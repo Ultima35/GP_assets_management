@@ -51,10 +51,23 @@ const aksesorisController = {
   getAll: async (req, res) => {
     try {
       const items = await Aksesoris.getAll();
+      const [units] = await db.query(
+        "SELECT id, aksesoris_id, kode_unit, nama_unit, kondisi, status_pinjam FROM aksesoris_units ORDER BY id ASC"
+      );
+      const unitsByAksesoris = {};
+      for (const u of units) {
+        if (!unitsByAksesoris[u.aksesoris_id]) unitsByAksesoris[u.aksesoris_id] = [];
+        unitsByAksesoris[u.aksesoris_id].push(u);
+      }
+      const data = items.map((a) => ({
+        ...a,
+        units: unitsByAksesoris[a.id] || [],
+      }));
+
       res.json({
         success: true,
         message: "Data aksesoris berhasil diambil",
-        data: items,
+        data,
       });
     } catch (error) {
       console.error("Error getAll aksesoris:", error);
@@ -317,7 +330,7 @@ const aksesorisController = {
 
       // Cek apakah aksesoris sedang dipinjam (peminjaman aktif)
       const [activeLoans] = await connection.query(
-        `SELECT DISTINCT p.kode_pinjam, p.tanggal_peminjaman, p.alasan_peminjaman, p.status,
+        `SELECT DISTINCT p.kode_pinjam, p.tanggal_peminjaman, p.alasan_peminjaman, p.status, p.created_at,
                 (SELECT COUNT(*) FROM peminjaman_items pi2 WHERE pi2.peminjaman_id = p.id) AS total_aset
          FROM peminjaman_items pi
          JOIN peminjaman p ON pi.peminjaman_id = p.id

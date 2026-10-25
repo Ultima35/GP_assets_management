@@ -338,7 +338,7 @@ const assetController = {
 
       // Cek apakah aset sedang dipinjam (peminjaman aktif)
       const [activeLoans] = await connection.query(
-        `SELECT DISTINCT p.kode_pinjam, p.tanggal_peminjaman, p.alasan_peminjaman, p.status,
+        `SELECT DISTINCT p.kode_pinjam, p.tanggal_peminjaman, p.alasan_peminjaman, p.status, p.created_at,
                 (SELECT COUNT(*) FROM peminjaman_items pi2 WHERE pi2.peminjaman_id = p.id) AS total_aset
          FROM peminjaman_items pi
          JOIN peminjaman p ON pi.peminjaman_id = p.id

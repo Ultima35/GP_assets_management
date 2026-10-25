@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { getPeminjamanByNamaPeminjam, downloadPeminjamanPDF } from "../../lib/peminjamanService";
 import { getUserContext } from "../../lib/authService";
@@ -12,6 +13,9 @@ import {
   Download,
   Filter,
   ChevronRight,
+  Check,
+  X,
+  Info,
 } from "lucide-react";
 
 const formatDateTime = (dateString) => {
@@ -52,6 +56,13 @@ export default function RiwayatPeminjamanPage() {
   const [statusFilter, setStatusFilter] = useState("Semua Status");
   const [currentUser, setCurrentUser] = useState(null);
   const [toast, setToast] = useState(null);
+
+  useEffect(() => {
+    if (toast) {
+      const t = setTimeout(() => setToast(null), 3500);
+      return () => clearTimeout(t);
+    }
+  }, [toast]);
 
   useEffect(() => {
     const ctx = getUserContext();
@@ -330,14 +341,24 @@ export default function RiwayatPeminjamanPage() {
       </div>
 
       {/* Toast */}
-      {toast && (
-        <div
-          className={`fixed bottom-4 right-4 px-4 py-3 rounded-lg text-white font-medium shadow-lg ${
-            toast.type === "success" ? "bg-green-600" : "bg-red-600"
-          }`}
-        >
+      {typeof document !== 'undefined' && toast && createPortal(
+        <div className={`fixed top-20 right-6 z-[9999] flex items-center gap-2 rounded-xl px-5 py-3 shadow-lg text-sm font-medium text-white transition-all animate-[slideIn_0.3s_ease] ${
+          toast.type === "error"
+            ? "bg-rose-500"
+            : toast.type === "info"
+            ? "bg-blue-500"
+            : "bg-emerald-500"
+        }`}>
+          {toast.type === "error" ? (
+            <X className="h-4 w-4" />
+          ) : toast.type === "info" ? (
+            <Info className="h-4 w-4" />
+          ) : (
+            <Check className="h-4 w-4" />
+          )}
           {toast.message}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

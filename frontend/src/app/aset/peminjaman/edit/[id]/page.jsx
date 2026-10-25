@@ -660,7 +660,7 @@ export default function EditPeminjamanPage() {
                   Informasi Status
                 </h3>
                 <p className="text-sm text-slate-600 leading-relaxed">
-                  Alat tidak dapat dikembalikan pada saat ini. Form pengembalian hanya aktif saat status peminjaman adalah <span className="font-bold text-slate-800">"Sedang Dipinjam"</span>.
+                  Alat tidak dapat dikembalikan pada saat ini. Form pengembalian hanya aktif saat status peminjaman adalah <span className="font-bold text-slate-800">&quot;Sedang Dipinjam&quot;</span>.
                 </p>
                 <p className="text-sm font-medium text-slate-500 mt-4 bg-white py-2 px-4 rounded-lg inline-block border border-slate-100">
                   Status Saat Ini: {data.status}
@@ -740,28 +740,25 @@ export default function EditPeminjamanPage() {
         document.body
       )}
 
-      {/* Modern Toast */}
-      {toast && (
-        <div className="fixed bottom-6 right-6 z-[120] animate-fade-in-up">
-          <div
-            className={`flex items-center gap-3 px-6 py-4 rounded-xl shadow-xl shadow-black/5 border ${
-              toast.type === "success"
-                ? "bg-emerald-50 text-emerald-900 border-emerald-200"
-                : "bg-red-50 text-red-900 border-red-200"
-            }`}
-          >
-            {toast.type === "success" ? (
-              <div className="bg-emerald-100 p-1 rounded-full">
-                <Check className="w-4 h-4 text-emerald-600" />
-              </div>
-            ) : (
-              <div className="bg-red-100 p-1 rounded-full">
-                <X className="w-4 h-4 text-red-600" />
-              </div>
-            )}
-            <p className="font-semibold text-sm">{toast.message}</p>
-          </div>
-        </div>
+      {/* Toast */}
+      {typeof document !== 'undefined' && toast && createPortal(
+        <div className={`fixed top-20 right-6 z-[9999] flex items-center gap-2 rounded-xl px-5 py-3 shadow-lg text-sm font-medium text-white transition-all animate-[slideIn_0.3s_ease] ${
+          toast.type === "error"
+            ? "bg-rose-500"
+            : toast.type === "info"
+            ? "bg-blue-500"
+            : "bg-emerald-500"
+        }`}>
+          {toast.type === "error" ? (
+            <X className="h-4 w-4" />
+          ) : toast.type === "info" ? (
+            <Info className="h-4 w-4" />
+          ) : (
+            <Check className="h-4 w-4" />
+          )}
+          {toast.message}
+        </div>,
+        document.body
       )}
     </div>
   );

@@ -1750,7 +1750,7 @@ export default function DaftarAsetPage() {
                             className="cursor-pointer inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-medium hover:underline ml-1"
                           >
                             <Layers className="h-3.5 w-3.5" />
-                            Kelola Unit Fisik ({showDetail.totalUnitsCount ?? showDetail.jumlah ?? 1} unit)
+                            Kelola Unit Fisik Aset ({showDetail.totalUnitsCount ?? showDetail.jumlah ?? 1} unit)
                           </button>
                         </div>
                       </div>
@@ -2254,7 +2254,7 @@ export default function DaftarAsetPage() {
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h2 className="text-lg font-bold text-slate-900">Kelola Unit Fisik</h2>
+                        <h2 className="text-lg font-bold text-slate-900">Kelola Unit Fisik Aset</h2>
                         <span className="font-mono text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
                           {showUnitsModal.kodeAset}
                         </span>
@@ -2309,7 +2309,7 @@ export default function DaftarAsetPage() {
                     <div className="p-4 rounded-xl border border-blue-200 bg-blue-50/40 space-y-3 animate-in fade-in">
                       <div className="flex items-center justify-between">
                         <h4 className="text-xs font-bold text-blue-900 uppercase tracking-wider">
-                          Form Tambah Unit Fisik Baru
+                          Form Tambah Unit Fisik Aset Baru
                         </h4>
                         <span className="text-[11px] text-blue-600">Kode unit dibuat otomatis</span>
                       </div>

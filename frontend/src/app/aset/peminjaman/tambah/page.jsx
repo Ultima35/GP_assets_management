@@ -11,7 +11,45 @@ import { getActivePegawai, getApprovers } from "../../../lib/pegawaiService";
 import api from "../../../lib/api";
 import { getUserContext } from "../../../lib/authService";
 import { toCapitalEachWord, toSentenceCase } from "../../../lib/stringUtils";
-import { ChevronLeft, FileText, Package, Plus, X, Check, AlertTriangle, Camera, Trash2, Grid, Image as ImageIcon, Search } from "lucide-react";
+import { ChevronLeft, FileText, Package, Plus, X, Check, AlertTriangle, Camera, Trash2, Grid, Image as ImageIcon, Search, Layers, Minus, Info } from "lucide-react";
+
+const getBackendURL = () => {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL.replace(/\/api$/, '');
+  }
+  if (typeof window !== "undefined") {
+    return `http://${window.location.hostname}:5000`;
+  }
+  return "http://localhost:5000";
+};
+const BACKEND_URL = getBackendURL();
+
+const getImageUrl = (gambar) => {
+  if (!gambar) return null;
+  if (gambar.startsWith("http")) return gambar;
+  return `${BACKEND_URL}${gambar}`;
+};
+
+function ItemThumbnail({ src, alt, width = 150, height = 150, className = "w-full h-full object-cover", iconSize = "w-8 h-8" }) {
+  const [failedSrc, setFailedSrc] = useState(null);
+  const imageUrl = getImageUrl(src);
+
+  if (!imageUrl || failedSrc === imageUrl) {
+    return <Package className={`${iconSize} text-slate-400`} />;
+  }
+
+  return (
+    <Image
+      src={imageUrl}
+      alt={alt || "Gambar Item"}
+      width={width}
+      height={height}
+      unoptimized
+      onError={() => setFailedSrc(imageUrl)}
+      className={className}
+    />
+  );
+}
 
 export default function TambahPeminjamanPage() {
   const router = useRouter();
@@ -44,8 +82,9 @@ export default function TambahPeminjamanPage() {
   const [itemSearch, setItemSearch] = useState("");
   const [itemFilter, setItemFilter] = useState("semua"); // "semua" | "asset" | "aksesoris"
   const [brandFilter, setBrandFilter] = useState("semua"); // "semua" | "Galeria Studio" | "Galeria Production"
-  const [cabinetModalItem, setCabinetModalItem] = useState(null);
-  const [selectedCabinetIds, setSelectedCabinetIds] = useState([]);
+  const [detailModalItem, setDetailModalItem] = useState(null);
+  const [modalSelectedUnitIds, setModalSelectedUnitIds] = useState([]);
+  const [modalJumlah, setModalJumlah] = useState(1);
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
 
@@ -142,7 +181,7 @@ export default function TambahPeminjamanPage() {
               gambar: ak.gambar,
               jenisAset: ak.jenisAset,
               tipe: "aksesoris",
-              units: [],
+              units: ak.units || [],
             };
           }),
       ];
@@ -247,102 +286,192 @@ export default function TambahPeminjamanPage() {
     setKeperluanList(updated);
   };
 
-  // Cabinet modal management
-  const openCabinetModal = (item) => {
-    const existing = items.find((it) => it.id === item.id && it.tipe === item.tipe);
-    setCabinetModalItem(item);
-    if (existing && existing.unitIds) {
-      setSelectedCabinetIds([...existing.unitIds]);
-    } else {
-      const availableIds = (item.units || [])
-        .filter((u) => u.status_pinjam === "Tersedia" && u.kondisi !== "Rusak" && u.kondisi !== "Rusak Berat")
-        .map((u) => u.id);
-      setSelectedCabinetIds(availableIds);
-    }
-  };
-
-  const toggleCabinet = (unitId, isDisabled) => {
-    if (isDisabled) return;
-    if (selectedCabinetIds.includes(unitId)) {
-      setSelectedCabinetIds(selectedCabinetIds.filter((id) => id !== unitId));
-    } else {
-      setSelectedCabinetIds([...selectedCabinetIds, unitId]);
-    }
-  };
-
-  const handleSaveCabinetSelection = () => {
-    if (!cabinetModalItem) return;
-    if (selectedCabinetIds.length === 0) {
-      showToast("Pilih minimal 1 kabinet", "error");
-      return;
+  // Unit statistics helper
+  const getItemUnitStats = (item) => {
+    if (!item.units || item.units.length === 0) {
+      const isReady = item.kondisi === "Siap Digunakan" && (Number(item.stok) || 0) > 0;
+      return {
+        hasUnits: false,
+        total: Number(item.jumlahTotal || item.stok || 0),
+        ready: isReady ? Number(item.stok || 0) : 0,
+        rusak: item.kondisi === "Rusak" ? Number(item.stok || 0) : 0,
+        rusakBerat: item.kondisi === "Rusak Berat" ? Number(item.stok || 0) : 0,
+        maintenance: item.kondisi === "Maintenance" ? Number(item.stok || 0) : 0,
+        dipinjam: 0,
+        isAvailable: isReady,
+      };
     }
 
-    const selectedUnits = (cabinetModalItem.units || []).filter((u) => selectedCabinetIds.includes(u.id));
-    const unitNames = selectedUnits.map((u) => u.nama_unit || u.kode_unit).join(", ");
+    const total = item.units.length;
+    const ready = item.units.filter((u) => u.status_pinjam === "Tersedia" && u.kondisi === "Siap Digunakan").length;
+    const rusak = item.units.filter((u) => u.kondisi === "Rusak").length;
+    const rusakBerat = item.units.filter((u) => u.kondisi === "Rusak Berat").length;
+    const maintenance = item.units.filter((u) => u.kondisi === "Maintenance").length;
+    const dipinjam = item.units.filter((u) => u.status_pinjam === "Dipinjam").length;
 
-    const existingIndex = items.findIndex((it) => it.id === cabinetModalItem.id && it.tipe === cabinetModalItem.tipe);
-    const newItem = {
-      id: cabinetModalItem.id,
-      nama: cabinetModalItem.nama,
-      kode: cabinetModalItem.kode,
-      tipe: cabinetModalItem.tipe,
-      harga: cabinetModalItem.harga,
-      tipeHarga: cabinetModalItem.tipeHarga,
-      hargaAsetOriginal: cabinetModalItem.hargaAsetOriginal,
-      jumlahTotal: cabinetModalItem.jumlahTotal,
-      stok: cabinetModalItem.stok,
-      jumlah: selectedCabinetIds.length,
-      kategori: cabinetModalItem.kategori,
-      merek: cabinetModalItem.merek,
-      jenisAset: cabinetModalItem.jenisAset,
+    return {
       hasUnits: true,
-      units: cabinetModalItem.units,
-      unitIds: selectedCabinetIds,
-      unitNames: unitNames,
+      total,
+      ready,
+      rusak,
+      rusakBerat,
+      maintenance,
+      dipinjam,
+      isAvailable: ready > 0,
     };
-
-    if (existingIndex >= 0) {
-      const updated = [...items];
-      updated[existingIndex] = newItem;
-      setItems(updated);
-      showToast(`Pilihan kabinet ${cabinetModalItem.nama} diperbarui (${selectedCabinetIds.length} kabinet)`, "success");
-    } else {
-      setItems([...items, newItem]);
-      showToast(`${cabinetModalItem.nama} ditambahkan (${selectedCabinetIds.length} kabinet)`, "success");
-    }
-
-    setCabinetModalItem(null);
-    setSelectedCabinetIds([]);
   };
 
-  // Item management
-  const addItemToList = (item) => {
+  // Unit modal management
+  const openDetailModal = (item) => {
+    const existing = items.find((it) => it.id === item.id && it.tipe === item.tipe);
+    setDetailModalItem(item);
+
     if (item.units && item.units.length > 0) {
-      openCabinetModal(item);
-      return;
+      if (existing && existing.unitIds && existing.unitIds.length > 0) {
+        setModalSelectedUnitIds([...existing.unitIds]);
+      } else {
+        const availableIds = (item.units || [])
+          .filter((u) => u.status_pinjam === "Tersedia" && u.kondisi === "Siap Digunakan")
+          .map((u) => u.id);
+        setModalSelectedUnitIds(availableIds);
+      }
+    } else {
+      if (existing) {
+        setModalJumlah(existing.jumlah || 1);
+      } else {
+        setModalJumlah(1);
+      }
     }
+  };
 
-    const alreadySelected = items.some(
-      (it) => it.id === item.id && it.tipe === item.tipe
+  const toggleModalUnit = (unitId, isDisabled) => {
+    if (isDisabled) return;
+    if (modalSelectedUnitIds.includes(unitId)) {
+      setModalSelectedUnitIds(modalSelectedUnitIds.filter((id) => id !== unitId));
+    } else {
+      setModalSelectedUnitIds([...modalSelectedUnitIds, unitId]);
+    }
+  };
+
+  const handleSaveModal = () => {
+    if (!detailModalItem) return;
+
+    const hasUnits = detailModalItem.units && detailModalItem.units.length > 0;
+    const existingIndex = items.findIndex(
+      (it) => it.id === detailModalItem.id && it.tipe === detailModalItem.tipe
     );
-    if (alreadySelected) {
-      showToast("Item sudah dipilih", "error");
+
+    if (hasUnits) {
+      if (modalSelectedUnitIds.length === 0) {
+        showToast("Pilih minimal 1 unit", "error");
+        return;
+      }
+
+      const selectedUnits = (detailModalItem.units || []).filter((u) =>
+        modalSelectedUnitIds.includes(u.id)
+      );
+      const unitNames = selectedUnits.map((u) => u.nama_unit || u.kode_unit).join(", ");
+
+      const newItem = {
+        id: detailModalItem.id,
+        nama: detailModalItem.nama,
+        kode: detailModalItem.kode,
+        tipe: detailModalItem.tipe,
+        harga: detailModalItem.harga,
+        tipeHarga: detailModalItem.tipeHarga,
+        hargaAsetOriginal: detailModalItem.hargaAsetOriginal,
+        jumlahTotal: detailModalItem.jumlahTotal,
+        stok: detailModalItem.stok,
+        jumlah: modalSelectedUnitIds.length,
+        kategori: detailModalItem.kategori,
+        merek: detailModalItem.merek,
+        jenisAset: detailModalItem.jenisAset,
+        kondisi: detailModalItem.kondisi,
+        hasUnits: true,
+        units: detailModalItem.units,
+        unitIds: modalSelectedUnitIds,
+        unitNames: unitNames,
+      };
+
+      if (existingIndex >= 0) {
+        const updated = [...items];
+        updated[existingIndex] = newItem;
+        setItems(updated);
+        showToast(`Pilihan unit ${detailModalItem.nama} diperbarui (${modalSelectedUnitIds.length} unit)`, "success");
+      } else {
+        setItems([...items, newItem]);
+        showToast(`${detailModalItem.nama} ditambahkan (${modalSelectedUnitIds.length} unit)`, "success");
+      }
+    } else {
+      const qty = Math.max(1, Math.min(modalJumlah, detailModalItem.stok || 1));
+      const newItem = {
+        id: detailModalItem.id,
+        nama: detailModalItem.nama,
+        kode: detailModalItem.kode,
+        tipe: detailModalItem.tipe,
+        harga: detailModalItem.harga,
+        tipeHarga: detailModalItem.tipeHarga,
+        hargaAsetOriginal: detailModalItem.hargaAsetOriginal,
+        jumlahTotal: detailModalItem.jumlahTotal,
+        stok: detailModalItem.stok,
+        jumlah: qty,
+        kategori: detailModalItem.kategori,
+        merek: detailModalItem.merek,
+        jenisAset: detailModalItem.jenisAset,
+        kondisi: detailModalItem.kondisi,
+        hasUnits: false,
+      };
+
+      if (existingIndex >= 0) {
+        const updated = [...items];
+        updated[existingIndex] = newItem;
+        setItems(updated);
+        showToast(`Jumlah ${detailModalItem.nama} diperbarui (${qty} unit)`, "success");
+      } else {
+        setItems([...items, newItem]);
+        showToast(`${detailModalItem.nama} ditambahkan (${qty} unit)`, "success");
+      }
+    }
+
+    setDetailModalItem(null);
+    setModalSelectedUnitIds([]);
+    setModalJumlah(1);
+  };
+
+  // Item click handler
+  const handleItemClick = (item) => {
+    const stats = getItemUnitStats(item);
+
+    // If item is completely unavailable, show informative error toast
+    if (!stats.isAvailable) {
+      if (stats.hasUnits) {
+        showToast(`"${item.nama}" tidak memiliki unit yang siap digunakan`, "error");
+      } else if (item.kondisi !== "Siap Digunakan") {
+        showToast(`"${item.nama}" kondisi ${item.kondisi}, tidak siap digunakan`, "error");
+      } else {
+        showToast(`"${item.nama}" stok kosong`, "error");
+      }
       return;
     }
 
-    if (item.kondisi !== "Siap Digunakan") {
-      showToast(`"${item.nama}" tidak dalam kondisi Siap Digunakan`, "error");
-      return;
+    // Check if already selected
+    const existing = items.find((it) => it.id === item.id && it.tipe === item.tipe);
+    if (existing) {
+      // If item has more than 1 unit or stock > 1, open modal to edit
+      if ((stats.hasUnits && item.units.length > 1) || (!stats.hasUnits && item.stok > 1)) {
+        openDetailModal(item);
+        return;
+      } else {
+        showToast(`"${item.nama}" sudah dipilih`, "info");
+        return;
+      }
     }
 
-    if (item.stok <= 0) {
-      showToast(`"${item.nama}" stok kosong`, "error");
-      return;
-    }
-
-    setItems([
-      ...items,
-      {
+    // User Feedback 2: Jika ada unit aset dan aksesoris yang hanya punya 1 unit, tidak perlu modal, langsung tampil ke item terpilih
+    if (stats.hasUnits && item.units.length === 1) {
+      const readyUnits = item.units.filter((u) => u.status_pinjam === "Tersedia" && u.kondisi === "Siap Digunakan");
+      const theUnit = readyUnits[0] || item.units[0];
+      const newItem = {
         id: item.id,
         nama: item.nama,
         kode: item.kode,
@@ -356,8 +485,42 @@ export default function TambahPeminjamanPage() {
         kategori: item.kategori,
         merek: item.merek,
         jenisAset: item.jenisAset,
-      },
-    ]);
+        kondisi: theUnit.kondisi || item.kondisi,
+        hasUnits: true,
+        units: item.units,
+        unitIds: [theUnit.id],
+        unitNames: theUnit.nama_unit || theUnit.kode_unit,
+      };
+      setItems([...items, newItem]);
+      showToast(`${item.nama} (${theUnit.nama_unit || theUnit.kode_unit}) ditambahkan`, "success");
+      return;
+    }
+
+    if (!stats.hasUnits && item.stok === 1) {
+      const newItem = {
+        id: item.id,
+        nama: item.nama,
+        kode: item.kode,
+        tipe: item.tipe,
+        harga: item.harga,
+        tipeHarga: item.tipeHarga,
+        hargaAsetOriginal: item.hargaAsetOriginal,
+        jumlahTotal: item.jumlahTotal,
+        stok: item.stok,
+        jumlah: 1,
+        kategori: item.kategori,
+        merek: item.merek,
+        jenisAset: item.jenisAset,
+        kondisi: item.kondisi,
+        hasUnits: false,
+      };
+      setItems([...items, newItem]);
+      showToast(`${item.nama} ditambahkan`, "success");
+      return;
+    }
+
+    // If has multiple units or stock > 1: open Item Detail Modal
+    openDetailModal(item);
   };
 
   const removeItemFromList = (index) => {
@@ -701,184 +864,178 @@ export default function TambahPeminjamanPage() {
             {/* Item Selection - Grid View */}
             {viewMode === "grid" && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 max-h-96 overflow-y-auto">
-                {filteredItems.map((item) => (
-                  <div
-                    key={`${item.tipe}-${item.id}`}
-                    onClick={() => addItemToList(item)}
-                    className={`p-4 rounded-lg border-2 cursor-pointer transition ${
-                      items.some((it) => it.id === item.id && it.tipe === item.tipe)
-                        ? "border-primary bg-blue-50"
-                        : "border-slate-200 hover:border-primary hover:bg-slate-50"
-                    } ${item.kondisi !== "Siap Digunakan" || item.stok <= 0 ? "opacity-50 cursor-not-allowed" : ""}`}
-                  >
-                    {/* Gambar */}
-                    <div className="mb-3 h-40 bg-slate-100 rounded-lg overflow-hidden flex items-center justify-center">
-                      {item.gambar ? (
-                        <Image
-                          src={item.gambar}
-                          alt={item.nama}
-                          width={150}
-                          height={150}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <Package className="w-8 h-8 text-slate-400" />
-                      )}
-                    </div>
+                {filteredItems.map((item) => {
+                  const stats = getItemUnitStats(item);
+                  const isSelected = items.some((it) => it.id === item.id && it.tipe === item.tipe);
+                  const selectedItem = items.find((it) => it.id === item.id && it.tipe === item.tipe);
+                  const isDisabled = !stats.isAvailable;
 
-                    {/* Info */}
-                    <p className="font-semibold text-slate-900 text-sm truncate">{item.nama}</p>
-                    <p className="text-xs text-slate-500">{item.kode}</p>
-
-                    {/* Badge */}
-                    <div className="flex gap-1 mt-2 flex-nowrap items-center">
-                      {renderBrandBadge(item.jenisAset, false)}
-                      <span className={`shrink-0 text-center inline-block text-[10px] sm:text-xs px-1 sm:px-2 py-0.5 rounded-full font-semibold ${
-                        item.tipe === "asset"
-                          ? "bg-blue-100 text-blue-700"
-                          : "bg-purple-100 text-purple-700"
-                      }`}>
-                        {item.tipe === "asset" ? "Aset" : "Aksesoris"}
-                      </span>
-                      <span className={`shrink-0 text-center inline-block text-[10px] sm:text-xs px-1 sm:px-2 py-0.5 rounded-full font-semibold ${getKondisiBadge(item.kondisi, false)}`}>
-                        {item.kondisi}
-                      </span>
-                    </div>
-
-                    {/* Stok & Harga */}
-                    <div className="mt-2 pt-2 border-t border-slate-200 text-xs">
-                      <p className="text-slate-600">Stok: <span className="font-semibold">{item.stok}</span></p>
-                      {item.harga > 0 && (
-                        <div>
-                          <p className="text-slate-600">Harga: <span className="font-semibold text-emerald-600">Rp {(item.harga || 0).toLocaleString('id-ID')}/unit</span></p>
-                          {item.tipeHarga === "Per Paket" && (
-                            <p className="text-[10px] text-purple-600 font-medium">(Paket: Rp {Number(item.hargaAsetOriginal).toLocaleString('id-ID')})</p>
+                  return (
+                    <div
+                      key={`${item.tipe}-${item.id}`}
+                      onClick={() => handleItemClick(item)}
+                      className={`p-4 rounded-lg border-2 transition flex flex-col justify-between ${
+                        isSelected
+                          ? "border-primary bg-blue-50/70"
+                          : isDisabled
+                          ? "border-slate-200 bg-slate-50/50 opacity-60 cursor-not-allowed"
+                          : "border-slate-200 hover:border-primary hover:bg-slate-50 cursor-pointer"
+                      }`}
+                    >
+                      <div>
+                        {/* Gambar */}
+                        <div className="mb-3 h-40 bg-slate-100 rounded-lg overflow-hidden flex items-center justify-center relative">
+                          <ItemThumbnail
+                            src={item.gambar}
+                            alt={item.nama}
+                            width={150}
+                            height={150}
+                            className="w-full h-full object-cover"
+                            iconSize="w-8 h-8"
+                          />
+                          {isSelected && (
+                            <div className="absolute top-2 right-2 bg-primary text-white p-1 rounded-full shadow">
+                              <Check className="w-3.5 h-3.5 stroke-[3]" />
+                            </div>
                           )}
                         </div>
-                      )}
-                    </div>
 
-                    {/* Preview Kabinet Videotron/Unit */}
-                    {item.units && item.units.length > 0 && (
-                      <div className="mt-2 pt-2 border-t border-slate-100">
-                        <div className="flex items-center justify-between text-[11px] text-slate-500 mb-1">
-                          <span className="font-medium">Kabinet:</span>
-                          <span className="text-[10px] font-semibold text-primary">
-                            {item.units.filter(u => u.status_pinjam === 'Tersedia').length}/{item.units.length} Siap
+                        {/* Info */}
+                        <p className="font-semibold text-slate-900 text-sm truncate" title={item.nama}>{item.nama}</p>
+                        <p className="text-xs text-slate-500 truncate">{item.kode}</p>
+
+                        {/* Badges */}
+                        <div className="flex gap-1 mt-2 flex-nowrap items-center overflow-hidden">
+                          {renderBrandBadge(item.jenisAset, false)}
+                          <span className={`shrink-0 text-center inline-block text-[10px] sm:text-xs px-1 sm:px-2 py-0.5 rounded-full font-semibold ${
+                            item.tipe === "asset"
+                              ? "bg-blue-100 text-blue-700"
+                              : "bg-purple-100 text-purple-700"
+                          }`}>
+                            {item.tipe === "asset" ? "Aset" : "Aksesoris"}
+                          </span>
+                          <span className={`shrink-0 text-center inline-block text-[10px] sm:text-xs px-1 sm:px-2 py-0.5 rounded-full font-semibold ${getKondisiBadge(item.kondisi, false)}`}>
+                            {item.kondisi}
                           </span>
                         </div>
-                        <div className="flex flex-wrap gap-1">
-                          {item.units.map((u) => {
-                            const isDipinjam = u.status_pinjam === "Dipinjam";
-                            const isRusak = u.kondisi === "Rusak" || u.kondisi === "Rusak Berat";
-                            const isUnavailable = isDipinjam || isRusak;
-                            const isSel = items.find(it => it.id === item.id && it.tipe === item.tipe)?.unitIds?.includes(u.id);
-                            return (
-                              <span
-                                key={u.id}
-                                className={`text-[10px] px-1 py-0.5 rounded font-bold ${
-                                  isSel
-                                    ? "bg-blue-600 text-white"
-                                    : isUnavailable
-                                    ? "bg-slate-200 text-slate-400 line-through"
-                                    : "bg-emerald-100 text-emerald-800 border border-emerald-200"
-                                }`}
-                                title={`${u.nama_unit} (${isDipinjam ? "Dipinjam" : isRusak ? "Rusak" : "Tersedia"})`}
-                              >
-                                {u.nama_unit}
-                              </span>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
 
-                    {items.some((it) => it.id === item.id && it.tipe === item.tipe) && (
-                      <div className="mt-2 flex items-center justify-center text-primary text-xs font-semibold">
-                        <Check className="w-4 h-4 mr-1" />
-                        {items.find(it => it.id === item.id && it.tipe === item.tipe)?.unitIds?.length
-                          ? `${items.find(it => it.id === item.id && it.tipe === item.tipe).unitIds.length} Kabinet Terpilih`
-                          : "Terpilih"}
+                        {/* Stok & Harga */}
+                        <div className="mt-2 pt-2 border-t border-slate-200 text-xs">
+                          <p className="text-slate-600">
+                            Stok: <span className={`font-semibold ${stats.ready > 0 ? "text-slate-800" : "text-red-500"}`}>{stats.ready}</span>
+                          </p>
+                          {item.harga > 0 && (
+                            <div className="mt-0.5">
+                              <p className="text-slate-600">Harga: <span className="font-semibold text-emerald-600">Rp {(item.harga || 0).toLocaleString('id-ID')}/unit</span></p>
+                              {item.tipeHarga === "Per Paket" && (
+                                <p className="text-[10px] text-purple-600 font-medium">(Paket: Rp {Number(item.hargaAsetOriginal).toLocaleString('id-ID')})</p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Indikator Unit Ringkas */}
+                        {stats.hasUnits && (
+                          <div className="mt-2 pt-2 border-t border-slate-100 flex items-center gap-1.5 text-[11px] text-slate-500">
+                            <Layers className="w-3.5 h-3.5 text-slate-400" />
+                            <span>
+                              <strong className={stats.ready > 0 ? "text-emerald-600" : "text-red-500"}>{stats.ready}</strong>/{stats.total} unit tersedia
+                            </span>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                ))}
+
+                      {isSelected && (
+                        <div className="mt-3 pt-2 border-t border-blue-200 flex items-center justify-center text-primary text-xs font-semibold">
+                          <Check className="w-4 h-4 mr-1" />
+                          {selectedItem?.hasUnits
+                            ? `${selectedItem.unitIds?.length || selectedItem.jumlah} Unit Terpilih`
+                            : `${selectedItem?.jumlah || 1} Terpilih`}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
 
             {/* Item Selection - List View */}
             {viewMode === "list" && (
               <div className="space-y-2 mb-6 max-h-96 overflow-y-auto">
-                {filteredItems.map((item) => (
-                  <div
-                    key={`${item.tipe}-${item.id}`}
-                    onClick={() => addItemToList(item)}
-                    className={`p-3 rounded-lg border-2 cursor-pointer transition flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-2 ${
-                      items.some((it) => it.id === item.id && it.tipe === item.tipe)
-                        ? "border-primary bg-blue-50"
-                        : "border-slate-200 hover:border-primary"
-                    } ${item.kondisi !== "Siap Digunakan" || item.stok <= 0 ? "opacity-50 cursor-not-allowed" : ""}`}
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-1 w-full">
-                      <div className="flex items-center gap-2 shrink-0">
-                        {renderBrandBadge(item.jenisAset, true)}
-                        <span className={`w-[84px] text-center inline-block text-[10px] sm:text-xs px-1 sm:px-2 py-0.5 rounded-full font-semibold border shrink-0 ${
-                          item.tipe === "asset"
-                            ? "bg-blue-100 text-blue-700 border-blue-200"
-                            : "bg-purple-100 text-purple-700 border-purple-200"
-                        }`}>
-                          {item.tipe === "asset" ? "Aset" : "Aksesoris"}
-                        </span>
-                      </div>
-                      <div className="flex-1 min-w-0 mt-1 sm:mt-0">
-                        <p className="font-semibold text-slate-900 truncate">{item.nama}</p>
-                        <p className="text-xs text-slate-500 truncate">{item.kode} • {item.kategori} • {item.merek}</p>
-                        {item.units && item.units.length > 0 && (
-                          <div className="flex flex-wrap items-center gap-1 mt-1">
-                            <span className="text-[10px] text-slate-400 font-medium">Kabinet:</span>
-                            {item.units.map((u) => {
-                              const isDipinjam = u.status_pinjam === "Dipinjam";
-                              const isRusak = u.kondisi === "Rusak" || u.kondisi === "Rusak Berat";
-                              const isUnavailable = isDipinjam || isRusak;
-                              const isSel = items.find(it => it.id === item.id && it.tipe === item.tipe)?.unitIds?.includes(u.id);
-                              return (
-                                <span
-                                  key={u.id}
-                                  className={`text-[10px] px-1 py-0.5 rounded font-bold ${
-                                    isSel
-                                      ? "bg-blue-600 text-white"
-                                      : isUnavailable
-                                      ? "bg-slate-200 text-slate-400 line-through"
-                                      : "bg-emerald-100 text-emerald-800 border border-emerald-200"
-                                  }`}
-                                  title={`${u.nama_unit} (${isDipinjam ? "Dipinjam" : isRusak ? "Rusak" : "Tersedia"})`}
-                                >
-                                  {u.nama_unit}
-                                </span>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap items-center justify-between sm:justify-end gap-3 sm:gap-2 shrink-0 border-t sm:border-0 border-slate-100 pt-2 sm:pt-0 w-full sm:w-auto">
-                      <div className="flex items-center gap-3 sm:gap-2">
-                        <span className="text-xs font-semibold text-slate-600">Stok: {item.stok}</span>
-                        {item.harga > 0 && (
-                          <div className="flex flex-col text-right">
-                            <span className="text-xs font-semibold text-emerald-600">Rp {(item.harga || 0).toLocaleString('id-ID')}</span>
-                            {item.tipeHarga === "Per Paket" && (
-                              <span className="text-[10px] text-purple-600 font-medium">Paket</span>
+                {filteredItems.map((item) => {
+                  const stats = getItemUnitStats(item);
+                  const isSelected = items.some((it) => it.id === item.id && it.tipe === item.tipe);
+                  const selectedItem = items.find((it) => it.id === item.id && it.tipe === item.tipe);
+                  const isDisabled = !stats.isAvailable;
+
+                  return (
+                    <div
+                      key={`${item.tipe}-${item.id}`}
+                      onClick={() => handleItemClick(item)}
+                      className={`p-3 rounded-lg border-2 transition flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-2 ${
+                        isSelected
+                          ? "border-primary bg-blue-50/70"
+                          : isDisabled
+                          ? "border-slate-200 bg-slate-50/50 opacity-60 cursor-not-allowed"
+                          : "border-slate-200 hover:border-primary hover:bg-slate-50 cursor-pointer"
+                      }`}
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-1 w-full min-w-0">
+                        <div className="flex items-center gap-2 shrink-0">
+                          {renderBrandBadge(item.jenisAset, true)}
+                          <span className={`w-[84px] text-center inline-block text-[10px] sm:text-xs px-1 sm:px-2 py-0.5 rounded-full font-semibold border shrink-0 ${
+                            item.tipe === "asset"
+                              ? "bg-blue-100 text-blue-700 border-blue-200"
+                              : "bg-purple-100 text-purple-700 border-purple-200"
+                          }`}>
+                            {item.tipe === "asset" ? "Aset" : "Aksesoris"}
+                          </span>
+                        </div>
+                        <div className="flex-1 min-w-0 mt-1 sm:mt-0">
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold text-slate-900 truncate">{item.nama}</p>
+                            {isSelected && (
+                              <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold">
+                                <Check className="w-3 h-3" />
+                                {selectedItem?.hasUnits ? `${selectedItem.jumlah} Unit` : `${selectedItem?.jumlah} Terpilih`}
+                              </span>
                             )}
                           </div>
-                        )}
+                          <p className="text-xs text-slate-500 truncate">{item.kode} • {item.kategori} • {item.merek}</p>
+                          {stats.hasUnits && (
+                            <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mt-1">
+                              <Layers className="w-3.5 h-3.5 text-slate-400" />
+                              <span>
+                                <strong className={stats.ready > 0 ? "text-emerald-600 font-semibold" : "text-red-500 font-semibold"}>
+                                  {stats.ready}
+                                </strong>
+                                /{stats.total} unit tersedia
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <span className={`text-center inline-block text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-semibold border ${getKondisiBadge(item.kondisi, true)}`}>
-                        {item.kondisi}
-                      </span>
+                      <div className="flex flex-wrap items-center justify-between sm:justify-end gap-3 sm:gap-2 shrink-0 border-t sm:border-0 border-slate-100 pt-2 sm:pt-0 w-full sm:w-auto">
+                        <div className="flex items-center gap-3 sm:gap-2">
+                          <span className={`text-xs font-semibold ${stats.ready > 0 ? "text-slate-700" : "text-red-500"}`}>
+                            Stok: {stats.ready}
+                          </span>
+                          {item.harga > 0 && (
+                            <div className="flex flex-col text-right">
+                              <span className="text-xs font-semibold text-emerald-600">Rp {(item.harga || 0).toLocaleString('id-ID')}</span>
+                              {item.tipeHarga === "Per Paket" && (
+                                <span className="text-[10px] text-purple-600 font-medium">Paket</span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        <span className={`text-center inline-block text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-semibold border ${getKondisiBadge(item.kondisi, true)}`}>
+                          {item.kondisi}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 
@@ -894,13 +1051,16 @@ export default function TambahPeminjamanPage() {
           {/* Section 3: Selected Items */}
           {items.length > 0 && (
             <div className="bg-white rounded-lg shadow-sm border border-slate-200 border-t-4 border-t-primary p-6">
-              <h3 className="text-lg font-semibold text-slate-900 mb-4">Item Terpilih</h3>
+              <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                <Package className="w-5 h-5 text-primary" />
+                Item Terpilih ({items.length})
+              </h3>
 
               <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
                 {items.map((item, idx) => (
                   <div key={idx} className="p-3 rounded-lg border-2 border-slate-200 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     {/* Item Info */}
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-1 w-full">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-1 w-full min-w-0">
                       <div className="flex items-center gap-2 shrink-0">
                         {renderBrandBadge(item.jenisAset, true)}
                         <span className={`w-[84px] text-center inline-block text-[10px] sm:text-xs px-1 sm:px-2 py-0.5 rounded-full font-semibold border shrink-0 ${
@@ -913,10 +1073,17 @@ export default function TambahPeminjamanPage() {
                       </div>
                       <div className="flex-1 min-w-0 mt-1 sm:mt-0">
                         <p className="font-semibold text-slate-900 truncate">{item.nama}</p>
-                        <p className="text-xs text-slate-500 truncate">{item.kode} • Stok: {item.stok}</p>
+                        <p className="text-xs text-slate-500 truncate">
+                          {item.kode} • Stok: {item.stok}
+                          {item.kondisi && (
+                            <span className="ml-1.5 inline-block">
+                              • <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${getKondisiBadge(item.kondisi, false)}`}>{item.kondisi}</span>
+                            </span>
+                          )}
+                        </p>
                         {item.hasUnits && (
                           <div className="flex flex-wrap items-center gap-1 mt-1.5">
-                            <span className="text-[11px] text-slate-500 font-semibold">Kabinet:</span>
+                            <span className="text-[11px] text-slate-500 font-semibold">Unit:</span>
                             {(item.units || [])
                               .filter((u) => item.unitIds?.includes(u.id))
                               .map((u) => (
@@ -928,13 +1095,25 @@ export default function TambahPeminjamanPage() {
                               type="button"
                               onClick={() => {
                                 const orig = allItems.find((it) => it.id === item.id && it.tipe === item.tipe) || item;
-                                openCabinetModal(orig);
+                                openDetailModal(orig);
                               }}
                               className="cursor-pointer text-xs text-primary hover:underline font-semibold ml-2"
                             >
-                              Ubah Kabinet
+                              Ubah Unit
                             </button>
                           </div>
+                        )}
+                        {!item.hasUnits && (item.stok > 1) && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const orig = allItems.find((it) => it.id === item.id && it.tipe === item.tipe) || item;
+                              openDetailModal(orig);
+                            }}
+                            className="cursor-pointer text-xs text-primary hover:underline font-semibold mt-1 inline-block"
+                          >
+                            Atur Jumlah
+                          </button>
                         )}
                       </div>
                     </div>
@@ -951,7 +1130,7 @@ export default function TambahPeminjamanPage() {
                       
                       {item.hasUnits ? (
                         <div className="flex items-center gap-1.5 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200">
-                          <span className="text-xs font-bold text-blue-800">{item.jumlah} Kabinet</span>
+                          <span className="text-xs font-bold text-blue-800">{item.jumlah} Unit</span>
                         </div>
                       ) : (
                         <div className="flex items-center gap-2 bg-slate-50 p-1 rounded-lg border border-slate-200">
@@ -1092,131 +1271,279 @@ export default function TambahPeminjamanPage() {
           </div>
         </form>
 
-      {/* Modal Pemilihan Kabinet / Unit */}
-      {cabinetModalItem && createPortal(
+      {/* Modal Pemilihan Item / Unit */}
+      {detailModalItem && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh]">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 border-t-4 border-t-primary w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh]">
             {/* Modal Header */}
             <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center text-primary">
-                  <Package className="w-5 h-5" />
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center shrink-0">
+                  <ItemThumbnail
+                    src={detailModalItem.gambar}
+                    alt={detailModalItem.nama}
+                    width={48}
+                    height={48}
+                    className="w-full h-full object-cover"
+                    iconSize="w-6 h-6"
+                  />
                 </div>
-                <div>
-                  <h3 className="text-base font-bold text-slate-900">
-                    Pilih Kabinet {cabinetModalItem.nama}
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {renderBrandBadge(detailModalItem.jenisAset, false)}
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
+                      detailModalItem.tipe === "asset"
+                        ? "bg-blue-100 text-blue-700"
+                        : "bg-purple-100 text-purple-700"
+                    }`}>
+                      {detailModalItem.tipe === "asset" ? "Aset" : "Aksesoris"}
+                    </span>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${getKondisiBadge(detailModalItem.kondisi, false)}`}>
+                      {detailModalItem.kondisi}
+                    </span>
+                  </div>
+                  <h3 className="text-base font-bold text-slate-900 truncate mt-0.5">
+                    {detailModalItem.nama}
                   </h3>
-                  <p className="text-xs text-slate-500">
-                    {cabinetModalItem.kode} • Total {cabinetModalItem.units?.length || 0} kabinet terdaftar
+                  <p className="text-xs text-slate-500 truncate">
+                    {detailModalItem.kode} • {detailModalItem.kategori} • {detailModalItem.merek}
                   </p>
                 </div>
               </div>
               <button
                 type="button"
-                onClick={() => setCabinetModalItem(null)}
-                className="cursor-pointer p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-lg transition"
+                onClick={() => setDetailModalItem(null)}
+                className="cursor-pointer p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-lg transition shrink-0 ml-2"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Modal Body */}
-            <div className="p-6 overflow-y-auto flex-1">
-              {/* Quick actions & stats */}
-              <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
-                <span className="text-xs font-medium text-slate-600">
-                  Kabinet Terpilih: <strong className="text-primary font-bold">{selectedCabinetIds.length}</strong> dari {cabinetModalItem.units?.filter(u => u.status_pinjam === 'Tersedia').length || 0} tersedia
-                </span>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const avail = (cabinetModalItem.units || [])
-                        .filter((u) => u.status_pinjam === "Tersedia" && u.kondisi !== "Rusak" && u.kondisi !== "Rusak Berat")
-                        .map((u) => u.id);
-                      setSelectedCabinetIds(avail);
-                    }}
-                    className="cursor-pointer text-xs px-2.5 py-1 rounded bg-blue-50 text-blue-700 font-semibold hover:bg-blue-100 transition"
-                  >
-                    Pilih Semua Tersedia
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedCabinetIds([])}
-                    className="cursor-pointer text-xs px-2.5 py-1 rounded bg-slate-100 text-slate-600 font-semibold hover:bg-slate-200 transition"
-                  >
-                    Reset
-                  </button>
+            <div className="p-6 overflow-y-auto flex-1 space-y-4">
+              {/* Quick Info bar */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs">
+                <div>
+                  <span className="text-slate-500 block">Stok Tersedia</span>
+                  <span className="text-sm font-bold text-slate-900">
+                    {detailModalItem.units && detailModalItem.units.length > 0
+                      ? `${detailModalItem.units.filter(u => u.status_pinjam === 'Tersedia' && u.kondisi === 'Siap Digunakan').length} Unit`
+                      : `${detailModalItem.stok} Unit`}
+                  </span>
                 </div>
+                <div>
+                  <span className="text-slate-500 block">Kondisi Alat</span>
+                  <span className="text-sm font-bold text-emerald-600">
+                    {detailModalItem.kondisi}
+                  </span>
+                </div>
+                {detailModalItem.harga > 0 && (
+                  <div>
+                    <span className="text-slate-500 block">Harga / Unit</span>
+                    <span className="text-sm font-bold text-emerald-600">
+                      Rp {detailModalItem.harga.toLocaleString('id-ID')}
+                    </span>
+                  </div>
+                )}
               </div>
 
-              {/* Cabinet Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {(cabinetModalItem.units || []).map((u) => {
-                  const isDipinjam = u.status_pinjam === "Dipinjam";
-                  const isRusak = u.kondisi === "Rusak" || u.kondisi === "Rusak Berat";
-                  const isUnavailable = isDipinjam || isRusak;
-                  const isSelected = selectedCabinetIds.includes(u.id);
-
-                  return (
-                    <div
-                      key={u.id}
-                      onClick={() => !isUnavailable && toggleCabinet(u.id, isUnavailable)}
-                      className={`relative p-3.5 rounded-xl border-2 transition-all flex flex-col justify-between select-none ${
-                        isUnavailable
-                          ? "bg-slate-100 border-slate-200 opacity-60 cursor-not-allowed"
-                          : isSelected
-                          ? "bg-blue-50 border-primary shadow-sm cursor-pointer ring-1 ring-primary"
-                          : "bg-white border-slate-200 hover:border-primary/50 hover:bg-slate-50 cursor-pointer"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <span className={`text-base font-bold ${
-                          isSelected ? "text-primary" : isUnavailable ? "text-slate-400" : "text-slate-800"
-                        }`}>
-                          {u.nama_unit || u.kode_unit}
+              {/* JIKA ITEM MEMILIKI UNIT (units.length > 0) */}
+              {detailModalItem.units && detailModalItem.units.length > 0 ? (
+                <div>
+                  {/* Status Breakdown Legend */}
+                  {(() => {
+                    const stats = getItemUnitStats(detailModalItem);
+                    return (
+                      <div className="flex flex-wrap items-center gap-1.5 text-xs bg-slate-50 p-2.5 rounded-lg border border-slate-200 mb-3">
+                        <span className="font-semibold text-slate-600 mr-1">Status Unit:</span>
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-medium text-[11px]">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                          {stats.ready} Siap
                         </span>
-                        {isSelected ? (
-                          <div className="w-5 h-5 rounded-md bg-primary text-white flex items-center justify-center">
-                            <Check className="w-3.5 h-3.5 stroke-[3]" />
-                          </div>
-                        ) : (
-                          <div className={`w-5 h-5 rounded-md border ${
-                            isUnavailable ? "border-slate-300 bg-slate-200" : "border-slate-300 bg-white"
-                          }`} />
+                        {stats.dipinjam > 0 && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-medium text-[11px]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                            {stats.dipinjam} Dipinjam
+                          </span>
+                        )}
+                        {stats.maintenance > 0 && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800 font-medium text-[11px]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-yellow-500"></span>
+                            {stats.maintenance} Maintenance
+                          </span>
+                        )}
+                        {stats.rusak > 0 && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-100 text-red-800 font-medium text-[11px]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                            {stats.rusak} Rusak
+                          </span>
+                        )}
+                        {stats.rusakBerat > 0 && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-900 text-white font-medium text-[11px]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-300"></span>
+                            {stats.rusakBerat} Rusak Berat
+                          </span>
                         )}
                       </div>
+                    );
+                  })()}
 
-                      <div className="flex items-center justify-between text-[11px] pt-1 border-t border-slate-100">
-                        <span className="text-slate-500 font-mono text-[10px] truncate max-w-[70px]">
-                          {u.kode_unit}
-                        </span>
-                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${
-                          isDipinjam
-                            ? "bg-amber-100 text-amber-800"
-                            : isRusak
-                            ? "bg-red-100 text-red-800"
-                            : "bg-emerald-100 text-emerald-800"
-                        }`}>
-                          {isDipinjam ? "Dipinjam" : isRusak ? "Rusak" : "Tersedia"}
-                        </span>
-                      </div>
+                  {/* Actions & Selected count */}
+                  <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
+                    <span className="text-xs font-medium text-slate-600">
+                      Unit Terpilih: <strong className="text-primary font-bold">{modalSelectedUnitIds.length}</strong> unit
+                    </span>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const avail = (detailModalItem.units || [])
+                            .filter((u) => u.status_pinjam === "Tersedia" && u.kondisi === "Siap Digunakan")
+                            .map((u) => u.id);
+                          setModalSelectedUnitIds(avail);
+                        }}
+                        className="cursor-pointer text-xs px-2.5 py-1 rounded bg-blue-50 text-blue-700 font-semibold hover:bg-blue-100 transition"
+                      >
+                        Pilih Semua Siap
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setModalSelectedUnitIds([])}
+                        className="cursor-pointer text-xs px-2.5 py-1 rounded bg-slate-100 text-slate-600 font-semibold hover:bg-slate-200 transition"
+                      >
+                        Reset
+                      </button>
                     </div>
-                  );
-                })}
-              </div>
+                  </div>
+
+                  {/* Unit List */}
+                  <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                    {(detailModalItem.units || []).map((u) => {
+                      const isDipinjam = u.status_pinjam === "Dipinjam";
+                      const isRusak = u.kondisi === "Rusak";
+                      const isRusakBerat = u.kondisi === "Rusak Berat";
+                      const isMaintenance = u.kondisi === "Maintenance";
+                      const isUnavailable = isDipinjam || isRusak || isRusakBerat || isMaintenance;
+                      const isSelected = modalSelectedUnitIds.includes(u.id);
+
+                      let statusLabel = "Siap Digunakan";
+                      let statusBadgeClass = "bg-emerald-100 text-emerald-800 border-emerald-200";
+                      if (isDipinjam) {
+                        statusLabel = "Dipinjam";
+                        statusBadgeClass = "bg-amber-100 text-amber-800 border-amber-200";
+                      } else if (isRusakBerat) {
+                        statusLabel = "Rusak Berat";
+                        statusBadgeClass = "bg-red-900 text-white border-red-800";
+                      } else if (isRusak) {
+                        statusLabel = "Rusak";
+                        statusBadgeClass = "bg-red-100 text-red-800 border-red-200";
+                      } else if (isMaintenance) {
+                        statusLabel = "Maintenance";
+                        statusBadgeClass = "bg-yellow-100 text-yellow-800 border-yellow-200";
+                      }
+
+                      return (
+                        <div
+                          key={u.id}
+                          onClick={() => toggleModalUnit(u.id, isUnavailable)}
+                          className={`relative px-4 py-3 rounded-xl border transition-all flex items-center justify-between gap-3 select-none ${
+                            isUnavailable
+                              ? "bg-slate-100/80 border-slate-200 opacity-60 cursor-not-allowed"
+                              : isSelected
+                              ? "bg-blue-50/70 border-primary ring-1 ring-primary shadow-xs cursor-pointer"
+                              : "bg-white border-slate-200 hover:border-primary/50 hover:bg-slate-50 cursor-pointer"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            {/* Checkbox Icon */}
+                            {isSelected ? (
+                              <div className="w-5 h-5 rounded-md bg-primary text-white flex items-center justify-center shrink-0 shadow-xs">
+                                <Check className="w-3.5 h-3.5 stroke-[3]" />
+                              </div>
+                            ) : (
+                              <div className={`w-5 h-5 rounded-md border shrink-0 ${
+                                isUnavailable ? "border-slate-300 bg-slate-200" : "border-slate-300 bg-white"
+                              }`} />
+                            )}
+
+                            {/* Unit Details: Name & Code */}
+                            <div className="min-w-0">
+                              <p className={`text-sm font-semibold truncate ${
+                                isSelected ? "text-primary" : isUnavailable ? "text-slate-500" : "text-slate-800"
+                              }`}>
+                                {u.nama_unit || u.kode_unit}
+                              </p>
+                              <p className="text-xs text-slate-500 font-mono">
+                                {u.kode_unit}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Unit Status Badge */}
+                          <div className="shrink-0 flex items-center gap-2">
+                            <span className={`px-2.5 py-1 rounded-full text-[11px] font-semibold border ${statusBadgeClass}`}>
+                              {statusLabel}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                /* JIKA ITEM TANPA UNIT (Item Bulk / Stok > 1) */
+                <div className="py-2">
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Tentukan Jumlah Pinjam
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setModalJumlah((prev) => Math.max(1, prev - 1))}
+                      disabled={modalJumlah <= 1}
+                      className="cursor-pointer w-10 h-10 rounded-lg border border-slate-300 flex items-center justify-center text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                    >
+                      <Minus className="w-4 h-4" />
+                    </button>
+                    <input
+                      type="number"
+                      min="1"
+                      max={detailModalItem.stok}
+                      value={modalJumlah}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value) || 1;
+                        setModalJumlah(Math.max(1, Math.min(val, detailModalItem.stok)));
+                      }}
+                      className="w-24 text-center font-bold text-lg rounded-lg border border-slate-300 py-1.5 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setModalJumlah((prev) => Math.min(detailModalItem.stok, prev + 1))}
+                      disabled={modalJumlah >= detailModalItem.stok}
+                      className="cursor-pointer w-10 h-10 rounded-lg border border-slate-300 flex items-center justify-center text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                    <span className="text-xs text-slate-500 font-medium">
+                      / {detailModalItem.stok} unit tersedia
+                    </span>
+                  </div>
+                </div>
+              )}
 
               {/* Price Calculation Box */}
-              {cabinetModalItem.harga > 0 && (
+              {detailModalItem.harga > 0 && (
                 <div className="mt-4 p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
                   <div>
-                    <span className="text-slate-500 block">Estimasi Nilai ({selectedCabinetIds.length} kabinet):</span>
+                    <span className="text-slate-500 block">
+                      Estimasi Nilai ({detailModalItem.units && detailModalItem.units.length > 0 ? modalSelectedUnitIds.length : modalJumlah} unit):
+                    </span>
                     <span className="text-[11px] text-slate-400">
-                      @ Rp {cabinetModalItem.harga.toLocaleString("id-ID")} / kabinet
+                      @ Rp {detailModalItem.harga.toLocaleString("id-ID")} / unit
                     </span>
                   </div>
                   <span className="text-base font-bold text-emerald-600">
-                    Rp {(cabinetModalItem.harga * selectedCabinetIds.length).toLocaleString("id-ID")}
+                    Rp {(detailModalItem.harga * (detailModalItem.units && detailModalItem.units.length > 0 ? modalSelectedUnitIds.length : modalJumlah)).toLocaleString("id-ID")}
                   </span>
                 </div>
               )}
@@ -1226,19 +1553,19 @@ export default function TambahPeminjamanPage() {
             <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
               <button
                 type="button"
-                onClick={() => setCabinetModalItem(null)}
+                onClick={() => setDetailModalItem(null)}
                 className="cursor-pointer px-4 py-2 text-sm rounded-lg border border-slate-300 font-semibold text-slate-700 hover:bg-slate-200 transition"
               >
                 Batal
               </button>
               <button
                 type="button"
-                disabled={selectedCabinetIds.length === 0}
-                onClick={handleSaveCabinetSelection}
+                disabled={detailModalItem.units && detailModalItem.units.length > 0 ? modalSelectedUnitIds.length === 0 : modalJumlah <= 0}
+                onClick={handleSaveModal}
                 className="cursor-pointer px-5 py-2 text-sm rounded-lg bg-primary text-white font-semibold hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-1.5"
               >
                 <Check className="w-4 h-4" />
-                Simpan ({selectedCabinetIds.length} Kabinet)
+                Simpan ({detailModalItem.units && detailModalItem.units.length > 0 ? modalSelectedUnitIds.length : modalJumlah} Unit)
               </button>
             </div>
           </div>
@@ -1247,10 +1574,21 @@ export default function TambahPeminjamanPage() {
       )}
 
       {/* Toast */}
-      {toast && createPortal(
-        <div className={`fixed bottom-4 right-4 px-4 py-3 rounded-lg text-white font-medium shadow-lg animation-fade-in ${
-          toast.type === "success" ? "bg-green-600" : "bg-red-600"
+      {typeof document !== 'undefined' && toast && createPortal(
+        <div className={`fixed top-20 right-6 z-[9999] flex items-center gap-2 rounded-xl px-5 py-3 shadow-lg text-sm font-medium text-white transition-all animate-[slideIn_0.3s_ease] ${
+          toast.type === "error"
+            ? "bg-rose-500"
+            : toast.type === "info"
+            ? "bg-blue-500"
+            : "bg-emerald-500"
         }`}>
+          {toast.type === "error" ? (
+            <X className="h-4 w-4" />
+          ) : toast.type === "info" ? (
+            <Info className="h-4 w-4" />
+          ) : (
+            <Check className="h-4 w-4" />
+          )}
           {toast.message}
         </div>,
         document.body
