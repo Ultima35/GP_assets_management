@@ -1266,39 +1266,48 @@ export default function DaftarAsetPage() {
         </div>
 
         {/* Toolbar */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 sm:p-5 border-b border-slate-300 bg-slate-50/50">
-          <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
-            <div className="relative w-full sm:w-56">
+        <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3 p-4 sm:p-5 border-b border-slate-300 bg-slate-50/50">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full xl:w-auto">
+            <div className="relative w-full sm:w-56 md:w-64">
               <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
-              <input type="text" placeholder="Cari nama aset..." value={search} onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-                className="w-full rounded-lg border-2 border-slate-200 py-2 pl-10 pr-4 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary cursor-text transition-colors hover:border-slate-300" />
+              <input
+                type="text"
+                placeholder="Cari nama aset..."
+                value={search}
+                onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+                className="w-full rounded-lg border-2 border-slate-200 py-2 pl-10 pr-4 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary cursor-text transition-colors hover:border-slate-300"
+              />
             </div>
-            <select
-              value={kondisiFilter}
-              onChange={(e) => { setKondisiFilter(e.target.value); setCurrentPage(1); }}
-              className="w-full sm:w-36 rounded-lg border-2 border-slate-200 py-2 px-2.5 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors hover:border-slate-300 outline-none cursor-pointer"
-            >
-              <option value="">Semua Kondisi</option>
-              {kondisiOptions.map(opt => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
-            </select>
-            <select
-              value={brandFilter}
-              onChange={(e) => { setBrandFilter(e.target.value); setCurrentPage(1); }}
-              className="w-full sm:w-40 rounded-lg border-2 border-slate-200 py-2 px-2.5 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors hover:border-slate-300 outline-none cursor-pointer"
-            >
-              <option value="">Semua Brand</option>
-              <option value="Galeria studio">Galeria Studio</option>
-              <option value="Galeria production">Galeria Production</option>
-            </select>
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center w-full sm:w-auto">
+              <select
+                value={kondisiFilter}
+                onChange={(e) => { setKondisiFilter(e.target.value); setCurrentPage(1); }}
+                className="w-full sm:w-36 rounded-lg border-2 border-slate-200 py-2 px-2.5 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors hover:border-slate-300 outline-none cursor-pointer"
+              >
+                <option value="">Semua Kondisi</option>
+                {kondisiOptions.map((opt) => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
+              <select
+                value={brandFilter}
+                onChange={(e) => { setBrandFilter(e.target.value); setCurrentPage(1); }}
+                className="w-full sm:w-40 rounded-lg border-2 border-slate-200 py-2 px-2.5 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors hover:border-slate-300 outline-none cursor-pointer"
+              >
+                <option value="">Semua Brand</option>
+                <option value="Galeria studio">Galeria Studio</option>
+                <option value="Galeria production">Galeria Production</option>
+              </select>
+            </div>
           </div>
-          <div className="flex flex-wrap lg:flex-nowrap items-center gap-2 w-full sm:w-auto shrink-0">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap xl:flex-nowrap items-center w-full xl:w-auto sm:justify-start xl:justify-end">
             {/* Export Excel Button */}
             <button
               onClick={handleExportExcel}
               title="Export data ke file Excel"
-              className="cursor-pointer w-full sm:w-auto flex justify-center items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-700 whitespace-nowrap"
+              className={`cursor-pointer w-full sm:w-auto flex justify-center items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-700 whitespace-nowrap ${
+                ["user", "guest"].includes(userRole) ? "col-span-2 sm:col-span-1" : ""
+              }`}
             >
               <Download className="h-4 w-4" />
               Export Excel
@@ -1320,7 +1329,9 @@ export default function DaftarAsetPage() {
             {["super admin", "admin"].includes(userRole) && (
               <button
                 onClick={() => { setFormData(emptyForm); setImageFile(null); setImagePreview(null); setShowModal(true); }}
-                className="cursor-pointer w-full sm:w-auto flex justify-center items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-hover whitespace-nowrap"
+                className={`cursor-pointer w-full sm:w-auto flex justify-center items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-hover whitespace-nowrap ${
+                  userRole === "admin" ? "col-span-2 sm:col-span-1" : ""
+                }`}
               >
                 <Plus className="h-4 w-4" />
                 Tambah Aset
@@ -2121,105 +2132,105 @@ export default function DaftarAsetPage() {
           })()}
           {/* Modal Hapus Seluruh Data (Khusus Super Admin) */}
           {showDeleteAllModal && (
-            <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs transition-opacity animate-in fade-in duration-300" onClick={() => setShowDeleteAllModal(false)}>
-              <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl border-t-4 border-t-rose-600 animate-modal-in overflow-hidden" onClick={(e) => e.stopPropagation()}>
-                <div className="p-6">
-                  <div className="flex items-start gap-3 mb-4">
-                    <div className="p-2.5 rounded-full bg-rose-100 text-rose-600">
-                      <AlertTriangle className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-lg font-bold text-slate-800">Hapus Seluruh Data</h3>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-rose-100 text-rose-700">
-                          Super Admin
-                        </span>
+            <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/50 p-2.5 sm:p-4 backdrop-blur-xs transition-opacity animate-in fade-in duration-300" onClick={() => setShowDeleteAllModal(false)}>
+              <div className="w-full max-w-lg max-h-[92vh] flex flex-col rounded-2xl bg-white shadow-2xl border-t-4 border-t-rose-600 animate-modal-in overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                <div className="p-4 sm:p-6 overflow-y-auto custom-scrollbar flex-1">
+                  <div className="flex items-start justify-between gap-3 mb-4">
+                    <div className="flex items-start gap-2.5 sm:gap-3 min-w-0">
+                      <div className="p-2 sm:p-2.5 rounded-xl sm:rounded-full bg-rose-100 text-rose-600 shrink-0">
+                        <AlertTriangle className="h-5 w-5 sm:h-6 sm:w-6" />
                       </div>
-                      <p className="text-xs text-slate-500 mt-0.5">Tindakan pembersihan massal (Wipe Data)</p>
+                      <div className="min-w-0">
+                        <h3 className="text-base sm:text-lg font-bold text-slate-800">Hapus Seluruh Data</h3>
+                        <p className="text-xs text-slate-500 mt-0.5">Tindakan pembersihan massal (Wipe Data)</p>
+                      </div>
                     </div>
+                    <span className="shrink-0 px-2 sm:px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-bold tracking-wider uppercase bg-rose-100 text-rose-700 border border-rose-200">
+                      Super Admin
+                    </span>
                   </div>
 
-                  <div className="p-3.5 mb-5 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 text-xs leading-relaxed space-y-1">
+                  <div className="p-3 sm:p-3.5 mb-4 sm:mb-5 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 text-xs leading-relaxed space-y-1">
                     <p className="font-bold flex items-center gap-1.5 text-rose-700">
                       ⚠️ PERINGATAN KERAS: TINDAKAN INI PERMANEN!
                     </p>
-                    <p>
+                    <p className="text-[11px] sm:text-xs text-rose-800">
                       Semua data inventaris yang dipilih beserta berkas foto yang tersimpan di server akan <strong>dihapus secara permanen</strong> dan <strong>tidak dapat dipulihkan</strong>.
                     </p>
                   </div>
 
-                  <div className="space-y-4">
+                  <div className="space-y-3.5 sm:space-y-4">
                     <div>
                       <label className="block text-xs font-semibold text-slate-700 mb-2">Pilih Data yang Ingin Dihapus:</label>
                       <div className="grid grid-cols-1 gap-2">
-                        <label className={`cursor-pointer flex items-center gap-3 p-3 rounded-xl border transition-all ${deleteAllTarget === "both" ? "border-rose-500 bg-rose-50/50 text-rose-900 font-semibold" : "border-slate-200 text-slate-700 hover:bg-slate-50"}`}>
+                        <label className={`cursor-pointer flex items-start gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded-xl border transition-all ${deleteAllTarget === "both" ? "border-rose-500 bg-rose-50/60 ring-1 ring-rose-500/20 text-rose-900 font-semibold" : "border-slate-200 text-slate-700 hover:bg-slate-50"}`}>
                           <input
                             type="radio"
                             name="deleteTarget"
                             value="both"
                             checked={deleteAllTarget === "both"}
                             onChange={(e) => setDeleteAllTarget(e.target.value)}
-                            className="text-rose-600 focus:ring-rose-500"
+                            className="mt-0.5 text-rose-600 focus:ring-rose-500 shrink-0"
                           />
                           <div>
-                            <div className="text-xs font-bold">Seluruh Aset & Aksesoris</div>
-                            <div className="text-[11px] opacity-75">Kosongkan semua data inventaris aset dan aksesoris</div>
+                            <div className="text-xs font-bold text-slate-800">Seluruh Aset & Aksesoris</div>
+                            <div className="text-[11px] text-slate-500 mt-0.5">Kosongkan semua data inventaris aset dan aksesoris</div>
                           </div>
                         </label>
 
-                        <label className={`cursor-pointer flex items-center gap-3 p-3 rounded-xl border transition-all ${deleteAllTarget === "assets" ? "border-rose-500 bg-rose-50/50 text-rose-900 font-semibold" : "border-slate-200 text-slate-700 hover:bg-slate-50"}`}>
+                        <label className={`cursor-pointer flex items-start gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded-xl border transition-all ${deleteAllTarget === "assets" ? "border-rose-500 bg-rose-50/60 ring-1 ring-rose-500/20 text-rose-900 font-semibold" : "border-slate-200 text-slate-700 hover:bg-slate-50"}`}>
                           <input
                             type="radio"
                             name="deleteTarget"
                             value="assets"
                             checked={deleteAllTarget === "assets"}
                             onChange={(e) => setDeleteAllTarget(e.target.value)}
-                            className="text-rose-600 focus:ring-rose-500"
+                            className="mt-0.5 text-rose-600 focus:ring-rose-500 shrink-0"
                           />
                           <div>
-                            <div className="text-xs font-bold">Hanya Seluruh Aset</div>
-                            <div className="text-[11px] opacity-75">Hanya menghapus data pada tabel Daftar Aset</div>
+                            <div className="text-xs font-bold text-slate-800">Hanya Seluruh Aset</div>
+                            <div className="text-[11px] text-slate-500 mt-0.5">Hanya menghapus data pada tabel Daftar Aset</div>
                           </div>
                         </label>
 
-                        <label className={`cursor-pointer flex items-center gap-3 p-3 rounded-xl border transition-all ${deleteAllTarget === "accessories" ? "border-rose-500 bg-rose-50/50 text-rose-900 font-semibold" : "border-slate-200 text-slate-700 hover:bg-slate-50"}`}>
+                        <label className={`cursor-pointer flex items-start gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded-xl border transition-all ${deleteAllTarget === "accessories" ? "border-rose-500 bg-rose-50/60 ring-1 ring-rose-500/20 text-rose-900 font-semibold" : "border-slate-200 text-slate-700 hover:bg-slate-50"}`}>
                           <input
                             type="radio"
                             name="deleteTarget"
                             value="accessories"
                             checked={deleteAllTarget === "accessories"}
                             onChange={(e) => setDeleteAllTarget(e.target.value)}
-                            className="text-rose-600 focus:ring-rose-500"
+                            className="mt-0.5 text-rose-600 focus:ring-rose-500 shrink-0"
                           />
                           <div>
-                            <div className="text-xs font-bold">Hanya Seluruh Aksesoris</div>
-                            <div className="text-[11px] opacity-75">Hanya menghapus data pada tabel Aksesoris</div>
+                            <div className="text-xs font-bold text-slate-800">Hanya Seluruh Aksesoris</div>
+                            <div className="text-[11px] text-slate-500 mt-0.5">Hanya menghapus data pada tabel Aksesoris</div>
                           </div>
                         </label>
                       </div>
                     </div>
 
-                    <div className="pt-2">
-                      <label className="block text-xs font-semibold text-slate-700 mb-1">
-                        Ketik <span className="font-mono text-rose-600 font-bold bg-rose-50 px-1 py-0.5 rounded border border-rose-200">HAPUS SEMUA</span> untuk konfirmasi:
+                    <div className="pt-1 sm:pt-2">
+                      <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                        Ketik <span className="font-mono text-rose-600 font-bold bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">HAPUS SEMUA</span> untuk konfirmasi:
                       </label>
                       <input
                         type="text"
                         value={deleteAllConfirmation}
                         onChange={(e) => setDeleteAllConfirmation(e.target.value)}
                         placeholder="Ketik HAPUS SEMUA di sini..."
-                        className="w-full px-3.5 py-2 text-sm border-2 border-slate-200 rounded-xl focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 font-mono tracking-wide text-slate-800"
+                        className="w-full px-3 sm:px-3.5 py-2 text-xs sm:text-sm border-2 border-slate-200 rounded-xl focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 font-mono tracking-wide text-slate-800 bg-white"
                       />
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-end gap-3 border-t border-slate-100 bg-slate-50/50 px-6 py-4">
+                <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3 border-t border-slate-100 bg-slate-50/70 px-4 py-3 sm:px-6 sm:py-4 shrink-0 rounded-b-2xl">
                   <button
                     type="button"
                     onClick={() => setShowDeleteAllModal(false)}
                     disabled={deleteAllLoading}
-                    className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100"
+                    className="cursor-pointer w-full sm:w-auto text-center rounded-lg border border-slate-200 px-4 py-2 text-xs sm:text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100"
                   >
                     Batal
                   </button>
@@ -2227,7 +2238,7 @@ export default function DaftarAsetPage() {
                     type="button"
                     onClick={handleDeleteAll}
                     disabled={deleteAllLoading || deleteAllConfirmation.trim() !== "HAPUS SEMUA"}
-                    className="cursor-pointer rounded-lg bg-rose-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-rose-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="cursor-pointer w-full sm:w-auto text-center rounded-lg bg-rose-600 px-5 py-2 text-xs sm:text-sm font-semibold text-white shadow-sm transition-colors hover:bg-rose-700 disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     {deleteAllLoading ? "Menghapus..." : "Konfirmasi Hapus Permanen"}
                   </button>
@@ -2239,27 +2250,27 @@ export default function DaftarAsetPage() {
           {/* Modal Kelola Unit Fisik (Option 3) */}
           {showUnitsModal && (
             <div
-              className="fixed inset-0 z-60 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs transition-opacity animate-in fade-in duration-300"
+              className="fixed inset-0 z-60 flex items-center justify-center bg-black/50 p-2.5 sm:p-4 backdrop-blur-xs transition-opacity animate-in fade-in duration-300"
               onClick={() => setShowUnitsModal(null)}
             >
               <div
-                className="max-h-[90vh] w-full max-w-4xl flex flex-col rounded-2xl bg-white shadow-2xl border-t-4 border-t-blue-600 animate-modal-in overflow-hidden"
+                className="max-h-[92vh] sm:max-h-[90vh] w-full max-w-4xl flex flex-col rounded-2xl bg-white shadow-2xl border-t-4 border-t-blue-600 animate-modal-in overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Modal Header */}
-                <div className="flex items-center justify-between border-b border-slate-100 bg-blue-50/70 px-6 py-4 shrink-0">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-blue-100 text-blue-700 rounded-xl">
-                      <Layers className="h-6 w-6" />
+                <div className="flex items-center justify-between border-b border-slate-100 bg-blue-50/70 px-4 py-3 sm:px-6 sm:py-4 shrink-0">
+                  <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                    <div className="p-2 sm:p-2.5 bg-blue-100 text-blue-700 rounded-xl shrink-0">
+                      <Layers className="h-5 w-5 sm:h-6 sm:w-6" />
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h2 className="text-lg font-bold text-slate-900">Kelola Unit Fisik Aset</h2>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                        <h2 className="text-base sm:text-lg font-bold text-slate-900 truncate">Kelola Unit Fisik Aset</h2>
                         <span className="font-mono text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
                           {showUnitsModal.kodeAset}
                         </span>
                       </div>
-                      <p className="text-xs text-slate-500 mt-0.5 font-medium">
+                      <p className="text-xs text-slate-500 mt-0.5 font-medium truncate">
                         {showUnitsModal.namaAset} • {showUnitsModal.kategori || "Aset"}
                       </p>
                     </div>
@@ -2267,25 +2278,25 @@ export default function DaftarAsetPage() {
                   <button
                     type="button"
                     onClick={() => setShowUnitsModal(null)}
-                    className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+                    className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 shrink-0 ml-2"
                   >
                     <X className="h-5 w-5" />
                   </button>
                 </div>
 
                 {/* Modal Subheader / Summary Stats */}
-                <div className="px-6 py-3 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 shrink-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="px-2.5 py-1 rounded-lg text-xs font-medium bg-white border border-slate-200 text-slate-700 shadow-xs">
+                <div className="px-4 py-2.5 sm:px-6 sm:py-3 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 shrink-0">
+                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                    <span className="px-2 sm:px-2.5 py-1 rounded-lg text-[11px] sm:text-xs font-medium bg-white border border-slate-200 text-slate-700 shadow-xs">
                       Total: {assetUnitsList.length} Unit
                     </span>
-                    <span className="px-2.5 py-1 rounded-lg text-xs font-medium bg-emerald-50 border border-emerald-200 text-emerald-800 shadow-xs">
+                    <span className="px-2 sm:px-2.5 py-1 rounded-lg text-[11px] sm:text-xs font-medium bg-emerald-50 border border-emerald-200 text-emerald-800 shadow-xs">
                       Siap: {assetUnitsList.filter((u) => u.kondisi === "Siap Digunakan").length} Unit
                     </span>
-                    <span className="px-2.5 py-1 rounded-lg text-xs font-medium bg-rose-50 border border-rose-200 text-rose-800 shadow-xs">
+                    <span className="px-2 sm:px-2.5 py-1 rounded-lg text-[11px] sm:text-xs font-medium bg-rose-50 border border-rose-200 text-rose-800 shadow-xs">
                       Rusak: {assetUnitsList.filter((u) => u.kondisi === "Rusak" || u.kondisi === "Rusak Berat").length} Unit
                     </span>
-                    <span className="px-2.5 py-1 rounded-lg text-xs font-medium bg-amber-50 border border-amber-200 text-amber-800 shadow-xs">
+                    <span className="px-2 sm:px-2.5 py-1 rounded-lg text-[11px] sm:text-xs font-medium bg-amber-50 border border-amber-200 text-amber-800 shadow-xs">
                       Maintenance: {assetUnitsList.filter((u) => u.kondisi === "Maintenance").length} Unit
                     </span>
                   </div>
@@ -2294,7 +2305,7 @@ export default function DaftarAsetPage() {
                     <button
                       type="button"
                       onClick={() => setShowAddUnitForm((v) => !v)}
-                      className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white shadow-xs transition-colors hover:bg-blue-700 active:scale-95"
+                      className="cursor-pointer inline-flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white shadow-xs transition-colors hover:bg-blue-700 active:scale-95 w-full sm:w-auto"
                     >
                       <Plus className="h-3.5 w-3.5" />
                       {showAddUnitForm ? "Tutup Form Tambah" : "Tambah Unit Baru"}
@@ -2303,17 +2314,17 @@ export default function DaftarAsetPage() {
                 </div>
 
                 {/* Modal Body */}
-                <div className="p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1">
+                <div className="p-3.5 sm:p-6 space-y-3 sm:space-y-4 overflow-y-auto custom-scrollbar flex-1">
                   {/* Form Tambah Unit Baru (Collapsible) */}
                   {showAddUnitForm && (
-                    <div className="p-4 rounded-xl border border-blue-200 bg-blue-50/40 space-y-3 animate-in fade-in">
+                    <div className="p-3.5 sm:p-4 rounded-xl border border-blue-200 bg-blue-50/40 space-y-3 animate-in fade-in">
                       <div className="flex items-center justify-between">
                         <h4 className="text-xs font-bold text-blue-900 uppercase tracking-wider">
                           Form Tambah Unit Fisik Aset Baru
                         </h4>
                         <span className="text-[11px] text-blue-600">Kode unit dibuat otomatis</span>
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
                         <div>
                           <label className="block text-[11px] font-semibold text-slate-700 mb-1">Nama Unit (Opsional)</label>
                           <input
@@ -2382,97 +2393,182 @@ export default function DaftarAsetPage() {
                       <p className="text-xs mt-1 text-slate-400">Klik "Tambah Unit Baru" di atas untuk menambahkan unit fisik.</p>
                     </div>
                   ) : (
-                    <div className="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
-                      <table className="w-full text-left text-xs">
-                        <thead className="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
-                          <tr>
-                            <th className="px-3 py-2.5 w-36">Kode Unit</th>
-                            <th className="px-3 py-2.5">Nama / Label Unit</th>
-                            <th className="px-3 py-2.5 w-28">Lokasi</th>
-                            <th className="px-3 py-2.5 text-center w-28">Status Pinjam</th>
-                            <th className="px-3 py-2.5 text-center w-48">Kondisi Fisik</th>
-                            {["super admin", "admin"].includes(userRole) && (
-                              <th className="px-3 py-2.5 text-center w-16">Aksi</th>
-                            )}
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                          {assetUnitsList.map((unit, idx) => {
-                            return (
-                              <tr
-                                key={unit.id}
-                                className={`transition-colors ${
-                                  unit.kondisi === "Rusak" || unit.kondisi === "Rusak Berat"
-                                    ? "bg-rose-50/40"
+                    <>
+                      {/* Mobile Card List (sm:hidden) */}
+                      <div className="space-y-2.5 sm:hidden">
+                        {assetUnitsList.map((unit) => (
+                          <div
+                            key={unit.id}
+                            className={`p-3 rounded-xl border transition-all ${
+                              unit.kondisi === "Rusak" || unit.kondisi === "Rusak Berat"
+                                ? "bg-rose-50/50 border-rose-200"
+                                : unit.kondisi === "Maintenance"
+                                ? "bg-amber-50/40 border-amber-200"
+                                : "bg-white border-slate-200 shadow-xs"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-2 mb-2">
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-mono text-xs font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
+                                  {unit.kode_unit}
+                                </span>
+                                <span
+                                  className={`text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full border ${
+                                    unit.status_pinjam === "Dipinjam"
+                                      ? "bg-amber-100 text-amber-800 border-amber-200"
+                                      : "bg-emerald-100 text-emerald-800 border-emerald-200"
+                                  }`}
+                                >
+                                  {unit.status_pinjam || "Tersedia"}
+                                </span>
+                              </div>
+                              {["super admin", "admin"].includes(userRole) && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteUnit(unit)}
+                                  className="cursor-pointer rounded-lg bg-rose-50 p-1.5 text-rose-600 hover:bg-rose-600 hover:text-white transition-colors"
+                                  title="Hapus Unit"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              )}
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2 text-xs mb-2.5">
+                              <div>
+                                <span className="text-[10px] text-slate-400 font-medium block">Nama/Label Unit</span>
+                                <span className="font-medium text-slate-700 truncate block">
+                                  {unit.nama_unit || <span className="text-slate-400 italic">-</span>}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-[10px] text-slate-400 font-medium block">Lokasi</span>
+                                <span className="font-medium text-slate-700 truncate block">
+                                  {unit.lokasi_unit || <span className="text-slate-400 italic">-</span>}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="text-[10px] text-slate-400 font-medium block mb-1">Kondisi Fisik</label>
+                              <select
+                                value={unit.kondisi}
+                                disabled={!["super admin", "admin"].includes(userRole)}
+                                onChange={(e) => handleUnitKondisiChange(unit.id, e.target.value)}
+                                className={`w-full text-center py-1.5 px-3 rounded-lg text-xs font-semibold uppercase tracking-wider border cursor-pointer focus:outline-none ${
+                                  unit.kondisi === "Siap Digunakan"
+                                    ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+                                    : unit.kondisi === "Rusak" || unit.kondisi === "Rusak Berat"
+                                    ? "bg-rose-50 text-rose-700 border-rose-300"
                                     : unit.kondisi === "Maintenance"
-                                    ? "bg-amber-50/30"
-                                    : idx % 2 === 0
-                                    ? "bg-white"
-                                    : "bg-slate-50/40"
+                                    ? "bg-amber-50 text-amber-700 border-amber-300"
+                                    : "bg-slate-100 text-slate-700 border-slate-300"
                                 }`}
                               >
-                                <td className="px-3 py-2.5 font-mono font-bold text-slate-800">
-                                  {unit.kode_unit}
-                                </td>
-                                <td className="px-3 py-2.5 font-medium text-slate-800">
-                                  {unit.nama_unit || <span className="text-slate-400 italic">-</span>}
-                                </td>
-                                <td className="px-3 py-2.5 text-slate-600">
-                                  {unit.lokasi_unit || <span className="text-slate-400 italic">-</span>}
-                                </td>
-                                <td className="px-3 py-2.5 text-center text-xs font-semibold uppercase tracking-wider text-slate-700">
-                                  {unit.status_pinjam || "Tersedia"}
-                                </td>
-                                <td className="px-3 py-2.5 text-center">
-                                  <select
-                                    value={unit.kondisi}
-                                    disabled={!["super admin", "admin"].includes(userRole)}
-                                    onChange={(e) => handleUnitKondisiChange(unit.id, e.target.value)}
-                                    className={`w-full text-center px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider border transition-all cursor-pointer focus:outline-none ${
-                                      unit.kondisi === "Siap Digunakan"
-                                        ? "bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100"
-                                        : unit.kondisi === "Rusak" || unit.kondisi === "Rusak Berat"
-                                        ? "bg-rose-50 text-rose-700 border-rose-300 hover:bg-rose-100"
-                                        : unit.kondisi === "Maintenance"
-                                        ? "bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100"
-                                        : "bg-slate-100 text-slate-700 border-slate-300"
-                                    }`}
-                                    title="Ubah kondisi unit fisik ini"
-                                  >
-                                    {kondisiOptions.map((opt) => (
-                                      <option key={opt} value={opt} className="bg-white text-slate-800 normal-case">
-                                        {opt}
-                                      </option>
-                                    ))}
-                                  </select>
-                                </td>
-                                {["super admin", "admin"].includes(userRole) && (
-                                  <td className="px-3 py-2.5 text-center">
-                                    <button
-                                      type="button"
-                                      onClick={() => handleDeleteUnit(unit)}
-                                      className="cursor-pointer rounded-lg bg-rose-50 p-1.5 text-rose-600 hover:bg-rose-600 hover:text-white transition-colors"
-                                      title="Hapus Unit"
-                                    >
-                                      <Trash2 className="h-3.5 w-3.5" />
-                                    </button>
+                                {kondisiOptions.map((opt) => (
+                                  <option key={opt} value={opt} className="bg-white text-slate-800 normal-case">
+                                    {opt}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Desktop & Tablet Table (hidden sm:block) */}
+                      <div className="hidden sm:block border border-slate-200 rounded-xl overflow-x-auto shadow-xs">
+                        <table className="w-full text-left text-xs min-w-[640px]">
+                          <thead className="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+                            <tr>
+                              <th className="px-3 py-2.5 w-36">Kode Unit</th>
+                              <th className="px-3 py-2.5">Nama / Label Unit</th>
+                              <th className="px-3 py-2.5 w-28">Lokasi</th>
+                              <th className="px-3 py-2.5 text-center w-28">Status Pinjam</th>
+                              <th className="px-3 py-2.5 text-center w-48">Kondisi Fisik</th>
+                              {["super admin", "admin"].includes(userRole) && (
+                                <th className="px-3 py-2.5 text-center w-16">Aksi</th>
+                              )}
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {assetUnitsList.map((unit, idx) => {
+                              return (
+                                <tr
+                                  key={unit.id}
+                                  className={`transition-colors ${
+                                    unit.kondisi === "Rusak" || unit.kondisi === "Rusak Berat"
+                                      ? "bg-rose-50/40"
+                                      : unit.kondisi === "Maintenance"
+                                      ? "bg-amber-50/30"
+                                      : idx % 2 === 0
+                                      ? "bg-white"
+                                      : "bg-slate-50/40"
+                                  }`}
+                                >
+                                  <td className="px-3 py-2.5 font-mono font-bold text-slate-800">
+                                    {unit.kode_unit}
                                   </td>
-                                )}
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
+                                  <td className="px-3 py-2.5 font-medium text-slate-800">
+                                    {unit.nama_unit || <span className="text-slate-400 italic">-</span>}
+                                  </td>
+                                  <td className="px-3 py-2.5 text-slate-600">
+                                    {unit.lokasi_unit || <span className="text-slate-400 italic">-</span>}
+                                  </td>
+                                  <td className="px-3 py-2.5 text-center text-xs font-semibold uppercase tracking-wider text-slate-700">
+                                    {unit.status_pinjam || "Tersedia"}
+                                  </td>
+                                  <td className="px-3 py-2.5 text-center">
+                                    <select
+                                      value={unit.kondisi}
+                                      disabled={!["super admin", "admin"].includes(userRole)}
+                                      onChange={(e) => handleUnitKondisiChange(unit.id, e.target.value)}
+                                      className={`w-full text-center px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider border transition-all cursor-pointer focus:outline-none ${
+                                        unit.kondisi === "Siap Digunakan"
+                                          ? "bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100"
+                                          : unit.kondisi === "Rusak" || unit.kondisi === "Rusak Berat"
+                                          ? "bg-rose-50 text-rose-700 border-rose-300 hover:bg-rose-100"
+                                          : unit.kondisi === "Maintenance"
+                                          ? "bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100"
+                                          : "bg-slate-100 text-slate-700 border-slate-300"
+                                      }`}
+                                      title="Ubah kondisi unit fisik ini"
+                                    >
+                                      {kondisiOptions.map((opt) => (
+                                        <option key={opt} value={opt} className="bg-white text-slate-800 normal-case">
+                                          {opt}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </td>
+                                  {["super admin", "admin"].includes(userRole) && (
+                                    <td className="px-3 py-2.5 text-center">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeleteUnit(unit)}
+                                        className="cursor-pointer rounded-lg bg-rose-50 p-1.5 text-rose-600 hover:bg-rose-600 hover:text-white transition-colors"
+                                        title="Hapus Unit"
+                                      >
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                      </button>
+                                    </td>
+                                  )}
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
                   )}
                 </div>
 
                 {/* Modal Footer */}
-                <div className="flex flex-col sm:flex-row items-center justify-between border-t border-slate-100 px-6 py-4 bg-slate-50/70 gap-3 shrink-0">
-                  <span className="text-[11px] text-slate-500">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between border-t border-slate-100 px-4 py-3 sm:px-6 sm:py-4 bg-slate-50/70 gap-3 shrink-0 rounded-b-2xl">
+                  <span className="text-[11px] text-slate-500 text-left order-2 sm:order-1">
                     💡 Perubahan kondisi unit fisik langsung memperbarui jumlah stok siap pakai pada daftar aset utama.
                   </span>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-end gap-2.5 sm:gap-3 w-full sm:w-auto order-1 sm:order-2">
                     {["super admin", "admin"].includes(userRole) && (
                       <button
                         type="button"

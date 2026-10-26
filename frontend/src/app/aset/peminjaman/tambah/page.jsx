@@ -11,7 +11,7 @@ import { getActivePegawai, getApprovers } from "../../../lib/pegawaiService";
 import api from "../../../lib/api";
 import { getUserContext } from "../../../lib/authService";
 import { toCapitalEachWord, toSentenceCase } from "../../../lib/stringUtils";
-import { ChevronLeft, FileText, Package, Plus, X, Check, AlertTriangle, Camera, Trash2, Grid, Image as ImageIcon, Search, Layers, Minus, Info } from "lucide-react";
+import { ChevronLeft, FileText, Package, Plus, X, Check, AlertTriangle, Camera, Trash2, Grid, List, Image as ImageIcon, Search, Layers, Minus, Info } from "lucide-react";
 
 const getBackendURL = () => {
   if (process.env.NEXT_PUBLIC_API_URL) {
@@ -375,6 +375,7 @@ export default function TambahPeminjamanPage() {
       const newItem = {
         id: detailModalItem.id,
         nama: detailModalItem.nama,
+        gambar: detailModalItem.gambar,
         kode: detailModalItem.kode,
         tipe: detailModalItem.tipe,
         harga: detailModalItem.harga,
@@ -407,6 +408,7 @@ export default function TambahPeminjamanPage() {
       const newItem = {
         id: detailModalItem.id,
         nama: detailModalItem.nama,
+        gambar: detailModalItem.gambar,
         kode: detailModalItem.kode,
         tipe: detailModalItem.tipe,
         harga: detailModalItem.harga,
@@ -474,6 +476,7 @@ export default function TambahPeminjamanPage() {
       const newItem = {
         id: item.id,
         nama: item.nama,
+        gambar: item.gambar,
         kode: item.kode,
         tipe: item.tipe,
         harga: item.harga,
@@ -500,6 +503,7 @@ export default function TambahPeminjamanPage() {
       const newItem = {
         id: item.id,
         nama: item.nama,
+        gambar: item.gambar,
         kode: item.kode,
         tipe: item.tipe,
         harga: item.harga,
@@ -690,7 +694,7 @@ export default function TambahPeminjamanPage() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Section 1: Data Peminjam & Keperluan (Merged) */}
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200 border-t-4 border-t-primary p-6">
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 border-t-4 border-t-primary p-4 sm:p-6">
             <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
               <FileText className="w-5 h-5" />
               Informasi Peminjaman
@@ -793,77 +797,100 @@ export default function TambahPeminjamanPage() {
           </div>
 
           {/* Section 2: Item Selection */}
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200 border-t-4 border-t-primary p-6">
-            {/* Header Row: Title + Search + Filter + View Toggle */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
-              <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2 shrink-0">
-                <Package className="w-5 h-5" />
-                Pilih Item ({items.length} terpilih)
-              </h2>
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1 lg:justify-end">
-                {/* Search */}
-                <div className="relative flex-1 sm:max-w-xs">
-                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                  <input
-                    type="text"
-                    placeholder="Cari nama, kode, kategori..."
-                    value={itemSearch}
-                    onChange={(e) => setItemSearch(e.target.value)}
-                    className="w-full rounded-lg border border-slate-300 py-2 pl-10 pr-4 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
-                  />
-                </div>
-                {/* Filter Dropdowns */}
-                <div className="flex gap-2 items-center">
-                  <select
-                    value={itemFilter}
-                    onChange={(e) => setItemFilter(e.target.value)}
-                    className="cursor-pointer rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none bg-white"
-                  >
-                    <option value="semua">Semua Tipe</option>
-                    <option value="asset">Aset</option>
-                    <option value="aksesoris">Aksesoris</option>
-                  </select>
-                  <select
-                    value={brandFilter}
-                    onChange={(e) => setBrandFilter(e.target.value)}
-                    className="cursor-pointer rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none bg-white"
-                  >
-                    <option value="semua">Semua Brand</option>
-                    <option value="Galeria Studio">Galeria Studio</option>
-                    <option value="Galeria Production">Galeria Production</option>
-                  </select>
-                </div>
-                {/* View Mode Toggle */}
-                <div className="flex gap-1.5">
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 border-t-4 border-t-primary p-4 sm:p-6">
+            {/* Header Row: Title & View Mode Toggle */}
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <Package className="w-5 h-5 text-primary shrink-0" />
+                <h2 className="text-base sm:text-lg font-semibold text-slate-900 truncate">
+                  Pilih Item
+                </h2>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary shrink-0">
+                  {items.length} terpilih
+                </span>
+              </div>
+
+              {/* View Mode Toggle: Clean Segmented Pill */}
+              <div className="inline-flex items-center p-1 bg-slate-100 rounded-lg border border-slate-200/80 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setViewMode("list")}
+                  className={`cursor-pointer px-2.5 sm:px-3 py-1 text-xs sm:text-sm font-medium rounded-md transition-all flex items-center gap-1.5 ${
+                    viewMode === "list"
+                      ? "bg-white text-primary shadow-xs font-semibold"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                  title="Tampilan List"
+                >
+                  <List className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span>List</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("grid")}
+                  className={`cursor-pointer px-2.5 sm:px-3 py-1 text-xs sm:text-sm font-medium rounded-md transition-all flex items-center gap-1.5 ${
+                    viewMode === "grid"
+                      ? "bg-white text-primary shadow-xs font-semibold"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                  title="Tampilan Grid"
+                >
+                  <Grid className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span>Grid</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Controls Row: Search Input + 2 Filter Dropdowns */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 mb-4">
+              {/* Search */}
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Cari nama, kode, kategori..."
+                  value={itemSearch}
+                  onChange={(e) => setItemSearch(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 py-2 pl-9 pr-8 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none bg-white transition-colors"
+                />
+                {itemSearch && (
                   <button
                     type="button"
-                    onClick={() => setViewMode("list")}
-                    className={`cursor-pointer px-3 py-2 text-sm rounded-lg transition ${
-                      viewMode === "list"
-                        ? "bg-primary text-white hover:bg-primary-hover"
-                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                    }`}
+                    onClick={() => setItemSearch("")}
+                    className="cursor-pointer absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 p-0.5"
+                    title="Hapus pencarian"
                   >
-                    List
+                    <X className="w-3.5 h-3.5" />
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setViewMode("grid")}
-                    className={`cursor-pointer px-3 py-2 text-sm rounded-lg transition ${
-                      viewMode === "grid"
-                        ? "bg-primary text-white hover:bg-primary-hover"
-                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                    }`}
-                  >
-                    <Grid className="w-4 h-4 inline mr-1" /> Grid
-                  </button>
-                </div>
+                )}
+              </div>
+
+              {/* Filter Dropdowns (2 columns on mobile, inline flex on tablet/desktop) */}
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-2.5 shrink-0">
+                <select
+                  value={itemFilter}
+                  onChange={(e) => setItemFilter(e.target.value)}
+                  className="cursor-pointer rounded-lg border border-slate-300 px-3 py-2 text-xs sm:text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none bg-white w-full sm:w-auto"
+                >
+                  <option value="semua">Semua Tipe</option>
+                  <option value="asset">Aset</option>
+                  <option value="aksesoris">Aksesoris</option>
+                </select>
+                <select
+                  value={brandFilter}
+                  onChange={(e) => setBrandFilter(e.target.value)}
+                  className="cursor-pointer rounded-lg border border-slate-300 px-3 py-2 text-xs sm:text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none bg-white w-full sm:w-auto"
+                >
+                  <option value="semua">Semua Brand</option>
+                  <option value="Galeria Studio">Galeria Studio</option>
+                  <option value="Galeria Production">Galeria Production</option>
+                </select>
               </div>
             </div>
 
             {/* Item Selection - Grid View */}
             {viewMode === "grid" && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 max-h-96 overflow-y-auto">
+              <div className="grid grid-cols-1 min-[520px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 max-h-[460px] overflow-y-auto pr-1">
                 {filteredItems.map((item) => {
                   const stats = getItemUnitStats(item);
                   const isSelected = items.some((it) => it.id === item.id && it.tipe === item.tipe);
@@ -874,70 +901,76 @@ export default function TambahPeminjamanPage() {
                     <div
                       key={`${item.tipe}-${item.id}`}
                       onClick={() => handleItemClick(item)}
-                      className={`p-4 rounded-lg border-2 transition flex flex-col justify-between ${
+                      className={`p-3 sm:p-3.5 rounded-xl border-2 transition-all flex flex-col justify-between select-none ${
                         isSelected
-                          ? "border-primary bg-blue-50/70"
+                          ? "border-primary bg-blue-50/70 shadow-xs"
                           : isDisabled
                           ? "border-slate-200 bg-slate-50/50 opacity-60 cursor-not-allowed"
-                          : "border-slate-200 hover:border-primary hover:bg-slate-50 cursor-pointer"
+                          : "border-slate-200 hover:border-primary hover:bg-slate-50 cursor-pointer hover:shadow-xs active:scale-[0.99]"
                       }`}
                     >
                       <div>
                         {/* Gambar */}
-                        <div className="mb-3 h-40 bg-slate-100 rounded-lg overflow-hidden flex items-center justify-center relative">
+                        <div className="mb-2.5 h-36 sm:h-40 bg-slate-100 rounded-lg overflow-hidden flex items-center justify-center relative">
                           <ItemThumbnail
                             src={item.gambar}
                             alt={item.nama}
-                            width={150}
-                            height={150}
+                            width={160}
+                            height={160}
                             className="w-full h-full object-cover"
                             iconSize="w-8 h-8"
                           />
                           {isSelected && (
-                            <div className="absolute top-2 right-2 bg-primary text-white p-1 rounded-full shadow">
+                            <div className="absolute top-2 right-2 bg-primary text-white p-1 rounded-full shadow-md">
                               <Check className="w-3.5 h-3.5 stroke-[3]" />
                             </div>
                           )}
                         </div>
 
                         {/* Info */}
-                        <p className="font-semibold text-slate-900 text-sm truncate" title={item.nama}>{item.nama}</p>
-                        <p className="text-xs text-slate-500 truncate">{item.kode}</p>
+                        <p className="font-semibold text-slate-900 text-sm truncate" title={item.nama}>
+                          {item.nama}
+                        </p>
+                        <p className="text-xs text-slate-500 truncate mt-0.5">{item.kode}</p>
 
-                        {/* Badges */}
-                        <div className="flex gap-1 mt-2 flex-nowrap items-center overflow-hidden">
+                        {/* Badges (Wrap smoothly on mobile) */}
+                        <div className="flex flex-wrap gap-1 mt-2 items-center">
                           {renderBrandBadge(item.jenisAset, false)}
-                          <span className={`shrink-0 text-center inline-block text-[10px] sm:text-xs px-1 sm:px-2 py-0.5 rounded-full font-semibold ${
+                          <span className={`text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-semibold ${
                             item.tipe === "asset"
                               ? "bg-blue-100 text-blue-700"
                               : "bg-purple-100 text-purple-700"
                           }`}>
                             {item.tipe === "asset" ? "Aset" : "Aksesoris"}
                           </span>
-                          <span className={`shrink-0 text-center inline-block text-[10px] sm:text-xs px-1 sm:px-2 py-0.5 rounded-full font-semibold ${getKondisiBadge(item.kondisi, false)}`}>
+                          <span className={`text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-semibold ${getKondisiBadge(item.kondisi, false)}`}>
                             {item.kondisi}
                           </span>
                         </div>
 
                         {/* Stok & Harga */}
-                        <div className="mt-2 pt-2 border-t border-slate-200 text-xs">
-                          <p className="text-slate-600">
-                            Stok: <span className={`font-semibold ${stats.ready > 0 ? "text-slate-800" : "text-red-500"}`}>{stats.ready}</span>
-                          </p>
-                          {item.harga > 0 && (
-                            <div className="mt-0.5">
-                              <p className="text-slate-600">Harga: <span className="font-semibold text-emerald-600">Rp {(item.harga || 0).toLocaleString('id-ID')}/unit</span></p>
-                              {item.tipeHarga === "Per Paket" && (
-                                <p className="text-[10px] text-purple-600 font-medium">(Paket: Rp {Number(item.hargaAsetOriginal).toLocaleString('id-ID')})</p>
-                              )}
-                            </div>
+                        <div className="mt-2.5 pt-2 border-t border-slate-200 text-xs">
+                          <div className="flex items-center justify-between">
+                            <span className="text-slate-600">
+                              Stok: <strong className={stats.ready > 0 ? "text-slate-800" : "text-red-500 font-bold"}>{stats.ready}</strong>
+                            </span>
+                            {item.harga > 0 && (
+                              <span className="font-semibold text-emerald-600">
+                                Rp {(item.harga || 0).toLocaleString('id-ID')}
+                              </span>
+                            )}
+                          </div>
+                          {item.harga > 0 && item.tipeHarga === "Per Paket" && (
+                            <p className="text-[10px] text-purple-600 font-medium text-right mt-0.5">
+                              (Paket: Rp {Number(item.hargaAsetOriginal).toLocaleString('id-ID')})
+                            </p>
                           )}
                         </div>
 
                         {/* Indikator Unit Ringkas */}
                         {stats.hasUnits && (
                           <div className="mt-2 pt-2 border-t border-slate-100 flex items-center gap-1.5 text-[11px] text-slate-500">
-                            <Layers className="w-3.5 h-3.5 text-slate-400" />
+                            <Layers className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                             <span>
                               <strong className={stats.ready > 0 ? "text-emerald-600" : "text-red-500"}>{stats.ready}</strong>/{stats.total} unit tersedia
                             </span>
@@ -946,11 +979,13 @@ export default function TambahPeminjamanPage() {
                       </div>
 
                       {isSelected && (
-                        <div className="mt-3 pt-2 border-t border-blue-200 flex items-center justify-center text-primary text-xs font-semibold">
-                          <Check className="w-4 h-4 mr-1" />
-                          {selectedItem?.hasUnits
-                            ? `${selectedItem.unitIds?.length || selectedItem.jumlah} Unit Terpilih`
-                            : `${selectedItem?.jumlah || 1} Terpilih`}
+                        <div className="mt-3 pt-2 border-t border-blue-200/80 flex items-center justify-center text-primary text-xs font-bold gap-1 bg-blue-100/40 py-1.5 rounded-b-lg -mx-3 sm:-mx-3.5 -mb-3 sm:-mb-3.5">
+                          <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+                          <span>
+                            {selectedItem?.hasUnits
+                              ? `${selectedItem.unitIds?.length || selectedItem.jumlah} Unit Terpilih`
+                              : `${selectedItem?.jumlah || 1} Terpilih`}
+                          </span>
                         </div>
                       )}
                     </div>
@@ -961,7 +996,7 @@ export default function TambahPeminjamanPage() {
 
             {/* Item Selection - List View */}
             {viewMode === "list" && (
-              <div className="space-y-2 mb-6 max-h-96 overflow-y-auto">
+              <div className="space-y-2.5 mb-4 max-h-[460px] overflow-y-auto pr-1">
                 {filteredItems.map((item) => {
                   const stats = getItemUnitStats(item);
                   const isSelected = items.some((it) => it.id === item.id && it.tipe === item.tipe);
@@ -972,39 +1007,65 @@ export default function TambahPeminjamanPage() {
                     <div
                       key={`${item.tipe}-${item.id}`}
                       onClick={() => handleItemClick(item)}
-                      className={`p-3 rounded-lg border-2 transition flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-2 ${
+                      className={`p-3 rounded-xl border-2 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 select-none ${
                         isSelected
-                          ? "border-primary bg-blue-50/70"
+                          ? "border-primary bg-blue-50/70 shadow-xs"
                           : isDisabled
                           ? "border-slate-200 bg-slate-50/50 opacity-60 cursor-not-allowed"
-                          : "border-slate-200 hover:border-primary hover:bg-slate-50 cursor-pointer"
+                          : "border-slate-200 hover:border-primary hover:bg-slate-50 cursor-pointer active:scale-[0.99]"
                       }`}
                     >
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-1 w-full min-w-0">
-                        <div className="flex items-center gap-2 shrink-0">
-                          {renderBrandBadge(item.jenisAset, true)}
-                          <span className={`w-[84px] text-center inline-block text-[10px] sm:text-xs px-1 sm:px-2 py-0.5 rounded-full font-semibold border shrink-0 ${
-                            item.tipe === "asset"
-                              ? "bg-blue-100 text-blue-700 border-blue-200"
-                              : "bg-purple-100 text-purple-700 border-purple-200"
-                          }`}>
-                            {item.tipe === "asset" ? "Aset" : "Aksesoris"}
-                          </span>
+                      {/* Left: Thumbnail & Details */}
+                      <div className="flex items-start sm:items-center gap-3 flex-1 min-w-0">
+                        {/* Thumbnail */}
+                        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center relative">
+                          <ItemThumbnail
+                            src={item.gambar}
+                            alt={item.nama}
+                            width={56}
+                            height={56}
+                            className="w-full h-full object-cover"
+                            iconSize="w-6 h-6"
+                          />
+                          {isSelected && (
+                            <div className="absolute top-1 right-1 bg-primary text-white p-0.5 rounded-full shadow-sm">
+                              <Check className="w-2.5 h-2.5 stroke-[3]" />
+                            </div>
+                          )}
                         </div>
-                        <div className="flex-1 min-w-0 mt-1 sm:mt-0">
-                          <div className="flex items-center gap-2">
-                            <p className="font-semibold text-slate-900 truncate">{item.nama}</p>
+
+                        {/* Text & Badges */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                            {renderBrandBadge(item.jenisAset, true)}
+                            <span className={`text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-semibold border ${
+                              item.tipe === "asset"
+                                ? "bg-blue-100 text-blue-700 border-blue-200"
+                                : "bg-purple-100 text-purple-700 border-purple-200"
+                            }`}>
+                              {item.tipe === "asset" ? "Aset" : "Aksesoris"}
+                            </span>
+                            <span className={`text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-semibold border ${getKondisiBadge(item.kondisi, true)}`}>
+                              {item.kondisi}
+                            </span>
                             {isSelected && (
-                              <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold">
+                              <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold border border-blue-200 ml-auto sm:ml-0">
                                 <Check className="w-3 h-3" />
                                 {selectedItem?.hasUnits ? `${selectedItem.jumlah} Unit` : `${selectedItem?.jumlah} Terpilih`}
                               </span>
                             )}
                           </div>
-                          <p className="text-xs text-slate-500 truncate">{item.kode} • {item.kategori} • {item.merek}</p>
+
+                          <p className="font-semibold text-slate-900 text-sm truncate" title={item.nama}>
+                            {item.nama}
+                          </p>
+                          <p className="text-xs text-slate-500 truncate mt-0.5">
+                            {item.kode} • {item.kategori} • {item.merek}
+                          </p>
+
                           {stats.hasUnits && (
                             <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mt-1">
-                              <Layers className="w-3.5 h-3.5 text-slate-400" />
+                              <Layers className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                               <span>
                                 <strong className={stats.ready > 0 ? "text-emerald-600 font-semibold" : "text-red-500 font-semibold"}>
                                   {stats.ready}
@@ -1015,23 +1076,47 @@ export default function TambahPeminjamanPage() {
                           )}
                         </div>
                       </div>
-                      <div className="flex flex-wrap items-center justify-between sm:justify-end gap-3 sm:gap-2 shrink-0 border-t sm:border-0 border-slate-100 pt-2 sm:pt-0 w-full sm:w-auto">
-                        <div className="flex items-center gap-3 sm:gap-2">
+
+                      {/* Right: Stok, Harga & Select Button */}
+                      <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 border-t sm:border-0 border-slate-100 pt-2 sm:pt-0 w-full sm:w-auto">
+                        <div className="flex items-center gap-3 sm:flex-col sm:items-end sm:gap-0.5">
                           <span className={`text-xs font-semibold ${stats.ready > 0 ? "text-slate-700" : "text-red-500"}`}>
                             Stok: {stats.ready}
                           </span>
                           {item.harga > 0 && (
-                            <div className="flex flex-col text-right">
-                              <span className="text-xs font-semibold text-emerald-600">Rp {(item.harga || 0).toLocaleString('id-ID')}</span>
+                            <div className="flex items-center gap-1 sm:text-right">
+                              <span className="text-xs font-semibold text-emerald-600">
+                                Rp {(item.harga || 0).toLocaleString('id-ID')}
+                              </span>
                               {item.tipeHarga === "Per Paket" && (
-                                <span className="text-[10px] text-purple-600 font-medium">Paket</span>
+                                <span className="text-[10px] text-purple-600 font-medium">(Paket)</span>
                               )}
                             </div>
                           )}
                         </div>
-                        <span className={`text-center inline-block text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-semibold border ${getKondisiBadge(item.kondisi, true)}`}>
-                          {item.kondisi}
-                        </span>
+
+                        {/* Touch-friendly Action Button */}
+                        <div
+                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 shrink-0 ${
+                            isSelected
+                              ? "bg-primary text-white shadow-xs"
+                              : isDisabled
+                              ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                              : "bg-slate-100 text-slate-700 hover:bg-primary hover:text-white"
+                          }`}
+                        >
+                          {isSelected ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+                              <span>Terpilih</span>
+                            </>
+                          ) : (
+                            <>
+                              <Plus className="w-3.5 h-3.5" />
+                              <span>Pilih</span>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
                   );
@@ -1050,132 +1135,187 @@ export default function TambahPeminjamanPage() {
 
           {/* Section 3: Selected Items */}
           {items.length > 0 && (
-            <div className="bg-white rounded-lg shadow-sm border border-slate-200 border-t-4 border-t-primary p-6">
-              <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                <Package className="w-5 h-5 text-primary" />
-                Item Terpilih ({items.length})
-              </h3>
+            <div className="bg-white rounded-lg shadow-sm border border-slate-200 border-t-4 border-t-primary p-4 sm:p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-base sm:text-lg font-semibold text-slate-900 flex items-center gap-2">
+                  <Package className="w-5 h-5 text-primary" />
+                  Item Terpilih ({items.length})
+                </h3>
+                <span className="text-xs text-slate-500 hidden sm:inline">
+                  Total {items.reduce((s, it) => s + (it.jumlah || 1), 0)} unit alat
+                </span>
+              </div>
 
-              <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
-                {items.map((item, idx) => (
-                  <div key={idx} className="p-3 rounded-lg border-2 border-slate-200 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    {/* Item Info */}
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-1 w-full min-w-0">
-                      <div className="flex items-center gap-2 shrink-0">
-                        {renderBrandBadge(item.jenisAset, true)}
-                        <span className={`w-[84px] text-center inline-block text-[10px] sm:text-xs px-1 sm:px-2 py-0.5 rounded-full font-semibold border shrink-0 ${
-                          item.tipe === "asset"
-                            ? "bg-blue-100 text-blue-700 border-blue-200"
-                            : "bg-purple-100 text-purple-700 border-purple-200"
-                        }`}>
-                          {item.tipe === "asset" ? "Aset" : "Aksesoris"}
-                        </span>
-                      </div>
-                      <div className="flex-1 min-w-0 mt-1 sm:mt-0">
-                        <p className="font-semibold text-slate-900 truncate">{item.nama}</p>
-                        <p className="text-xs text-slate-500 truncate">
-                          {item.kode} • Stok: {item.stok}
-                          {item.kondisi && (
-                            <span className="ml-1.5 inline-block">
-                              • <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${getKondisiBadge(item.kondisi, false)}`}>{item.kondisi}</span>
-                            </span>
-                          )}
-                        </p>
-                        {item.hasUnits && (
-                          <div className="flex flex-wrap items-center gap-1 mt-1.5">
-                            <span className="text-[11px] text-slate-500 font-semibold">Unit:</span>
-                            {(item.units || [])
-                              .filter((u) => item.unitIds?.includes(u.id))
-                              .map((u) => (
-                                <span key={u.id} className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 font-bold rounded border border-blue-200">
-                                  {u.nama_unit || u.kode_unit}
-                                </span>
-                              ))}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const orig = allItems.find((it) => it.id === item.id && it.tipe === item.tipe) || item;
-                                openDetailModal(orig);
-                              }}
-                              className="cursor-pointer text-xs text-primary hover:underline font-semibold ml-2"
-                            >
-                              Ubah Unit
-                            </button>
-                          </div>
-                        )}
-                        {!item.hasUnits && (item.stok > 1) && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const orig = allItems.find((it) => it.id === item.id && it.tipe === item.tipe) || item;
-                              openDetailModal(orig);
-                            }}
-                            className="cursor-pointer text-xs text-primary hover:underline font-semibold mt-1 inline-block"
-                          >
-                            Atur Jumlah
-                          </button>
-                        )}
-                      </div>
-                    </div>
+              <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1">
+                {items.map((item, idx) => {
+                  const itemGambar = item.gambar || allItems.find((it) => it.id === item.id && it.tipe === item.tipe)?.gambar;
+                  const subtotal = (item.harga || 0) * (item.jumlah || 1);
 
-                    {/* Quantity & Actions */}
-                    <div className="flex items-center gap-3 shrink-0">
-                      {item.harga > 0 && (
-                        <div className="text-right hidden sm:block">
-                          <p className="text-xs font-semibold text-emerald-600">
-                            Rp {(item.harga * item.jumlah).toLocaleString('id-ID')}
-                          </p>
-                        </div>
-                      )}
-                      
-                      {item.hasUnits ? (
-                        <div className="flex items-center gap-1.5 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200">
-                          <span className="text-xs font-bold text-blue-800">{item.jumlah} Unit</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2 bg-slate-50 p-1 rounded-lg border border-slate-200">
-                          <label className="text-xs text-slate-600 font-medium ml-1">Jml:</label>
-                          <input
-                            type="number"
-                            min="1"
-                            max={item.stok}
-                            value={item.jumlah}
-                            onChange={(e) => updateItemJumlah(idx, parseInt(e.target.value))}
-                            className="w-14 rounded bg-white border border-slate-300 px-2 py-1 text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
+                  return (
+                    <div
+                      key={`${item.tipe}-${item.id}-${idx}`}
+                      className="p-3 sm:p-3.5 rounded-xl border-2 border-slate-200 bg-white hover:border-slate-300 transition-all shadow-xs flex flex-col gap-3"
+                    >
+                      {/* Top Part: Thumbnail + Badges + Item Info */}
+                      <div className="flex items-start gap-3 min-w-0">
+                        {/* Thumbnail */}
+                        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
+                          <ItemThumbnail
+                            src={itemGambar}
+                            alt={item.nama}
+                            width={56}
+                            height={56}
+                            className="w-full h-full object-cover"
+                            iconSize="w-6 h-6"
                           />
                         </div>
-                      )}
 
-                      <button
-                        type="button"
-                        onClick={() => removeItemFromList(idx)}
-                        className="cursor-pointer p-1.5 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-lg transition"
-                        title="Hapus Item"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                        {/* Info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                            {renderBrandBadge(item.jenisAset, true)}
+                            <span className={`text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-semibold border ${
+                              item.tipe === "asset"
+                                ? "bg-blue-100 text-blue-700 border-blue-200"
+                                : "bg-purple-100 text-purple-700 border-purple-200"
+                            }`}>
+                              {item.tipe === "asset" ? "Aset" : "Aksesoris"}
+                            </span>
+                            {item.kondisi && (
+                              <span className={`text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-semibold border ${getKondisiBadge(item.kondisi, true)}`}>
+                                {item.kondisi}
+                              </span>
+                            )}
+                          </div>
+
+                          <p className="font-semibold text-slate-900 text-sm truncate" title={item.nama}>
+                            {item.nama}
+                          </p>
+                          <p className="text-xs text-slate-500 truncate mt-0.5">
+                            {item.kode} • Stok: {item.stok}
+                          </p>
+
+                          {/* Unit Chips or Setting Links */}
+                          {item.hasUnits && (
+                            <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                              <span className="text-[11px] text-slate-500 font-semibold">Unit:</span>
+                              {(item.units || [])
+                                .filter((u) => item.unitIds?.includes(u.id))
+                                .map((u) => (
+                                  <span
+                                    key={u.id}
+                                    className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 font-bold rounded-md border border-blue-200"
+                                  >
+                                    {u.nama_unit || u.kode_unit}
+                                  </span>
+                                ))}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const orig = allItems.find((it) => it.id === item.id && it.tipe === item.tipe) || item;
+                                  openDetailModal(orig);
+                                }}
+                                className="cursor-pointer text-xs px-2 py-0.5 rounded bg-blue-50 hover:bg-blue-100 text-primary font-semibold transition"
+                              >
+                                Ubah Unit
+                              </button>
+                            </div>
+                          )}
+
+                          {!item.hasUnits && item.stok > 1 && (
+                            <div className="mt-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const orig = allItems.find((it) => it.id === item.id && it.tipe === item.tipe) || item;
+                                  openDetailModal(orig);
+                                }}
+                                className="cursor-pointer text-xs px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold transition inline-flex items-center gap-1"
+                              >
+                                Atur Jumlah
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Bottom Row / Action Bar: Subtotal, Quantity Control & Delete */}
+                      <div className="flex items-center justify-between border-t border-slate-100 pt-2.5 mt-1">
+                        {/* Left: Price Calculation */}
+                        <div className="flex flex-col">
+                          {item.harga > 0 ? (
+                            <>
+                              <span className="text-xs font-bold text-emerald-600 sm:text-sm">
+                                Rp {subtotal.toLocaleString('id-ID')}
+                              </span>
+                              <span className="text-[10px] text-slate-400">
+                                @ Rp {(item.harga || 0).toLocaleString('id-ID')}
+                                {item.tipeHarga === "Per Paket" && " (Paket)"}
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-xs text-slate-400 italic">Tanpa biaya</span>
+                          )}
+                        </div>
+
+                        {/* Right: Quantity Badge / Stepper & Delete */}
+                        <div className="flex items-center gap-2.5 sm:gap-3">
+                          {item.hasUnits ? (
+                            <div className="flex items-center gap-1.5 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200">
+                              <span className="text-xs font-bold text-blue-800">{item.jumlah} Unit</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded-lg border border-slate-200">
+                              <label className="text-xs text-slate-600 font-medium mr-1">Jml:</label>
+                              <input
+                                type="number"
+                                min="1"
+                                max={item.stok}
+                                value={item.jumlah}
+                                onChange={(e) => updateItemJumlah(idx, parseInt(e.target.value))}
+                                className="w-12 sm:w-14 text-center rounded bg-white border border-slate-300 py-0.5 text-xs sm:text-sm font-semibold text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
+                              />
+                            </div>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() => removeItemFromList(idx)}
+                            className="cursor-pointer p-1.5 sm:p-2 text-rose-600 hover:bg-rose-50 hover:text-rose-700 rounded-lg transition"
+                            title="Hapus Item"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Total Value */}
               {items.some((it) => it.harga > 0) && (
-                <div className="mt-4 pt-4 border-t border-slate-200 text-right">
-                  <p className="text-sm text-slate-600">Total Nilai Aset:</p>
-                  <p className="text-2xl font-bold text-emerald-600">
-                    Rp {calculateTotal().toLocaleString('id-ID')}
-                  </p>
-                  <p className="text-xs text-slate-500 mt-1">
-                    Anda bertanggung jawab atas aset di atas
-                  </p>
+                <div className="mt-5 p-4 rounded-xl bg-gradient-to-r from-emerald-50/80 to-slate-50 border border-emerald-200/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div>
+                    <span className="text-xs font-semibold uppercase tracking-wider text-emerald-800">
+                      Total Nilai Aset yang Dipinjam
+                    </span>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Peminjam bertanggung jawab penuh atas keutuhan dan kondisi aset di atas
+                    </p>
+                  </div>
+                  <div className="text-left sm:text-right shrink-0">
+                    <span className="text-2xl font-extrabold text-emerald-600 tracking-tight">
+                      Rp {calculateTotal().toLocaleString('id-ID')}
+                    </span>
+                  </div>
                 </div>
               )}
             </div>
           )}
 
           {/* Section 4: Bukti Peminjaman */}
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200 border-t-4 border-t-primary p-6">
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 border-t-4 border-t-primary p-4 sm:p-6">
             <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
               <Camera className="w-5 h-5" />
               Bukti Peminjaman ({buktiFiles.length}/5)
@@ -1252,18 +1392,18 @@ export default function TambahPeminjamanPage() {
           </div>
 
           {/* Submit Button */}
-          <div className="flex gap-3 justify-end">
+          <div className="flex flex-col-reverse sm:flex-row gap-3 justify-end">
             <button
               type="button"
               onClick={() => router.back()}
-              className="cursor-pointer px-6 py-2.5 rounded-lg border-2 border-slate-400 text-slate-700 font-semibold hover:bg-slate-200 hover:border-slate-500 hover:text-slate-900 transition"
+              className="cursor-pointer w-full sm:w-auto px-6 py-2.5 rounded-lg border-2 border-slate-400 text-slate-700 font-semibold hover:bg-slate-200 hover:border-slate-500 hover:text-slate-900 transition text-center"
             >
               Batal
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="cursor-pointer px-6 py-2.5 rounded-lg bg-primary text-white font-medium hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2"
+              className="cursor-pointer w-full sm:w-auto px-6 py-2.5 rounded-lg bg-primary text-white font-medium hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center gap-2"
             >
               <Check className="w-4 h-4" />
               {submitting ? "Menyimpan..." : "Simpan Peminjaman"}
@@ -1273,12 +1413,12 @@ export default function TambahPeminjamanPage() {
 
       {/* Modal Pemilihan Item / Unit */}
       {detailModalItem && createPortal(
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 border-t-4 border-t-primary w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 border-t-4 border-t-primary w-full max-w-xl overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[90vh]">
             {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+            <div className="px-4 py-3 sm:px-6 sm:py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center shrink-0">
+                <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center shrink-0">
                   <ItemThumbnail
                     src={detailModalItem.gambar}
                     alt={detailModalItem.nama}
@@ -1302,7 +1442,7 @@ export default function TambahPeminjamanPage() {
                       {detailModalItem.kondisi}
                     </span>
                   </div>
-                  <h3 className="text-base font-bold text-slate-900 truncate mt-0.5">
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900 truncate mt-0.5">
                     {detailModalItem.nama}
                   </h3>
                   <p className="text-xs text-slate-500 truncate">
@@ -1320,9 +1460,9 @@ export default function TambahPeminjamanPage() {
             </div>
 
             {/* Modal Body */}
-            <div className="p-6 overflow-y-auto flex-1 space-y-4">
+            <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4">
               {/* Quick Info bar */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs">
                 <div>
                   <span className="text-slate-500 block">Stok Tersedia</span>
                   <span className="text-sm font-bold text-slate-900">
@@ -1338,7 +1478,7 @@ export default function TambahPeminjamanPage() {
                   </span>
                 </div>
                 {detailModalItem.harga > 0 && (
-                  <div>
+                  <div className="col-span-2 sm:col-span-1">
                     <span className="text-slate-500 block">Harga / Unit</span>
                     <span className="text-sm font-bold text-emerald-600">
                       Rp {detailModalItem.harga.toLocaleString('id-ID')}
@@ -1389,7 +1529,7 @@ export default function TambahPeminjamanPage() {
                   })()}
 
                   {/* Actions & Selected count */}
-                  <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
+                  <div className="flex flex-col min-[420px]:flex-row min-[420px]:items-center justify-between gap-2 mb-3 pb-2 border-b border-slate-100">
                     <span className="text-xs font-medium text-slate-600">
                       Unit Terpilih: <strong className="text-primary font-bold">{modalSelectedUnitIds.length}</strong> unit
                     </span>
@@ -1446,7 +1586,7 @@ export default function TambahPeminjamanPage() {
                         <div
                           key={u.id}
                           onClick={() => toggleModalUnit(u.id, isUnavailable)}
-                          className={`relative px-4 py-3 rounded-xl border transition-all flex items-center justify-between gap-3 select-none ${
+                          className={`relative px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-xl border transition-all flex items-center justify-between gap-2.5 sm:gap-3 select-none ${
                             isUnavailable
                               ? "bg-slate-100/80 border-slate-200 opacity-60 cursor-not-allowed"
                               : isSelected
@@ -1481,7 +1621,7 @@ export default function TambahPeminjamanPage() {
 
                           {/* Unit Status Badge */}
                           <div className="shrink-0 flex items-center gap-2">
-                            <span className={`px-2.5 py-1 rounded-full text-[11px] font-semibold border ${statusBadgeClass}`}>
+                            <span className={`px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-[11px] font-semibold border ${statusBadgeClass}`}>
                               {statusLabel}
                             </span>
                           </div>
@@ -1550,11 +1690,11 @@ export default function TambahPeminjamanPage() {
             </div>
 
             {/* Modal Footer */}
-            <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
+            <div className="px-4 py-3 sm:px-6 sm:py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-end gap-2.5 sm:gap-3 shrink-0">
               <button
                 type="button"
                 onClick={() => setDetailModalItem(null)}
-                className="cursor-pointer px-4 py-2 text-sm rounded-lg border border-slate-300 font-semibold text-slate-700 hover:bg-slate-200 transition"
+                className="cursor-pointer px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-200 transition"
               >
                 Batal
               </button>
@@ -1562,7 +1702,7 @@ export default function TambahPeminjamanPage() {
                 type="button"
                 disabled={detailModalItem.units && detailModalItem.units.length > 0 ? modalSelectedUnitIds.length === 0 : modalJumlah <= 0}
                 onClick={handleSaveModal}
-                className="cursor-pointer px-5 py-2 text-sm rounded-lg bg-primary text-white font-semibold hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-1.5"
+                className="cursor-pointer px-5 py-2 text-xs sm:text-sm font-semibold rounded-lg bg-primary text-white hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-1.5"
               >
                 <Check className="w-4 h-4" />
                 Simpan ({detailModalItem.units && detailModalItem.units.length > 0 ? modalSelectedUnitIds.length : modalJumlah} Unit)
