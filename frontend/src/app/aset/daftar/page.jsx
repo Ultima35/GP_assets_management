@@ -721,6 +721,17 @@ export default function DaftarAsetPage() {
     }
   };
 
+  const handleStartEditUnit = (unit) => {
+    setEditingUnitId(unit.id);
+    setUnitForm({
+      nama_unit: unit.nama_unit || "",
+      no_sn: unit.no_sn || "",
+      kondisi: unit.kondisi || "Siap Digunakan",
+      lokasi_unit: unit.lokasi_unit || "",
+      keterangan: unit.keterangan || "",
+    });
+  };
+
   const handleSaveUnitEdit = async (unitId) => {
     try {
       await updateAssetUnit(unitId, unitForm);
@@ -771,17 +782,6 @@ export default function DaftarAsetPage() {
     } finally {
       setDeletingUnit(false);
     }
-  };
-
-  const handleStartEditUnit = (unit) => {
-    setEditingUnitId(unit.id);
-    setUnitForm({
-      nama_unit: unit.nama_unit || "",
-      no_sn: unit.no_sn || "",
-      kondisi: unit.kondisi || "Siap Digunakan",
-      lokasi_unit: unit.lokasi_unit || "",
-      keterangan: unit.keterangan || "",
-    });
   };
 
   // Export Excel
@@ -1898,7 +1898,7 @@ export default function DaftarAsetPage() {
                             <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
                             <div className="flex-1">
                               <p className="font-bold text-amber-800">Kategori sudah ada di dropdown!</p>
-                              <p className="mt-0.5 text-amber-700">Kategori <strong>"{duplicateKat.nama}"</strong> sudah tersedia dalam pilihan dropdown.</p>
+                              <p className="mt-0.5 text-amber-700">Kategori <strong>&quot;{duplicateKat.nama}&quot;</strong> sudah tersedia dalam pilihan dropdown.</p>
                               <button
                                 type="button"
                                 onClick={() => applyExistingKat(duplicateKat.nama)}
@@ -1918,7 +1918,7 @@ export default function DaftarAsetPage() {
                             <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
                             <div className="flex-1">
                               <p className="font-bold text-amber-800">Kode Singkat sudah digunakan!</p>
-                              <p className="mt-0.5 text-amber-700">Kode <strong>"{duplicateKode.kode_singkat}"</strong> sudah dipakai oleh kategori <strong>"{duplicateKode.nama}"</strong>.</p>
+                              <p className="mt-0.5 text-amber-700">Kode <strong>&quot;{duplicateKode.kode_singkat}&quot;</strong> sudah dipakai oleh kategori <strong>&quot;{duplicateKode.nama}&quot;</strong>.</p>
                             </div>
                           </div>
                         </div>
@@ -1954,7 +1954,7 @@ export default function DaftarAsetPage() {
                             <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
                             <div className="flex-1">
                               <p className="font-bold text-amber-800">Merek sudah ada di dropdown!</p>
-                              <p className="mt-0.5 text-amber-700">Merek <strong>"{duplicateMerek}"</strong> sudah tersedia dalam pilihan dropdown.</p>
+                              <p className="mt-0.5 text-amber-700">Merek <strong>&quot;{duplicateMerek}&quot;</strong> sudah tersedia dalam pilihan dropdown.</p>
                               <button
                                 type="button"
                                 onClick={() => applyExistingMerek(duplicateMerek)}
@@ -2390,17 +2390,21 @@ export default function DaftarAsetPage() {
                   ) : assetUnitsList.length === 0 ? (
                     <div className="py-12 text-center text-slate-400 bg-slate-50/60 rounded-xl border border-dashed border-slate-200">
                       <p className="text-sm font-medium">Belum ada unit fisik yang terdaftar untuk aset ini.</p>
-                      <p className="text-xs mt-1 text-slate-400">Klik "Tambah Unit Baru" di atas untuk menambahkan unit fisik.</p>
+                      <p className="text-xs mt-1 text-slate-400">Klik &quot;Tambah Unit Baru&quot; di atas untuk menambahkan unit fisik.</p>
                     </div>
                   ) : (
                     <>
                       {/* Mobile Card List (sm:hidden) */}
                       <div className="space-y-2.5 sm:hidden">
-                        {assetUnitsList.map((unit) => (
+                        {assetUnitsList.map((unit) => {
+                          const isEditing = editingUnitId === unit.id;
+                          return (
                           <div
                             key={unit.id}
                             className={`p-3 rounded-xl border transition-all ${
-                              unit.kondisi === "Rusak" || unit.kondisi === "Rusak Berat"
+                              isEditing
+                                ? "bg-blue-50/60 border-blue-300 ring-1 ring-blue-300"
+                                : unit.kondisi === "Rusak" || unit.kondisi === "Rusak Berat"
                                 ? "bg-rose-50/50 border-rose-200"
                                 : unit.kondisi === "Maintenance"
                                 ? "bg-amber-50/40 border-amber-200"
@@ -2423,31 +2427,90 @@ export default function DaftarAsetPage() {
                                 </span>
                               </div>
                               {["super admin", "admin"].includes(userRole) && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteUnit(unit)}
-                                  className="cursor-pointer rounded-lg bg-rose-50 p-1.5 text-rose-600 hover:bg-rose-600 hover:text-white transition-colors"
-                                  title="Hapus Unit"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </button>
+                                <div className="flex items-center gap-1">
+                                  {isEditing ? (
+                                    <>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleSaveUnitEdit(unit.id)}
+                                        className="cursor-pointer rounded-lg bg-emerald-500 p-1.5 text-white hover:bg-emerald-600 transition-colors shadow-xs"
+                                        title="Simpan"
+                                      >
+                                        <Check className="h-3.5 w-3.5" />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => setEditingUnitId(null)}
+                                        className="cursor-pointer rounded-lg bg-rose-500 p-1.5 text-white hover:bg-rose-600 transition-colors shadow-xs"
+                                        title="Batal"
+                                      >
+                                        <X className="h-3.5 w-3.5" />
+                                      </button>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleStartEditUnit(unit)}
+                                        className="cursor-pointer rounded-lg bg-blue-50 p-1.5 text-blue-600 hover:bg-blue-600 hover:text-white transition-colors"
+                                        title="Edit Unit"
+                                      >
+                                        <Pencil className="h-3.5 w-3.5" />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeleteUnit(unit)}
+                                        className="cursor-pointer rounded-lg bg-rose-50 p-1.5 text-rose-600 hover:bg-rose-600 hover:text-white transition-colors"
+                                        title="Hapus Unit"
+                                      >
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                      </button>
+                                    </>
+                                  )}
+                                </div>
                               )}
                             </div>
 
-                            <div className="grid grid-cols-2 gap-2 text-xs mb-2.5">
-                              <div>
-                                <span className="text-[10px] text-slate-400 font-medium block">Nama/Label Unit</span>
-                                <span className="font-medium text-slate-700 truncate block">
-                                  {unit.nama_unit || <span className="text-slate-400 italic">-</span>}
-                                </span>
+                            {isEditing ? (
+                              <div className="space-y-2 mb-2.5 bg-white/80 p-2.5 rounded-lg border border-blue-200">
+                                <div>
+                                  <label className="text-[10px] text-blue-900 font-semibold block mb-0.5">Nama / Label Unit</label>
+                                  <input
+                                    type="text"
+                                    value={unitForm.nama_unit}
+                                    onChange={(e) => setUnitForm((f) => ({ ...f, nama_unit: e.target.value }))}
+                                    className="w-full px-2.5 py-1 text-xs border border-blue-300 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 text-slate-800"
+                                    placeholder="Contoh: Kabinet A1"
+                                    autoFocus
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-[10px] text-blue-900 font-semibold block mb-0.5">Lokasi</label>
+                                  <input
+                                    type="text"
+                                    value={unitForm.lokasi_unit}
+                                    onChange={(e) => setUnitForm((f) => ({ ...f, lokasi_unit: e.target.value }))}
+                                    className="w-full px-2.5 py-1 text-xs border border-blue-300 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 text-slate-800"
+                                    placeholder="Lokasi..."
+                                  />
+                                </div>
                               </div>
-                              <div>
-                                <span className="text-[10px] text-slate-400 font-medium block">Lokasi</span>
-                                <span className="font-medium text-slate-700 truncate block">
-                                  {unit.lokasi_unit || <span className="text-slate-400 italic">-</span>}
-                                </span>
+                            ) : (
+                              <div className="grid grid-cols-2 gap-2 text-xs mb-2.5">
+                                <div>
+                                  <span className="text-[10px] text-slate-400 font-medium block">Nama/Label Unit</span>
+                                  <span className="font-medium text-slate-700 truncate block">
+                                    {unit.nama_unit || <span className="text-slate-400 italic">-</span>}
+                                  </span>
+                                </div>
+                                <div>
+                                  <span className="text-[10px] text-slate-400 font-medium block">Lokasi</span>
+                                  <span className="font-medium text-slate-700 truncate block">
+                                    {unit.lokasi_unit || <span className="text-slate-400 italic">-</span>}
+                                  </span>
+                                </div>
                               </div>
-                            </div>
+                            )}
 
                             <div>
                               <label className="text-[10px] text-slate-400 font-medium block mb-1">Kondisi Fisik</label>
@@ -2473,7 +2536,8 @@ export default function DaftarAsetPage() {
                               </select>
                             </div>
                           </div>
-                        ))}
+                        );
+                        })}
                       </div>
 
                       {/* Desktop & Tablet Table (hidden sm:block) */}
@@ -2487,17 +2551,20 @@ export default function DaftarAsetPage() {
                               <th className="px-3 py-2.5 text-center w-28">Status Pinjam</th>
                               <th className="px-3 py-2.5 text-center w-48">Kondisi Fisik</th>
                               {["super admin", "admin"].includes(userRole) && (
-                                <th className="px-3 py-2.5 text-center w-16">Aksi</th>
+                                <th className="px-3 py-2.5 text-center w-24">Aksi</th>
                               )}
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100">
                             {assetUnitsList.map((unit, idx) => {
+                              const isEditing = editingUnitId === unit.id;
                               return (
                                 <tr
                                   key={unit.id}
                                   className={`transition-colors ${
-                                    unit.kondisi === "Rusak" || unit.kondisi === "Rusak Berat"
+                                    isEditing
+                                      ? "bg-blue-50/60 ring-1 ring-blue-300"
+                                      : unit.kondisi === "Rusak" || unit.kondisi === "Rusak Berat"
                                       ? "bg-rose-50/40"
                                       : unit.kondisi === "Maintenance"
                                       ? "bg-amber-50/30"
@@ -2510,10 +2577,51 @@ export default function DaftarAsetPage() {
                                     {unit.kode_unit}
                                   </td>
                                   <td className="px-3 py-2.5 font-medium text-slate-800">
-                                    {unit.nama_unit || <span className="text-slate-400 italic">-</span>}
+                                    {isEditing ? (
+                                      <input
+                                        type="text"
+                                        value={unitForm.nama_unit}
+                                        onChange={(e) => setUnitForm((f) => ({ ...f, nama_unit: e.target.value }))}
+                                        onKeyDown={(e) => {
+                                          if (e.key === "Enter") handleSaveUnitEdit(unit.id);
+                                          if (e.key === "Escape") setEditingUnitId(null);
+                                        }}
+                                        placeholder="Nama / Label Unit..."
+                                        className="w-full px-2.5 py-1 text-xs border border-blue-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-slate-900 font-medium shadow-xs"
+                                        autoFocus
+                                      />
+                                    ) : (
+                                      <div className="flex items-center gap-1.5 group">
+                                        <span>{unit.nama_unit || <span className="text-slate-400 italic">-</span>}</span>
+                                        {["super admin", "admin"].includes(userRole) && (
+                                          <button
+                                            type="button"
+                                            onClick={() => handleStartEditUnit(unit)}
+                                            className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-blue-600 transition-opacity p-0.5 rounded cursor-pointer"
+                                            title="Edit nama unit"
+                                          >
+                                            <Pencil className="h-3 w-3" />
+                                          </button>
+                                        )}
+                                      </div>
+                                    )}
                                   </td>
                                   <td className="px-3 py-2.5 text-slate-600">
-                                    {unit.lokasi_unit || <span className="text-slate-400 italic">-</span>}
+                                    {isEditing ? (
+                                      <input
+                                        type="text"
+                                        value={unitForm.lokasi_unit}
+                                        onChange={(e) => setUnitForm((f) => ({ ...f, lokasi_unit: e.target.value }))}
+                                        onKeyDown={(e) => {
+                                          if (e.key === "Enter") handleSaveUnitEdit(unit.id);
+                                          if (e.key === "Escape") setEditingUnitId(null);
+                                        }}
+                                        placeholder="Lokasi..."
+                                        className="w-full px-2.5 py-1 text-xs border border-blue-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-slate-900 shadow-xs"
+                                      />
+                                    ) : (
+                                      unit.lokasi_unit || <span className="text-slate-400 italic">-</span>
+                                    )}
                                   </td>
                                   <td className="px-3 py-2.5 text-center text-xs font-semibold uppercase tracking-wider text-slate-700">
                                     {unit.status_pinjam || "Tersedia"}
@@ -2543,14 +2651,47 @@ export default function DaftarAsetPage() {
                                   </td>
                                   {["super admin", "admin"].includes(userRole) && (
                                     <td className="px-3 py-2.5 text-center">
-                                      <button
-                                        type="button"
-                                        onClick={() => handleDeleteUnit(unit)}
-                                        className="cursor-pointer rounded-lg bg-rose-50 p-1.5 text-rose-600 hover:bg-rose-600 hover:text-white transition-colors"
-                                        title="Hapus Unit"
-                                      >
-                                        <Trash2 className="h-3.5 w-3.5" />
-                                      </button>
+                                      <div className="flex items-center justify-center gap-1.5">
+                                        {isEditing ? (
+                                          <>
+                                            <button
+                                              type="button"
+                                              onClick={() => handleSaveUnitEdit(unit.id)}
+                                              className="cursor-pointer rounded-lg bg-emerald-500 p-1.5 text-white hover:bg-emerald-600 transition-colors shadow-xs"
+                                              title="Simpan Perubahan"
+                                            >
+                                              <Check className="h-3.5 w-3.5" />
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={() => setEditingUnitId(null)}
+                                              className="cursor-pointer rounded-lg bg-rose-500 p-1.5 text-white hover:bg-rose-600 transition-colors shadow-xs"
+                                              title="Batal"
+                                            >
+                                              <X className="h-3.5 w-3.5" />
+                                            </button>
+                                          </>
+                                        ) : (
+                                          <>
+                                            <button
+                                              type="button"
+                                              onClick={() => handleStartEditUnit(unit)}
+                                              className="cursor-pointer rounded-lg bg-blue-50 p-1.5 text-blue-600 hover:bg-blue-600 hover:text-white transition-colors"
+                                              title="Edit Unit"
+                                            >
+                                              <Pencil className="h-3.5 w-3.5" />
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={() => handleDeleteUnit(unit)}
+                                              className="cursor-pointer rounded-lg bg-rose-50 p-1.5 text-rose-600 hover:bg-rose-600 hover:text-white transition-colors"
+                                              title="Hapus Unit"
+                                            >
+                                              <Trash2 className="h-3.5 w-3.5" />
+                                            </button>
+                                          </>
+                                        )}
+                                      </div>
                                     </td>
                                   )}
                                 </tr>

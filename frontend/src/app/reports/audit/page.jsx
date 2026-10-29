@@ -90,6 +90,7 @@ export default function AuditReportPage() {
         log.userName?.toLowerCase().includes(s) || 
         log.details?.toLowerCase().includes(s) ||
         log.entityId?.toString().includes(s) ||
+        log.entityName?.toLowerCase().includes(s) ||
         log.entityType?.toLowerCase().includes(s)
       );
     }
@@ -383,8 +384,8 @@ export default function AuditReportPage() {
                 <th className="px-5 py-3 font-bold text-slate-700 text-center uppercase tracking-wider">Aksi</th>
                 <th className="px-5 py-3 font-bold text-slate-700 uppercase tracking-wider">Modul</th>
                 <th className="px-5 py-3 font-bold text-slate-700">
-                  <button onClick={() => handleSort("entityId")} className="flex items-center uppercase tracking-wider cursor-pointer">
-                    Item Terkait <SortIcon columnKey="entityId" sortConfig={sortConfig} />
+                  <button onClick={() => handleSort("entityName")} className="flex items-center uppercase tracking-wider cursor-pointer">
+                    Item Terkait <SortIcon columnKey="entityName" sortConfig={sortConfig} />
                   </button>
                 </th>
                 <th className="px-5 py-3 font-bold text-slate-700 text-nowrap uppercase tracking-wider">Rincian Perubahan</th>

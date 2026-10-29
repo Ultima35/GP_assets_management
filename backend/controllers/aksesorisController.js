@@ -800,12 +800,57 @@ const aksesorisController = {
   updateUnit: async (req, res) => {
     try {
       const { unitId } = req.params;
-      const [unitRows] = await db.query("SELECT * FROM aksesoris_units WHERE id = ?", [unitId]);
+      const [unitRows] = await db.query(
+        `SELECT u.*, ak.nama_aksesoris, ak.kode_aksesoris 
+         FROM aksesoris_units u 
+         LEFT JOIN aksesoris ak ON ak.id = u.aksesoris_id 
+         WHERE u.id = ?`,
+        [unitId]
+      );
       if (unitRows.length === 0) {
         return res.status(404).json({ success: false, message: "Unit aksesoris tidak ditemukan" });
       }
       const unit = unitRows[0];
       const { kode_unit, nama_unit, no_sn, kondisi, status_pinjam, lokasi_unit, keterangan } = req.body;
+
+      // Deteksi perubahan detail untuk Audit Log
+      const changes = [];
+
+      if (nama_unit !== undefined && nama_unit !== null && String(nama_unit).trim() !== String(unit.nama_unit || "").trim()) {
+        const oldVal = unit.nama_unit ? `"${unit.nama_unit}"` : "-";
+        const newVal = String(nama_unit).trim() ? `"${String(nama_unit).trim()}"` : "-";
+        changes.push(`nama unit diubah dari ${oldVal} menjadi ${newVal}`);
+      }
+
+      if (lokasi_unit !== undefined && lokasi_unit !== null && String(lokasi_unit).trim() !== String(unit.lokasi_unit || "").trim()) {
+        const oldVal = unit.lokasi_unit ? `"${unit.lokasi_unit}"` : "-";
+        const newVal = String(lokasi_unit).trim() ? `"${String(lokasi_unit).trim()}"` : "-";
+        changes.push(`lokasi diubah dari ${oldVal} menjadi ${newVal}`);
+      }
+
+      if (kondisi && kondisi !== unit.kondisi) {
+        changes.push(`kondisi diubah dari "${unit.kondisi}" menjadi "${kondisi}"`);
+      }
+
+      if (status_pinjam && status_pinjam !== unit.status_pinjam) {
+        changes.push(`status pinjam diubah dari "${unit.status_pinjam}" menjadi "${status_pinjam}"`);
+      }
+
+      if (no_sn !== undefined && no_sn !== null && String(no_sn).trim() !== String(unit.no_sn || "").trim()) {
+        const oldVal = unit.no_sn ? `"${unit.no_sn}"` : "-";
+        const newVal = String(no_sn).trim() ? `"${String(no_sn).trim()}"` : "-";
+        changes.push(`no SN diubah dari ${oldVal} menjadi ${newVal}`);
+      }
+
+      if (keterangan !== undefined && keterangan !== null && String(keterangan).trim() !== String(unit.keterangan || "").trim()) {
+        const oldVal = unit.keterangan ? `"${unit.keterangan}"` : "-";
+        const newVal = String(keterangan).trim() ? `"${String(keterangan).trim()}"` : "-";
+        changes.push(`keterangan diubah dari ${oldVal} menjadi ${newVal}`);
+      }
+
+      if (kode_unit && kode_unit !== unit.kode_unit) {
+        changes.push(`kode unit diubah dari "${unit.kode_unit}" menjadi "${kode_unit}"`);
+      }
 
       await db.query(
         `UPDATE aksesoris_units 
@@ -819,17 +864,21 @@ const aksesorisController = {
          WHERE id = ?`,
         [
           kode_unit || unit.kode_unit,
-          nama_unit !== undefined ? nama_unit : unit.nama_unit,
-          no_sn !== undefined ? no_sn : unit.no_sn,
+          nama_unit !== undefined ? (nama_unit !== "" ? nama_unit : null) : unit.nama_unit,
+          no_sn !== undefined ? (no_sn !== "" ? no_sn : null) : unit.no_sn,
           kondisi || unit.kondisi,
           status_pinjam || unit.status_pinjam,
-          lokasi_unit !== undefined ? lokasi_unit : unit.lokasi_unit,
-          keterangan !== undefined ? keterangan : unit.keterangan,
+          lokasi_unit !== undefined ? (lokasi_unit !== "" ? lokasi_unit : null) : unit.lokasi_unit,
+          keterangan !== undefined ? (keterangan !== "" ? keterangan : null) : unit.keterangan,
           unitId,
         ]
       );
 
       await syncAksesorisTotals(unit.aksesoris_id);
+
+      const changeDetails = changes.length > 0 
+        ? changes.join(", ") 
+        : `kondisi menjadi ${kondisi || unit.kondisi}`;
 
       await AuditLog.create({
         userId: req.user?.userId,
@@ -837,7 +886,7 @@ const aksesorisController = {
         action: "UPDATE",
         entityType: "Aksesoris Unit",
         entityId: unitId,
-        details: `Mengubah unit aksesoris ${unit.kode_unit}: kondisi menjadi ${kondisi || unit.kondisi}`,
+        details: `Mengubah unit aksesoris ${unit.kode_unit}: ${changeDetails}`,
       });
 
       const [updated] = await db.query("SELECT * FROM aksesoris_units WHERE id = ?", [unitId]);
@@ -856,7 +905,13 @@ const aksesorisController = {
   deleteUnit: async (req, res) => {
     try {
       const { unitId } = req.params;
-      const [unitRows] = await db.query("SELECT * FROM aksesoris_units WHERE id = ?", [unitId]);
+      const [unitRows] = await db.query(
+        `SELECT u.*, ak.nama_aksesoris 
+         FROM aksesoris_units u 
+         LEFT JOIN aksesoris ak ON ak.id = u.aksesoris_id 
+         WHERE u.id = ?`,
+        [unitId]
+      );
       if (unitRows.length === 0) {
         return res.status(404).json({ success: false, message: "Unit aksesoris tidak ditemukan" });
       }
@@ -875,7 +930,7 @@ const aksesorisController = {
         action: "DELETE",
         entityType: "Aksesoris Unit",
         entityId: unitId,
-        details: `Menghapus unit fisik aksesoris ${unit.kode_unit}`,
+        details: `Menghapus unit fisik aksesoris ${unit.kode_unit}${unit.nama_unit ? ` (${unit.nama_unit})` : ""}${unit.nama_aksesoris ? ` dari ${unit.nama_aksesoris}` : ""}`,
       });
 
       res.json({
