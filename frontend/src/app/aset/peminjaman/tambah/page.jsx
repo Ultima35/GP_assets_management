@@ -294,8 +294,8 @@ export default function TambahPeminjamanPage() {
         hasUnits: false,
         total: Number(item.jumlahTotal || item.stok || 0),
         ready: isReady ? Number(item.stok || 0) : 0,
-        rusak: item.kondisi === "Rusak" ? Number(item.stok || 0) : 0,
-        rusakBerat: item.kondisi === "Rusak Berat" ? Number(item.stok || 0) : 0,
+        rusak: (item.kondisi === "Rusak" || item.kondisi === "Rusak Berat") ? Number(item.stok || 0) : 0,
+        rusakBerat: 0,
         maintenance: item.kondisi === "Maintenance" ? Number(item.stok || 0) : 0,
         dipinjam: 0,
         isAvailable: isReady,
@@ -303,9 +303,9 @@ export default function TambahPeminjamanPage() {
     }
 
     const total = item.units.length;
-    const ready = item.units.filter((u) => u.status_pinjam === "Tersedia" && u.kondisi === "Siap Digunakan").length;
-    const rusak = item.units.filter((u) => u.kondisi === "Rusak").length;
-    const rusakBerat = item.units.filter((u) => u.kondisi === "Rusak Berat").length;
+    const ready = item.units.filter((u) => u.status_pinjam === "Tersedia" && (u.kondisi === "Siap Digunakan" || !u.kondisi)).length;
+    const rusak = item.units.filter((u) => u.kondisi === "Rusak" || u.kondisi === "Rusak Berat").length;
+    const rusakBerat = 0;
     const maintenance = item.units.filter((u) => u.kondisi === "Maintenance").length;
     const dipinjam = item.units.filter((u) => u.status_pinjam === "Dipinjam").length;
 
@@ -624,14 +624,25 @@ export default function TambahPeminjamanPage() {
     const badges = {
       "Siap Digunakan": `bg-green-100 text-green-800${isList ? " border-green-200" : ""}`,
       Rusak: `bg-red-100 text-red-800${isList ? " border-red-200" : ""}`,
-      "Rusak Berat": `bg-red-900 text-white${isList ? " border-red-800" : ""}`,
+      "Rusak Berat": `bg-red-100 text-red-800${isList ? " border-red-200" : ""}`,
       Maintenance: `bg-yellow-100 text-yellow-800${isList ? " border-yellow-200" : ""}`,
     };
     return (badges[kondisi] || `bg-gray-100 text-gray-800${isList ? " border-gray-200" : ""}`) + borderClass;
   };
 
+  const getItemSubtotal = (item) => {
+    if (item.tipeHarga === "Per Paket" && (item.jumlahTotal || 1) > 0) {
+      const original = Number(item.hargaAsetOriginal) || 0;
+      const totalUnits = Number(item.jumlahTotal) || 1;
+      const qty = Number(item.jumlah) || 1;
+      if (qty === totalUnits) return original;
+      return Math.round((original * qty) / totalUnits);
+    }
+    return (Number(item.harga) || 0) * (Number(item.jumlah) || 1);
+  };
+
   const calculateTotal = () => {
-    return items.reduce((sum, item) => sum + item.harga * item.jumlah, 0);
+    return items.reduce((sum, item) => sum + getItemSubtotal(item), 0);
   };
 
   const renderBrandBadge = (jenisAset, isList = false) => {
@@ -956,7 +967,7 @@ export default function TambahPeminjamanPage() {
                             </span>
                             {item.harga > 0 && (
                               <span className="font-semibold text-emerald-600">
-                                Rp {(item.harga || 0).toLocaleString('id-ID')}
+                                {item.tipeHarga === "Per Paket" ? "~ " : ""}Rp {(item.harga || 0).toLocaleString('id-ID')}{item.tipeHarga === "Per Paket" ? "/unit" : ""}
                               </span>
                             )}
                           </div>
@@ -1086,7 +1097,7 @@ export default function TambahPeminjamanPage() {
                           {item.harga > 0 && (
                             <div className="flex items-center gap-1 sm:text-right">
                               <span className="text-xs font-semibold text-emerald-600">
-                                Rp {(item.harga || 0).toLocaleString('id-ID')}
+                                {item.tipeHarga === "Per Paket" ? "~ " : ""}Rp {(item.harga || 0).toLocaleString('id-ID')}
                               </span>
                               {item.tipeHarga === "Per Paket" && (
                                 <span className="text-[10px] text-purple-600 font-medium">(Paket)</span>
@@ -1149,7 +1160,7 @@ export default function TambahPeminjamanPage() {
               <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1">
                 {items.map((item, idx) => {
                   const itemGambar = item.gambar || allItems.find((it) => it.id === item.id && it.tipe === item.tipe)?.gambar;
-                  const subtotal = (item.harga || 0) * (item.jumlah || 1);
+                  const subtotal = getItemSubtotal(item);
 
                   return (
                     <div
@@ -1249,8 +1260,8 @@ export default function TambahPeminjamanPage() {
                                 Rp {subtotal.toLocaleString('id-ID')}
                               </span>
                               <span className="text-[10px] text-slate-400">
-                                @ Rp {(item.harga || 0).toLocaleString('id-ID')}
-                                {item.tipeHarga === "Per Paket" && " (Paket)"}
+                                {item.tipeHarga === "Per Paket" ? "~ " : "@ "}Rp {(item.harga || 0).toLocaleString('id-ID')} / unit
+                                {item.tipeHarga === "Per Paket" && ` (Paket: Rp ${Number(item.hargaAsetOriginal || 0).toLocaleString('id-ID')})`}
                               </span>
                             </>
                           ) : (
@@ -1380,9 +1391,11 @@ export default function TambahPeminjamanPage() {
                       <button
                         type="button"
                         onClick={() => removeFile(idx)}
-                        className="cursor-pointer absolute -top-2 -right-2 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition"
+                        className="cursor-pointer absolute -top-2 -right-2 bg-red-600 hover:bg-red-700 text-white rounded-full p-1 shadow-md opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition z-10"
+                        title="Hapus gambar"
+                        aria-label="Hapus gambar"
                       >
-                        <X className="w-3 h-3" />
+                        <X className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   ))}
@@ -1568,18 +1581,15 @@ export default function TambahPeminjamanPage() {
 
                       let statusLabel = "Siap Digunakan";
                       let statusBadgeClass = "bg-emerald-100 text-emerald-800 border-emerald-200";
-                      if (isDipinjam) {
-                        statusLabel = "Dipinjam";
-                        statusBadgeClass = "bg-amber-100 text-amber-800 border-amber-200";
-                      } else if (isRusakBerat) {
-                        statusLabel = "Rusak Berat";
-                        statusBadgeClass = "bg-red-900 text-white border-red-800";
-                      } else if (isRusak) {
+                      if (isDipinjam || u.kondisi === "Sedang Dipinjam") {
+                        statusLabel = "Sedang Dipinjam";
+                        statusBadgeClass = "bg-blue-100 text-blue-800 border-blue-200";
+                      } else if (isRusak || isRusakBerat) {
                         statusLabel = "Rusak";
                         statusBadgeClass = "bg-red-100 text-red-800 border-red-200";
                       } else if (isMaintenance) {
                         statusLabel = "Maintenance";
-                        statusBadgeClass = "bg-yellow-100 text-yellow-800 border-yellow-200";
+                        statusBadgeClass = "bg-amber-100 text-amber-800 border-amber-200";
                       }
 
                       return (
@@ -1672,21 +1682,33 @@ export default function TambahPeminjamanPage() {
               )}
 
               {/* Price Calculation Box */}
-              {detailModalItem.harga > 0 && (
-                <div className="mt-4 p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
-                  <div>
-                    <span className="text-slate-500 block">
-                      Estimasi Nilai ({detailModalItem.units && detailModalItem.units.length > 0 ? modalSelectedUnitIds.length : modalJumlah} unit):
-                    </span>
-                    <span className="text-[11px] text-slate-400">
-                      @ Rp {detailModalItem.harga.toLocaleString("id-ID")} / unit
+              {detailModalItem.harga > 0 && (() => {
+                const count = (detailModalItem.units && detailModalItem.units.length > 0)
+                  ? modalSelectedUnitIds.length
+                  : modalJumlah;
+                const modalSubtotal = (detailModalItem.tipeHarga === "Per Paket" && (detailModalItem.jumlahTotal || 1) > 0)
+                  ? (count === Number(detailModalItem.jumlahTotal || 1)
+                      ? Number(detailModalItem.hargaAsetOriginal) || 0
+                      : Math.round(((Number(detailModalItem.hargaAsetOriginal) || 0) * count) / Number(detailModalItem.jumlahTotal || 1)))
+                  : (Number(detailModalItem.harga) || 0) * count;
+
+                return (
+                  <div className="mt-4 p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
+                    <div>
+                      <span className="text-slate-500 block">
+                        Estimasi Nilai ({count} unit):
+                      </span>
+                      <span className="text-[11px] text-slate-400">
+                        {detailModalItem.tipeHarga === "Per Paket" ? "~ " : "@ "}Rp {detailModalItem.harga.toLocaleString("id-ID")} / unit
+                        {detailModalItem.tipeHarga === "Per Paket" && ` (Paket: Rp ${Number(detailModalItem.hargaAsetOriginal || 0).toLocaleString("id-ID")})`}
+                      </span>
+                    </div>
+                    <span className="text-base font-bold text-emerald-600">
+                      Rp {modalSubtotal.toLocaleString("id-ID")}
                     </span>
                   </div>
-                  <span className="text-base font-bold text-emerald-600">
-                    Rp {(detailModalItem.harga * (detailModalItem.units && detailModalItem.units.length > 0 ? modalSelectedUnitIds.length : modalJumlah)).toLocaleString("id-ID")}
-                  </span>
-                </div>
-              )}
+                );
+              })()}
             </div>
 
             {/* Modal Footer */}

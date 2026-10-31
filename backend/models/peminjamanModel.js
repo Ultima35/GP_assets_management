@@ -47,24 +47,7 @@ const Peminjaman = {
     );
     if (!headers[0]) return null;
 
-    const [items] = await db.query(
-      `SELECT pi.*,
-              COALESCE(a.nama_aset, ak.nama_aksesoris) AS nama_aset,
-              COALESCE(a.kode_aset, ak.kode_aksesoris) AS kode_aset,
-              COALESCE(au.nama_unit, aku.nama_unit) AS nama_unit,
-              COALESCE(au.kode_unit, aku.kode_unit) AS kode_unit_fisik,
-              COALESCE(a.jumlah, ak.jumlah_unit) AS stok_tersedia,
-              COALESCE(a.harga_aset, ak.harga_aset) AS harga_aset,
-              COALESCE(a.kategori, ak.kategori) AS kategori,
-              COALESCE(a.merek, ak.merek) AS merek
-       FROM peminjaman_items pi
-       LEFT JOIN assets a ON pi.asset_id = a.id
-       LEFT JOIN asset_units au ON pi.unit_id = au.id
-       LEFT JOIN aksesoris ak ON pi.aksesoris_id = ak.id
-       LEFT JOIN aksesoris_units aku ON pi.aksesoris_unit_id = aku.id
-       WHERE pi.peminjaman_id = ?`,
-      [id]
-    );
+    const items = await Peminjaman.getItemsWithPricing(id);
 
     return { ...headers[0], items };
   },
@@ -519,7 +502,13 @@ const Peminjaman = {
          LEFT JOIN assets a ON pi.asset_id = a.id
          LEFT JOIN aksesoris ak ON pi.aksesoris_id = ak.id
          WHERE pi.peminjaman_id = p.id) AS daftar_aset,
-        (SELECT SUM(COALESCE(a.harga_aset, ak.harga_aset) * pi.jumlah)
+        (SELECT ROUND(SUM(
+           CASE 
+             WHEN a.tipe_harga = 'Per Paket' AND COALESCE(a.jumlah_total, 0) > 0 THEN (a.harga_aset * pi.jumlah) / a.jumlah_total
+             WHEN ak.tipe_harga = 'Per Paket' AND COALESCE(ak.jumlah_total, 0) > 0 THEN (ak.harga_aset * pi.jumlah) / ak.jumlah_total
+             ELSE COALESCE(a.harga_aset, ak.harga_aset) * pi.jumlah
+           END
+         ))
          FROM peminjaman_items pi
          LEFT JOIN assets a ON pi.asset_id = a.id
          LEFT JOIN aksesoris ak ON pi.aksesoris_id = ak.id
@@ -558,8 +547,11 @@ const Peminjaman = {
               COALESCE(a.kode_aset, ak.kode_aksesoris) AS kode_aset,
               COALESCE(au.nama_unit, aku.nama_unit) AS nama_unit,
               COALESCE(au.kode_unit, aku.kode_unit) AS kode_unit_fisik,
+              COALESCE(a.jumlah, ak.jumlah_unit) AS stok_tersedia,
               COALESCE(a.tipe_harga, ak.tipe_harga, 'Per Unit') AS tipe_harga,
               COALESCE(a.jumlah_total, ak.jumlah_total, 1) AS jumlah_total,
+              COALESCE(a.harga_aset, ak.harga_aset) AS harga_aset_original,
+              COALESCE(a.harga_aset, ak.harga_aset) AS harga_aset,
               ROUND(
                 CASE 
                   WHEN a.tipe_harga = 'Per Paket' AND COALESCE(a.jumlah_total, 0) > 0 THEN a.harga_aset / a.jumlah_total
@@ -567,13 +559,6 @@ const Peminjaman = {
                   ELSE COALESCE(a.harga_aset, ak.harga_aset)
                 END
               ) AS harga_unit,
-              ROUND(
-                (CASE 
-                  WHEN a.tipe_harga = 'Per Paket' AND COALESCE(a.jumlah_total, 0) > 0 THEN a.harga_aset / a.jumlah_total
-                  WHEN ak.tipe_harga = 'Per Paket' AND COALESCE(ak.jumlah_total, 0) > 0 THEN ak.harga_aset / ak.jumlah_total
-                  ELSE COALESCE(a.harga_aset, ak.harga_aset)
-                END) * pi.jumlah
-              ) AS harga_total,
               COALESCE(a.kategori, ak.kategori) AS kategori,
               COALESCE(a.merek, ak.merek) AS merek
        FROM peminjaman_items pi
@@ -584,6 +569,46 @@ const Peminjaman = {
        WHERE pi.peminjaman_id = ?`,
       [peminjamanId]
     );
+
+    // Group items 'Per Paket' to distribute pricing without rounding discrepancy (e.g. 25jt/6 units = 25.000.000, not 25.000.002)
+    const packageTotals = {};
+    for (const item of items) {
+      if (item.tipe_harga === 'Per Paket') {
+        const key = item.asset_id ? `asset_${item.asset_id}` : `ak_${item.aksesoris_id}`;
+        if (!packageTotals[key]) {
+          packageTotals[key] = {
+            totalOriginal: Number(item.harga_aset_original) || 0,
+            packageTotalUnits: Number(item.jumlah_total) || 1,
+            borrowedItems: [],
+            totalBorrowedQty: 0
+          };
+        }
+        packageTotals[key].borrowedItems.push(item);
+        packageTotals[key].totalBorrowedQty += (Number(item.jumlah) || 1);
+      } else {
+        item.harga_total = (Number(item.harga_unit) || 0) * (Number(item.jumlah) || 1);
+      }
+    }
+
+    for (const key in packageTotals) {
+      const pkg = packageTotals[key];
+      const targetTotal = (pkg.totalBorrowedQty === pkg.packageTotalUnits)
+        ? pkg.totalOriginal
+        : Math.round((pkg.totalOriginal * pkg.totalBorrowedQty) / pkg.packageTotalUnits);
+
+      let allocated = 0;
+      pkg.borrowedItems.forEach((item, index) => {
+        if (index === pkg.borrowedItems.length - 1) {
+          // Last item absorbs any rounding difference to ensure total equals targetTotal exactly
+          item.harga_total = targetTotal - allocated;
+        } else {
+          const itemVal = Math.round((targetTotal * (Number(item.jumlah) || 1)) / pkg.totalBorrowedQty);
+          item.harga_total = itemVal;
+          allocated += itemVal;
+        }
+      });
+    }
+
     return items;
   }
 };

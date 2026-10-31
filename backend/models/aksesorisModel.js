@@ -6,9 +6,9 @@ const Aksesoris = {
     const [rows] = await db.query(
       `SELECT a.*, u.nama_lengkap as created_by_name,
         COALESCE(NULLIF(COUNT(au.id), 0), a.jumlah_total, a.jumlah_unit, 1) as total_units_count,
-        COALESCE(SUM(CASE WHEN au.kondisi = 'Siap Digunakan' AND au.status_pinjam = 'Tersedia' THEN 1 ELSE 0 END), a.jumlah_unit, 1) as ready_units_count,
-        COALESCE(SUM(CASE WHEN au.kondisi = 'Rusak' THEN 1 ELSE 0 END), 0) as rusak_units_count,
-        COALESCE(SUM(CASE WHEN au.kondisi = 'Rusak Berat' THEN 1 ELSE 0 END), 0) as rusak_berat_units_count,
+        COALESCE(SUM(CASE WHEN (au.kondisi = 'Siap Digunakan' OR au.kondisi IS NULL) AND au.status_pinjam = 'Tersedia' THEN 1 ELSE 0 END), a.jumlah_unit, 1) as ready_units_count,
+        COALESCE(SUM(CASE WHEN au.kondisi = 'Rusak' OR au.kondisi = 'Rusak Berat' THEN 1 ELSE 0 END), 0) as rusak_units_count,
+        0 as rusak_berat_units_count,
         COALESCE(SUM(CASE WHEN au.kondisi = 'Maintenance' THEN 1 ELSE 0 END), 0) as maintenance_units_count,
         COALESCE(SUM(CASE WHEN au.status_pinjam = 'Dipinjam' THEN 1 ELSE 0 END), 0) as dipinjam_units_count
        FROM aksesoris a
@@ -160,9 +160,9 @@ const Aksesoris = {
     const [rows] = await db.query(
       `SELECT a.*, u.nama_lengkap as created_by_name,
         COALESCE(NULLIF(COUNT(au.id), 0), a.jumlah_total, a.jumlah_unit, 1) as total_units_count,
-        COALESCE(SUM(CASE WHEN au.kondisi = 'Siap Digunakan' AND au.status_pinjam = 'Tersedia' THEN 1 ELSE 0 END), a.jumlah_unit, 1) as ready_units_count,
-        COALESCE(SUM(CASE WHEN au.kondisi = 'Rusak' THEN 1 ELSE 0 END), 0) as rusak_units_count,
-        COALESCE(SUM(CASE WHEN au.kondisi = 'Rusak Berat' THEN 1 ELSE 0 END), 0) as rusak_berat_units_count,
+        COALESCE(SUM(CASE WHEN (au.kondisi = 'Siap Digunakan' OR au.kondisi IS NULL) AND au.status_pinjam = 'Tersedia' THEN 1 ELSE 0 END), a.jumlah_unit, 1) as ready_units_count,
+        COALESCE(SUM(CASE WHEN au.kondisi = 'Rusak' OR au.kondisi = 'Rusak Berat' THEN 1 ELSE 0 END), 0) as rusak_units_count,
+        0 as rusak_berat_units_count,
         COALESCE(SUM(CASE WHEN au.kondisi = 'Maintenance' THEN 1 ELSE 0 END), 0) as maintenance_units_count,
         COALESCE(SUM(CASE WHEN au.status_pinjam = 'Dipinjam' THEN 1 ELSE 0 END), 0) as dipinjam_units_count
        FROM aksesoris a

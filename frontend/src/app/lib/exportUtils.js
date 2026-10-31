@@ -283,7 +283,7 @@ export const downloadAssetTemplate = async () => {
   const templateValidations = {
     jenisAset: ["Galeria Production", "Galeria Studio"],
     tipeHarga: ["Per Unit", "Per Paket"],
-    kondisi: ["Siap Digunakan", "Rusak", "Rusak Berat", "Maintenance", "Dijual"],
+    kondisi: ["Siap Digunakan", "Maintenance", "Rusak"],
   };
 
   await exportTemplateToExcel(columns, sampleData, "Template_Import_Aset.xlsx", "Template_Aset", templateValidations);
@@ -342,7 +342,7 @@ export const downloadAksesorisTemplate = async () => {
   const templateValidations = {
     jenisAset: ["Galeria Production", "Galeria Studio"],
     tipeHarga: ["Per Unit", "Per Paket"],
-    kondisi: ["Siap Digunakan", "Rusak", "Rusak Berat", "Maintenance", "Dijual"],
+    kondisi: ["Siap Digunakan", "Maintenance", "Rusak"],
   };
 
   await exportTemplateToExcel(columns, sampleData, "Template_Import_Aksesoris.xlsx", "Template_Aksesoris", templateValidations);
@@ -375,3 +375,41 @@ export const parseExcelFile = (file) => {
     reader.readAsArrayBuffer(file);
   });
 };
+
+export const normalizeDate = (val) => {
+  if (!val) return "";
+  if (typeof val === "number" || (!isNaN(val) && !isNaN(parseFloat(val)) && isFinite(val) && Number(val) > 10000 && Number(val) < 100000)) {
+    const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+    const date = new Date(excelEpoch.getTime() + Number(val) * 86400000);
+    if (!isNaN(date.getTime())) {
+      return date.toISOString().split("T")[0];
+    }
+  }
+  const str = String(val).trim();
+  if (!str) return "";
+  const ymdMatch = str.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
+  if (ymdMatch) {
+    const year = ymdMatch[1];
+    const month = String(ymdMatch[2]).padStart(2, "0");
+    const day = String(ymdMatch[3]).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+  const dmyMatch = str.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})/);
+  if (dmyMatch) {
+    const day = String(dmyMatch[1]).padStart(2, "0");
+    const month = String(dmyMatch[2]).padStart(2, "0");
+    const year = dmyMatch[3];
+    return `${year}-${month}-${day}`;
+  }
+  const parsed = new Date(str);
+  if (!isNaN(parsed.getTime())) {
+    const y = parsed.getFullYear();
+    const m = String(parsed.getMonth() + 1).padStart(2, "0");
+    const d = String(parsed.getDate()).padStart(2, "0");
+    if (y > 1900 && y < 2100) {
+      return `${y}-${m}-${d}`;
+    }
+  }
+  return str;
+};
+

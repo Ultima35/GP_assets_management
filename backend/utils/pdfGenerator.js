@@ -64,15 +64,21 @@ function generateLoanPDF(data) {
   const statusStyle = getStatusStyle(data.status);
 
   // Build table rows with pricing
+  let grandTotal = 0;
   const itemRows = (data.items || []).map((item, idx) => {
-    const hargaUnit = parseInt(item.harga_aset || item.hargaUnit || 0);
+    const hargaUnit = parseInt(item.harga_unit || item.harga_aset || item.hargaUnit || 0);
     const jumlah = parseInt(item.jumlah || 0);
-    const totalHarga = hargaUnit * jumlah;
+    const totalHarga = parseInt(item.harga_total !== undefined ? item.harga_total : (hargaUnit * jumlah));
+    grandTotal += totalHarga;
+    const namaDisplay = item.nama_aset || item.namaAset || '-';
+    const unitDisplay = (item.nama_unit || item.namaUnit) ? ` (Kabinet ${item.nama_unit || item.namaUnit})` : '';
+    const kodeDisplay = item.kode_unit_fisik || item.kode_aset || item.kodeAset || '-';
+
     return `
     <tr>
       <td style="text-align:center; padding:7px 8px; border-bottom:1px solid #ddd; font-size:12px;">${idx + 1}</td>
-      <td style="padding:7px 8px; border-bottom:1px solid #ddd; font-size:12px; font-family:'Courier New',monospace; font-weight:600;">${item.kode_aset || '-'}</td>
-      <td style="padding:7px 8px; border-bottom:1px solid #ddd; font-size:12px;">${item.nama_aset || '-'}</td>
+      <td style="padding:7px 8px; border-bottom:1px solid #ddd; font-size:12px; font-family:'Courier New',monospace; font-weight:600;">${kodeDisplay}</td>
+      <td style="padding:7px 8px; border-bottom:1px solid #ddd; font-size:12px;">${namaDisplay}${unitDisplay}</td>
       <td style="text-align:center; padding:7px 8px; border-bottom:1px solid #ddd; font-size:12px; font-weight:700;">${item.jumlah}</td>
       <td style="text-align:right; padding:7px 8px; border-bottom:1px solid #ddd; font-size:11px; font-family:'Courier New',monospace;">${formatRupiah(hargaUnit)}</td>
       <td style="text-align:right; padding:7px 8px; border-bottom:1px solid #ddd; font-size:11px; font-family:'Courier New',monospace; font-weight:600;">${formatRupiah(totalHarga)}</td>
@@ -414,6 +420,12 @@ function generateLoanPDF(data) {
     <tbody>
       ${itemRows}
     </tbody>
+    <tfoot>
+      <tr style="background-color:#f9fafb;">
+        <td colspan="5" style="text-align:right; padding:8px; font-weight:700; font-size:12px; border-top:2px solid #cbd5e1;">Total Nilai Aset:</td>
+        <td style="text-align:right; padding:8px; font-weight:700; font-size:12px; font-family:'Courier New',monospace; border-top:2px solid #cbd5e1; color:#0f766e;">${formatRupiah(grandTotal)}</td>
+      </tr>
+    </tfoot>
   </table>
 
   <!-- ===== SIGNATURE ===== -->

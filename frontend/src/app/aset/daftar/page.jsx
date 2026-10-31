@@ -10,7 +10,7 @@ import { getAllBrands, createBrand } from "../../lib/brandService";
 import { getUserContext } from "../../lib/authService";
 import { getAllUsers } from "../../lib/userService";
 import { toSentenceCase, toUpperCaseText } from "../../lib/stringUtils";
-import { exportToExcel, downloadAssetTemplate, parseExcelFile } from "../../lib/exportUtils";
+import { exportToExcel, downloadAssetTemplate, parseExcelFile, normalizeDate } from "../../lib/exportUtils";
 import { Search, Plus, Info, Pencil, Trash2, X, Check, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, AlertTriangle, ChevronUp, ChevronDown, MapPin, Image as ImageIcon, Package, Camera, Download, Upload, FileSpreadsheet, Split, Layers } from "lucide-react";
 
 const getBackendURL = () => {
@@ -23,7 +23,7 @@ const getBackendURL = () => {
   return "http://localhost:5000";
 };
 const BACKEND_URL = getBackendURL();
-const kondisiOptions = ["Siap Digunakan", "Rusak", "Rusak Berat", "Maintenance", "Dijual"];
+const kondisiOptions = ["Siap Digunakan", "Maintenance", "Rusak"];
 const ROWS_OPTIONS = [10, 20, 30, 40, 50];
 
 const emptyForm = {
@@ -863,7 +863,7 @@ export default function DaftarAsetPage() {
           jumlah: parseInt(r["Jumlah"] || r["jumlah"] || 1, 10) || 1,
           hargaAset: parseFloat(r["Harga Aset"] || r["Harga"] || r["harga_aset"] || 0) || 0,
           tipeHarga,
-          tanggalPembelian: (r["Tanggal Pembelian"] || r["tanggal_pembelian"] || "").toString().trim(),
+          tanggalPembelian: normalizeDate(r["Tanggal Pembelian"] || r["tanggal_pembelian"] || ""),
           lokasiAset: toUpperCaseText((r["Lokasi Aset"] || r["Lokasi"] || r["lokasi_aset"] || "").toString().trim()),
           kondisi: (r["Kondisi"] || r["kondisi"] || "Siap Digunakan").toString().trim(),
           pengguna: (r["Pengelola"] || r["pengguna"] || "").toString().trim(),
@@ -942,10 +942,9 @@ export default function DaftarAsetPage() {
   const getKondisiBadge = (kondisi) => {
     const s = {
       "Siap Digunakan": "bg-emerald-50 text-emerald-700 border-emerald-500 hover:bg-emerald-600 hover:text-white hover:border-emerald-600",
-      "Rusak": "bg-red-50 text-red-700 border-red-500 hover:bg-red-600 hover:text-white hover:border-red-600",
-      "Rusak Berat": "bg-rose-900 text-white border-rose-950 hover:bg-black hover:border-black",
       "Maintenance": "bg-amber-50 text-amber-700 border-amber-500 hover:bg-amber-600 hover:text-white hover:border-amber-600",
-      "Dijual": "bg-slate-100 text-slate-600 border-slate-500 hover:bg-slate-600 hover:text-white hover:border-slate-600"
+      "Rusak": "bg-red-50 text-red-700 border-red-500 hover:bg-red-600 hover:text-white hover:border-red-600",
+      "Rusak Berat": "bg-red-50 text-red-700 border-red-500 hover:bg-red-600 hover:text-white hover:border-red-600",
     };
     return s[kondisi] || "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-600 hover:text-white hover:border-slate-600";
   };
@@ -953,10 +952,9 @@ export default function DaftarAsetPage() {
   const getKondisiBadgeStatic = (kondisi) => {
     const s = {
       "Siap Digunakan": "bg-emerald-50 text-emerald-700 border-emerald-500",
-      "Rusak": "bg-red-50 text-red-700 border-red-500",
-      "Rusak Berat": "bg-rose-900 text-white border-rose-950",
       "Maintenance": "bg-amber-50 text-amber-700 border-amber-500",
-      "Dijual": "bg-slate-100 text-slate-600 border-slate-500"
+      "Rusak": "bg-red-50 text-red-700 border-red-500",
+      "Rusak Berat": "bg-red-50 text-red-700 border-red-500",
     };
     return s[kondisi] || "bg-slate-50 text-slate-700 border-slate-200";
   };
@@ -966,10 +964,10 @@ export default function DaftarAsetPage() {
     if (Array.isArray(item.units) && item.units.length > 0) {
       const counts = {};
       item.units.forEach((u) => {
-        const k = u.kondisi || "Siap Digunakan";
+        const k = u.kondisi === "Rusak Berat" ? "Rusak" : (u.kondisi || "Siap Digunakan");
         counts[k] = (counts[k] || 0) + 1;
       });
-      const order = ["Siap Digunakan", "Maintenance", "Rusak", "Rusak Berat", "Dijual"];
+      const order = ["Siap Digunakan", "Maintenance", "Rusak"];
       const result = [];
       order.forEach((k) => {
         if (counts[k]) {
@@ -984,15 +982,13 @@ export default function DaftarAsetPage() {
     }
     const result = [];
     const ready = Number(item.readyUnitsCount ?? item.jumlah ?? 0);
-    const rusak = Number(item.rusakUnitsCount || 0);
-    const rusakBerat = Number(item.rusakBeratUnitsCount || 0);
     const maint = Number(item.maintenanceUnitsCount || 0);
+    const rusak = Number((item.rusakUnitsCount || 0) + (item.rusakBeratUnitsCount || 0));
     const total = Number(item.totalUnitsCount ?? item.jumlahTotal ?? item.jumlah ?? 1);
 
     if (ready > 0) result.push({ kondisi: "Siap Digunakan", count: ready });
     if (maint > 0) result.push({ kondisi: "Maintenance", count: maint });
     if (rusak > 0) result.push({ kondisi: "Rusak", count: rusak });
-    if (rusakBerat > 0) result.push({ kondisi: "Rusak Berat", count: rusakBerat });
 
     if (result.length === 0) {
       result.push({ kondisi: item.kondisi || "Siap Digunakan", count: total });
@@ -1028,8 +1024,7 @@ export default function DaftarAsetPage() {
       "Siap Digunakan": "SIAP",
       "Maintenance": "MAINT",
       "Rusak": "RUSAK",
-      "Rusak Berat": "R.BERAT",
-      "Dijual": "DIJUAL"
+      "Rusak Berat": "RUSAK",
     };
 
     const getShort = (b) => {
@@ -2291,13 +2286,16 @@ export default function DaftarAsetPage() {
                       Total: {assetUnitsList.length} Unit
                     </span>
                     <span className="px-2 sm:px-2.5 py-1 rounded-lg text-[11px] sm:text-xs font-medium bg-emerald-50 border border-emerald-200 text-emerald-800 shadow-xs">
-                      Siap: {assetUnitsList.filter((u) => u.kondisi === "Siap Digunakan").length} Unit
+                      Siap: {assetUnitsList.filter((u) => (u.kondisi === "Siap Digunakan" || !u.kondisi) && u.status_pinjam !== "Dipinjam").length} Unit
                     </span>
-                    <span className="px-2 sm:px-2.5 py-1 rounded-lg text-[11px] sm:text-xs font-medium bg-rose-50 border border-rose-200 text-rose-800 shadow-xs">
-                      Rusak: {assetUnitsList.filter((u) => u.kondisi === "Rusak" || u.kondisi === "Rusak Berat").length} Unit
+                    <span className="px-2 sm:px-2.5 py-1 rounded-lg text-[11px] sm:text-xs font-medium bg-blue-50 border border-blue-200 text-blue-800 shadow-xs">
+                      Dipinjam: {assetUnitsList.filter((u) => u.kondisi === "Sedang Dipinjam" || u.status_pinjam === "Dipinjam").length} Unit
                     </span>
                     <span className="px-2 sm:px-2.5 py-1 rounded-lg text-[11px] sm:text-xs font-medium bg-amber-50 border border-amber-200 text-amber-800 shadow-xs">
                       Maintenance: {assetUnitsList.filter((u) => u.kondisi === "Maintenance").length} Unit
+                    </span>
+                    <span className="px-2 sm:px-2.5 py-1 rounded-lg text-[11px] sm:text-xs font-medium bg-rose-50 border border-rose-200 text-rose-800 shadow-xs">
+                      Rusak: {assetUnitsList.filter((u) => u.kondisi === "Rusak" || u.kondisi === "Rusak Berat").length} Unit
                     </span>
                   </div>
 
@@ -2408,6 +2406,8 @@ export default function DaftarAsetPage() {
                                 ? "bg-rose-50/50 border-rose-200"
                                 : unit.kondisi === "Maintenance"
                                 ? "bg-amber-50/40 border-amber-200"
+                                : unit.kondisi === "Sedang Dipinjam" || unit.status_pinjam === "Dipinjam"
+                                ? "bg-blue-50/40 border-blue-200"
                                 : "bg-white border-slate-200 shadow-xs"
                             }`}
                           >
@@ -2521,10 +2521,10 @@ export default function DaftarAsetPage() {
                                 className={`w-full text-center py-1.5 px-3 rounded-lg text-xs font-semibold uppercase tracking-wider border cursor-pointer focus:outline-none ${
                                   unit.kondisi === "Siap Digunakan"
                                     ? "bg-emerald-50 text-emerald-700 border-emerald-300"
-                                    : unit.kondisi === "Rusak" || unit.kondisi === "Rusak Berat"
-                                    ? "bg-rose-50 text-rose-700 border-rose-300"
                                     : unit.kondisi === "Maintenance"
                                     ? "bg-amber-50 text-amber-700 border-amber-300"
+                                    : unit.kondisi === "Rusak" || unit.kondisi === "Rusak Berat"
+                                    ? "bg-rose-50 text-rose-700 border-rose-300"
                                     : "bg-slate-100 text-slate-700 border-slate-300"
                                 }`}
                               >
@@ -2568,6 +2568,8 @@ export default function DaftarAsetPage() {
                                       ? "bg-rose-50/40"
                                       : unit.kondisi === "Maintenance"
                                       ? "bg-amber-50/30"
+                                      : unit.kondisi === "Sedang Dipinjam" || unit.status_pinjam === "Dipinjam"
+                                      ? "bg-blue-50/30"
                                       : idx % 2 === 0
                                       ? "bg-white"
                                       : "bg-slate-50/40"
@@ -2634,10 +2636,10 @@ export default function DaftarAsetPage() {
                                       className={`w-full text-center px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider border transition-all cursor-pointer focus:outline-none ${
                                         unit.kondisi === "Siap Digunakan"
                                           ? "bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100"
-                                          : unit.kondisi === "Rusak" || unit.kondisi === "Rusak Berat"
-                                          ? "bg-rose-50 text-rose-700 border-rose-300 hover:bg-rose-100"
                                           : unit.kondisi === "Maintenance"
                                           ? "bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100"
+                                          : unit.kondisi === "Rusak" || unit.kondisi === "Rusak Berat"
+                                          ? "bg-rose-50 text-rose-700 border-rose-300 hover:bg-rose-100"
                                           : "bg-slate-100 text-slate-700 border-slate-300"
                                       }`}
                                       title="Ubah kondisi unit fisik ini"

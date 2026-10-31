@@ -136,91 +136,85 @@ export async function getDashboardStats() {
     .filter(p => p.status === 'Sedang Dipinjam' || p.status === 'Menunggu Verifikasi')
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-  // ── Total Aset: jumlah keseluruhan unit aset KECUALI yang kondisinya "Dijual" atau "Rusak Berat" ──
-  const totalAset = assets
-    .filter(a => a.kondisi !== "Dijual" && a.kondisi !== "Rusak Berat")
-    .reduce((sum, a) => sum + (a.totalUnitsCount !== undefined ? Number(a.totalUnitsCount) : (parseInt(a.jumlahTotal) || parseInt(a.jumlah) || 0)), 0);
-
-  // ── Aksesoris: jumlah unit aksesoris KECUALI "Dijual" atau "Rusak Berat" ──
-  const totalAksesoris = aksesoris
-    .filter(a => a.kondisi !== "Dijual" && a.kondisi !== "Rusak Berat")
-    .reduce((sum, a) => sum + (parseInt(a.jumlahTotal) || parseInt(a.jumlahUnit) || 0), 0);
-
-  // ── Siap Digunakan: unit aset yang siap digunakan dan tersedia ──
-  const tersedia = assets
-    .filter(a => a.kondisi !== "Dijual" && a.kondisi !== "Rusak Berat")
-    .reduce((sum, a) => {
-      if (a.readyUnitsCount !== undefined) {
-        return sum + Number(a.readyUnitsCount);
-      }
-      return a.kondisi === "Siap Digunakan" ? sum + (parseInt(a.jumlah) || 0) : sum;
-    }, 0);
-
-  // ── Rusak: jumlah unit fisik yang berkondisi "Rusak" ──
-  const rusak = assets
-    .filter(a => a.kondisi !== "Dijual")
-    .reduce((sum, a) => {
-      if (a.rusakUnitsCount !== undefined) {
-        return sum + Number(a.rusakUnitsCount) + Number(a.rusakBeratUnitsCount || 0);
-      }
-      return (a.kondisi === "Rusak" || a.kondisi === "Rusak Berat") ? sum + (parseInt(a.jumlahTotal) || parseInt(a.jumlah) || 0) : sum;
-    }, 0);
-
-  // ── Maintenance: jumlah unit fisik yang berkondisi "Maintenance" ──
-  const maintenance = assets
-    .filter(a => a.kondisi !== "Dijual" && a.kondisi !== "Rusak Berat")
-    .reduce((sum, a) => {
-      if (a.maintenanceUnitsCount !== undefined) {
-        return sum + Number(a.maintenanceUnitsCount);
-      }
-      return a.kondisi === "Maintenance" ? sum + (parseInt(a.jumlahTotal) || parseInt(a.jumlah) || 0) : sum;
-    }, 0);
-
-  // ── Dipinjam Aset: HANYA jika ada peminjaman aktif riil (status 'Sedang Dipinjam' / 'Menunggu Verifikasi') ──
+  // ── 1. Dipinjam (Aset & Aksesoris) ──
   const dipinjamAsetFromLoans = activeLoans.reduce((sum, p) => sum + (parseInt(p.totalAsetPinjam) || 0), 0);
   const dipinjamUnitsFromAssets = assets.reduce((sum, a) => sum + (parseInt(a.dipinjamUnitsCount) || 0), 0);
   const dipinjamAset = activeLoans.length > 0
     ? Math.max(dipinjamAsetFromLoans, dipinjamUnitsFromAssets)
     : 0;
 
-  // ── Dipinjam Aksesoris: HANYA jika ada peminjaman aktif riil ──
+  const dipinjamAksesorisFromLoans = activeLoans.reduce((sum, p) => sum + (parseInt(p.totalAksesorisPinjam) || 0), 0);
+  const dipinjamUnitsFromAksesoris = aksesoris.reduce((sum, a) => sum + (parseInt(a.dipinjamUnitsCount) || 0), 0);
   const dipinjamAksesoris = activeLoans.length > 0
-    ? activeLoans.reduce((sum, p) => sum + (parseInt(p.totalAksesorisPinjam) || 0), 0)
+    ? Math.max(dipinjamAksesorisFromLoans, dipinjamUnitsFromAksesoris)
     : 0;
-
-  const aksesorisRusak = aksesoris
-    .filter(a => a.kondisi === "Rusak" || a.kondisi === "Rusak Berat")
-    .reduce((sum, a) => sum + (parseInt(a.jumlahTotal) || parseInt(a.jumlahUnit) || 0), 0);
-
-  const aksesorisMaintenance = aksesoris
-    .filter(a => a.kondisi === "Maintenance")
-    .reduce((sum, a) => sum + (parseInt(a.jumlahTotal) || parseInt(a.jumlahUnit) || 0), 0);
 
   const dipinjam = dipinjamAset + dipinjamAksesoris;
 
-  // ── Aksesoris Tersedia (pie chart): hanya yang kondisi "Siap Digunakan" dikurangi yang dipinjam ──
-  const aksesorisTersediaCount = Math.max(
-    0,
-    aksesoris
-      .filter(a => a.kondisi === "Siap Digunakan")
-      .reduce((sum, a) => sum + (parseInt(a.jumlahUnit) || 0), 0) - dipinjamAksesoris
-  );
+  // ── 2. Siap Digunakan (Tersedia) ──
+  const tersedia = assets.reduce((sum, a) => {
+    if (a.readyUnitsCount !== undefined) {
+      return sum + Number(a.readyUnitsCount);
+    }
+    return a.kondisi === "Siap Digunakan" ? Math.max(0, (parseInt(a.jumlah) || 0) - dipinjamAset) : sum;
+  }, 0);
+
+  const aksesorisTersediaCount = aksesoris.reduce((sum, a) => {
+    if (a.readyUnitsCount !== undefined) {
+      return sum + Number(a.readyUnitsCount);
+    }
+    return a.kondisi === "Siap Digunakan" ? Math.max(0, (parseInt(a.jumlahUnit) || 0) - dipinjamAksesoris) : sum;
+  }, 0);
+
+  // ── 3. Maintenance ──
+  const maintenance = assets.reduce((sum, a) => {
+    if (a.maintenanceUnitsCount !== undefined) {
+      return sum + Number(a.maintenanceUnitsCount);
+    }
+    return a.kondisi === "Maintenance" ? sum + (parseInt(a.jumlahTotal) || parseInt(a.jumlah) || 0) : sum;
+  }, 0);
+
+  const aksesorisMaintenance = aksesoris.reduce((sum, a) => {
+    if (a.maintenanceUnitsCount !== undefined) {
+      return sum + Number(a.maintenanceUnitsCount);
+    }
+    return a.kondisi === "Maintenance" ? sum + (parseInt(a.jumlahTotal) || parseInt(a.jumlahUnit) || 0) : sum;
+  }, 0);
+
+  // ── 4. Rusak (semua kondisi rusak) ──
+  const rusak = assets.reduce((sum, a) => {
+    if (a.rusakUnitsCount !== undefined) {
+      return sum + Number(a.rusakUnitsCount) + Number(a.rusakBeratUnitsCount || 0);
+    }
+    return (a.kondisi === "Rusak" || a.kondisi === "Rusak Berat") ? sum + (parseInt(a.jumlahTotal) || parseInt(a.jumlah) || 0) : sum;
+  }, 0);
+
+  const aksesorisRusak = aksesoris.reduce((sum, a) => {
+    if (a.rusakUnitsCount !== undefined) {
+      return sum + Number(a.rusakUnitsCount) + Number(a.rusakBeratUnitsCount || 0);
+    }
+    return (a.kondisi === "Rusak" || a.kondisi === "Rusak Berat") ? sum + (parseInt(a.jumlahTotal) || parseInt(a.jumlahUnit) || 0) : sum;
+  }, 0);
+
+  // ── Total: Penjumlahan 4 kondisi fisik (Siap Digunakan + Sedang Dipinjam + Maintenance + Rusak) ──
+  const totalAset = tersedia + dipinjamAset + maintenance + rusak;
+  const totalAksesoris = aksesorisTersediaCount + dipinjamAksesoris + aksesorisMaintenance + aksesorisRusak;
 
   // ── Total Nilai Aset: periksa tipeHarga ('Per Paket' = hargaAset, 'Per Unit' = hargaAset × jumlahTotal) ──
   const totalNilaiAset = assets
-    .filter(a => a.kondisi !== "Dijual" && a.kondisi !== "Rusak Berat")
+    .filter(a => a.kondisi !== "Rusak")
     .reduce((sum, a) => {
       const harga = parseInt(a.hargaAset) || 0;
-      const total = parseInt(a.jumlahTotal) || 0;
+      const total = parseInt(a.jumlahTotal) || parseInt(a.jumlah) || 0;
       return sum + (a.tipeHarga === "Per Paket" ? harga : harga * total);
     }, 0);
 
   // ── Total Nilai Aksesoris: periksa tipeHarga ('Per Paket' = hargaAset, 'Per Unit' = hargaAset × jumlahTotal) ──
   const totalNilaiAksesoris = aksesoris
-    .filter(a => a.kondisi !== "Dijual" && a.kondisi !== "Rusak Berat")
+    .filter(a => a.kondisi !== "Rusak")
     .reduce((sum, a) => {
       const harga = parseInt(a.hargaAset) || 0;
-      const total = parseInt(a.jumlahTotal) || 0;
+      const total = parseInt(a.jumlahTotal) || parseInt(a.jumlahUnit) || 0;
       return sum + (a.tipeHarga === "Per Paket" ? harga : harga * total);
     }, 0);
 

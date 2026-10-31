@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Waktu pembuatan: 22 Okt 2026 pada 12.12
+-- Waktu pembuatan: 31 Okt 2026 pada 08.14
 -- Versi server: 10.4.32-MariaDB
 -- Versi PHP: 8.2.12
 
@@ -39,7 +39,7 @@ CREATE TABLE `aksesoris` (
   `harga_aset` bigint(20) DEFAULT NULL,
   `tipe_harga` enum('Per Unit','Per Paket') NOT NULL DEFAULT 'Per Unit',
   `tanggal_pembelian` date DEFAULT NULL,
-  `kondisi` enum('Siap Digunakan','Rusak','Rusak Berat','Maintenance','Dijual') DEFAULT 'Siap Digunakan',
+  `kondisi` enum('Siap Digunakan','Maintenance','Rusak') DEFAULT 'Siap Digunakan',
   `lokasi` varchar(255) DEFAULT NULL,
   `jenis_aset` enum('Galeria Studio','Galeria Production') DEFAULT NULL,
   `gambar` varchar(500) DEFAULT NULL,
@@ -61,7 +61,7 @@ CREATE TABLE `aksesoris_units` (
   `kode_unit` varchar(60) NOT NULL,
   `nama_unit` varchar(255) DEFAULT NULL,
   `no_sn` varchar(100) DEFAULT NULL,
-  `kondisi` enum('Siap Digunakan','Rusak','Rusak Berat','Maintenance','Dijual') DEFAULT 'Siap Digunakan',
+  `kondisi` enum('Siap Digunakan','Maintenance','Rusak') DEFAULT 'Siap Digunakan',
   `status_pinjam` enum('Tersedia','Dipinjam') DEFAULT 'Tersedia',
   `lokasi_unit` varchar(255) DEFAULT NULL,
   `keterangan` text DEFAULT NULL,
@@ -87,7 +87,7 @@ CREATE TABLE `assets` (
   `spesifikasi` text DEFAULT NULL,
   `lokasi_aset` varchar(255) DEFAULT NULL,
   `jenis_aset` enum('Galeria Studio','Galeria Production') DEFAULT NULL,
-  `kondisi` enum('Siap Digunakan','Rusak','Rusak Berat','Maintenance','Dijual') DEFAULT 'Siap Digunakan',
+  `kondisi` enum('Siap Digunakan','Maintenance','Rusak') DEFAULT 'Siap Digunakan',
   `unit` varchar(100) DEFAULT NULL,
   `gambar` varchar(255) DEFAULT NULL,
   `keterangan` text DEFAULT NULL,
@@ -101,6 +101,56 @@ CREATE TABLE `assets` (
   `user_id` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+--
+-- Dumping data untuk tabel `assets`
+--
+
+INSERT INTO `assets` (`id`, `kode_aset`, `nama_aset`, `pengguna`, `kategori`, `merek`, `model`, `no_sn`, `spesifikasi`, `lokasi_aset`, `jenis_aset`, `kondisi`, `unit`, `gambar`, `keterangan`, `created_at`, `updated_at`, `jumlah`, `harga_aset`, `tipe_harga`, `jumlah_total`, `tanggal_pembelian`, `user_id`) VALUES
+(153, 'AST-GPRO-VID-001', 'Videotron a - 50 x 100 ncled', 'Mushsin', 'Videotron', 'NCLED', NULL, NULL, NULL, 'GUDANG', 'Galeria Production', 'Siap Digunakan', NULL, NULL, 'Berisi 6 kabinet: a1, a2, a3, a4, a5, a6', '2026-10-23 07:35:56', '2026-10-31 07:04:02', 0, 25000000.00, 'Per Paket', 6, NULL, 1),
+(154, 'AST-GPRO-VID-002', 'Videotron b - 50 x 100 ncled', 'Mushsin', 'Videotron', 'NCLED', NULL, NULL, NULL, 'GUDANG', 'Galeria Production', 'Siap Digunakan', NULL, NULL, 'Berisi 6 kabinet: b1, b2, b3, b4, b5, b6', '2026-10-23 07:35:56', '2026-10-31 07:04:02', 0, 25000000.00, 'Per Paket', 6, NULL, 1),
+(155, 'AST-GPRO-VID-003', 'Videotron c - 50 x 100 ncled', 'Mushsin', 'Videotron', 'NCLED', NULL, NULL, NULL, 'GUDANG', 'Galeria Production', 'Siap Digunakan', NULL, NULL, 'Berisi 6 kabinet: c1, c2, c3, c4, c5, c6', '2026-10-23 07:35:56', '2026-10-31 07:04:02', 0, 25000000.00, 'Per Paket', 6, NULL, 1),
+(156, 'AST-GPRO-VID-004', 'Videotron d - 50 x 100 ncled', 'Mushsin', 'Videotron', 'NCLED', NULL, NULL, NULL, 'GUDANG', 'Galeria Production', 'Siap Digunakan', NULL, NULL, 'Berisi 6 kabinet: d1, d2, d3, d4, d5, d6', '2026-10-23 07:35:56', '2026-10-31 07:04:02', 3, 25000000.00, 'Per Paket', 6, NULL, 1),
+(157, 'AST-GPRO-VID-005', 'Videotron e - 50 x 100 ncled', 'Mushsin', 'Videotron', 'NCLED', NULL, NULL, NULL, 'GUDANG', 'Galeria Production', 'Siap Digunakan', NULL, NULL, 'Berisi 6 kabinet: e1, e2, e3, e4, e5, e6', '2026-10-23 07:35:56', '2026-10-23 07:35:56', 6, 25000000.00, 'Per Paket', 6, NULL, 1),
+(158, 'AST-GPRO-VID-006', 'Videotron f - 50 x 100 ncled', 'Mushsin', 'Videotron', 'NCLED', NULL, NULL, NULL, 'GUDANG', 'Galeria Production', 'Siap Digunakan', NULL, NULL, 'Berisi 6 kabinet: f1, f2, f3, f4, f5, f6', '2026-10-23 07:35:56', '2026-10-23 07:35:56', 6, 25000000.00, 'Per Paket', 6, NULL, 1),
+(159, 'AST-GPRO-VID-007', 'Videotron g - 50 x 100 ncled', 'Mushsin', 'Videotron', 'NCLED', NULL, NULL, NULL, 'GUDANG', 'Galeria Production', 'Siap Digunakan', NULL, NULL, 'Berisi 6 kabinet: g1, g2, g3, g4, g5, g6', '2026-10-23 07:35:56', '2026-10-23 07:35:56', 6, 25000000.00, 'Per Paket', 6, NULL, 1),
+(160, 'AST-GPRO-VID-008', 'Videotron h - 50 x 100 ncled', 'Mushsin', 'Videotron', 'NCLED', NULL, NULL, NULL, 'GUDANG', 'Galeria Production', 'Siap Digunakan', NULL, NULL, 'Berisi 6 kabinet: h1, h2, h3, h4, h5, h6', '2026-10-23 07:35:56', '2026-10-23 07:35:56', 6, 25000000.00, 'Per Paket', 6, NULL, 1),
+(161, 'AST-GPRO-VID-009', 'Videotron i - 50 x 100 ncled', 'Mushsin', 'Videotron', 'NCLED', NULL, NULL, NULL, 'GUDANG', 'Galeria Production', 'Siap Digunakan', NULL, NULL, 'Berisi 6 kabinet: i1, i2, i3, i4, i5, i6', '2026-10-23 07:35:56', '2026-10-23 07:35:56', 6, 25000000.00, 'Per Paket', 6, NULL, 1),
+(162, 'AST-GPRO-VID-010', 'Videotron j - 50 x 100 ncled', 'Mushsin', 'Videotron', 'NCLED', NULL, NULL, NULL, 'GUDANG', 'Galeria Production', 'Siap Digunakan', NULL, NULL, 'Berisi 6 kabinet: j1, j2, j3, j4, j5, j6', '2026-10-23 07:35:56', '2026-10-23 07:35:56', 6, 25000000.00, 'Per Paket', 6, NULL, 1),
+(163, 'AST-GPRO-VID-011', 'Videotron k - 50 x 100 ncled', 'Mushsin', 'Videotron', 'NCLED', NULL, NULL, NULL, 'GUDANG', 'Galeria Production', 'Siap Digunakan', NULL, NULL, 'Berisi 6 kabinet: k1, k2, k3, k4, k5, k6', '2026-10-23 07:35:56', '2026-10-23 07:35:56', 6, 25000000.00, 'Per Paket', 6, NULL, 1),
+(164, 'AST-GPRO-VID-012', 'Videotron l - 50 x 100 ncled', 'Mushsin', 'Videotron', 'NCLED', NULL, NULL, NULL, 'GUDANG', 'Galeria Production', 'Siap Digunakan', NULL, NULL, 'Berisi 6 kabinet: l1, l2, l3, l4, l5, l6', '2026-10-23 07:35:56', '2026-10-23 07:35:56', 6, 25000000.00, 'Per Paket', 6, NULL, 1),
+(165, 'AST-GPRO-VID-013', 'Videotron m - 50 x 100 ncled', 'Mushsin', 'Videotron', 'NCLED', NULL, NULL, NULL, 'GUDANG', 'Galeria Production', 'Siap Digunakan', NULL, NULL, 'Berisi 6 kabinet: m1, m2, m3, m4, m5, m6', '2026-10-23 07:35:56', '2026-10-23 07:35:56', 6, 25000000.00, 'Per Paket', 6, NULL, 1),
+(166, 'AST-GPRO-VID-014', 'Videotron n - 50 x 100 ncled', 'Mushsin', 'Videotron', 'NCLED', NULL, NULL, NULL, 'GUDANG', 'Galeria Production', 'Siap Digunakan', NULL, NULL, 'Berisi 6 kabinet: n1, n2, n3, n4, n5, n6', '2026-10-23 07:35:56', '2026-10-23 07:35:56', 6, 25000000.00, 'Per Paket', 6, NULL, 1),
+(167, 'AST-GPRO-VID-015', 'Videotron o - 50 x 100 ncled', 'Mushsin', 'Videotron', 'NCLED', NULL, NULL, NULL, 'GUDANG', 'Galeria Production', 'Siap Digunakan', NULL, NULL, 'Berisi 6 kabinet: o1, o2, o3, o4, o5, o6', '2026-10-23 07:35:56', '2026-10-23 07:35:56', 6, 25000000.00, 'Per Paket', 6, NULL, 1),
+(168, 'AST-GPRO-VID-016', 'Videotron p - 50 x 100 ncled', 'Mushsin', 'Videotron', 'NCLED', NULL, NULL, NULL, 'GUDANG', 'Galeria Production', 'Siap Digunakan', NULL, NULL, 'Berisi 6 kabinet: p1, p2, p3, p4, p5, p6', '2026-10-23 07:35:56', '2026-10-23 07:35:56', 6, 25000000.00, 'Per Paket', 6, NULL, 1),
+(169, 'AST-GPRO-VID-017', 'Videotron q - 50 x 100 ncled', 'Mushsin', 'Videotron', 'NCLED', NULL, NULL, NULL, 'GUDANG', 'Galeria Production', 'Siap Digunakan', NULL, NULL, 'Berisi 6 kabinet: q1, q2, q3, q4, q5, q6', '2026-10-23 07:35:56', '2026-10-23 07:35:56', 6, 25000000.00, 'Per Paket', 6, NULL, 1),
+(170, 'AST-GPRO-VID-018', 'Videotron r - 50 x 50 gkgd', 'Mushsin', 'Videotron', 'GKGD', NULL, NULL, NULL, 'GUDANG', 'Galeria Production', 'Siap Digunakan', NULL, NULL, 'Berisi 6 kabinet: r1, r2, r3, r4, r5, r6', '2026-10-23 07:35:56', '2026-10-23 07:35:56', 6, 25000000.00, 'Per Paket', 6, NULL, 1),
+(171, 'AST-GPRO-VID-019', 'Videotron s - 50 x 50 gkgd', 'Mushsin', 'Videotron', 'GKGD', NULL, NULL, NULL, 'GUDANG', 'Galeria Production', 'Siap Digunakan', NULL, NULL, 'Berisi 6 kabinet: s1, s2, s3, s4, s5, s6', '2026-10-23 07:35:56', '2026-10-23 07:35:56', 6, 25000000.00, 'Per Paket', 6, NULL, 1),
+(172, 'AST-GPRO-VID-020', 'Videotron t - 50 x 50 gkgd', 'Mushsin', 'Videotron', 'GKGD', NULL, NULL, NULL, 'GUDANG', 'Galeria Production', 'Siap Digunakan', NULL, NULL, 'Berisi 6 kabinet: t1, t2, t3, t4, t5, t6', '2026-10-23 07:35:56', '2026-10-23 07:35:56', 6, 25000000.00, 'Per Paket', 6, NULL, 1),
+(173, 'AST-GPRO-VID-021', 'Videotron u - 50 x 50 gkgd', 'Mushsin', 'Videotron', 'GKGD', NULL, NULL, NULL, 'GUDANG', 'Galeria Production', 'Siap Digunakan', NULL, NULL, 'Berisi 6 kabinet: u1, u2, u3, u4, u5, u6', '2026-10-23 07:35:56', '2026-10-23 07:35:56', 6, 25000000.00, 'Per Paket', 6, NULL, 1),
+(174, 'AST-GPRO-VID-022', 'Kabel lan 50cm', 'Mushsin', 'Videotron', NULL, NULL, NULL, NULL, 'GUDANG', 'Galeria Production', 'Siap Digunakan', NULL, NULL, NULL, '2026-10-23 07:35:56', '2026-10-31 07:04:02', 0, 0.00, 'Per Unit', 1, NULL, 1),
+(175, 'AST-GPRO-VID-023', 'Kabel lan 30 meter', 'Mushsin', 'Videotron', NULL, NULL, NULL, NULL, 'GUDANG', 'Galeria Production', 'Siap Digunakan', NULL, NULL, NULL, '2026-10-23 07:35:56', '2026-10-31 07:04:02', 0, 0.00, 'Per Unit', 1, NULL, 1),
+(176, 'AST-GPRO-VID-024', 'Kabel lan 50 meter', 'Mushsin', 'Videotron', NULL, NULL, NULL, NULL, 'GUDANG', 'Galeria Production', 'Siap Digunakan', NULL, NULL, NULL, '2026-10-23 07:35:56', '2026-10-31 07:04:02', 0, 0.00, 'Per Unit', 1, NULL, 1),
+(177, 'AST-GPRO-VID-025', 'Kabel lan 100 meter', 'Mushsin', 'Videotron', NULL, NULL, NULL, NULL, 'GUDANG', 'Galeria Production', 'Siap Digunakan', NULL, NULL, NULL, '2026-10-23 07:35:56', '2026-10-31 07:04:02', 0, 0.00, 'Per Unit', 1, NULL, 1),
+(178, 'AST-GPRO-VID-026', 'Kabel powercon 50cm', 'Mushsin', 'Videotron', NULL, NULL, NULL, NULL, 'GUDANG', 'Galeria Production', 'Siap Digunakan', NULL, NULL, NULL, '2026-10-23 07:35:56', '2026-10-31 07:04:02', 0, 0.00, 'Per Unit', 1, NULL, 1),
+(179, 'AST-GPRO-VID-027', 'Kabel powercon listrik biasa', 'Mushsin', 'Videotron', NULL, NULL, NULL, NULL, 'GUDANG', 'Galeria Production', 'Siap Digunakan', NULL, NULL, NULL, '2026-10-23 07:35:56', '2026-10-31 07:04:02', 0, 0.00, 'Per Unit', 1, NULL, 1),
+(180, 'AST-GPRO-VID-028', 'Kabel powercon listrik tiga', 'Mushsin', 'Videotron', NULL, NULL, NULL, NULL, 'GUDANG', 'Galeria Production', 'Siap Digunakan', NULL, NULL, NULL, '2026-10-23 07:35:56', '2026-10-31 07:04:02', 0, 0.00, 'Per Unit', 1, NULL, 1),
+(181, 'AST-GPRO-VID-029', 'Prosecessor vx 10', 'Mushsin', 'Videotron', NULL, NULL, NULL, NULL, 'GUDANG', 'Galeria Production', 'Siap Digunakan', NULL, NULL, NULL, '2026-10-23 07:35:56', '2026-10-23 07:35:56', 1, 0.00, 'Per Unit', 1, NULL, 1),
+(182, 'AST-GPRO-VID-030', 'Processor x2m', 'Mushsin', 'Videotron', NULL, NULL, NULL, NULL, 'GUDANG', 'Galeria Production', 'Siap Digunakan', NULL, NULL, NULL, '2026-10-23 07:35:56', '2026-10-23 07:35:56', 1, 0.00, 'Per Unit', 1, NULL, 1),
+(183, 'AST-GPRO-VID-031', 'Processor x4', 'Mushsin', 'Videotron', NULL, NULL, NULL, NULL, 'GUDANG', 'Galeria Production', 'Siap Digunakan', NULL, NULL, NULL, '2026-10-23 07:35:56', '2026-10-23 07:35:56', 1, 0.00, 'Per Unit', 1, NULL, 1),
+(184, 'AST-GPRO-VID-032', 'Rangka besi 180', 'Mushsin', 'Videotron', NULL, NULL, NULL, NULL, 'GUDANG', 'Galeria Production', 'Siap Digunakan', NULL, NULL, NULL, '2026-10-23 07:35:56', '2026-10-23 07:35:56', 1, 0.00, 'Per Unit', 1, NULL, 1),
+(185, 'AST-GPRO-VID-033', 'Rabgka besi 150', 'Mushsin', 'Videotron', NULL, NULL, NULL, NULL, 'GUDANG', 'Galeria Production', 'Siap Digunakan', NULL, NULL, NULL, '2026-10-23 07:35:56', '2026-10-23 07:35:56', 1, 0.00, 'Per Unit', 1, NULL, 1),
+(186, 'AST-GPRO-VID-034', 'Rangka besi 100', 'Mushsin', 'Videotron', NULL, NULL, NULL, NULL, 'GUDANG', 'Galeria Production', 'Siap Digunakan', NULL, NULL, NULL, '2026-10-23 07:35:56', '2026-10-23 07:35:56', 1, 0.00, 'Per Unit', 1, NULL, 1),
+(187, 'AST-GPRO-VID-035', 'Rangka besi 50', 'Mushsin', 'Videotron', NULL, NULL, NULL, NULL, 'GUDANG', 'Galeria Production', 'Siap Digunakan', NULL, NULL, NULL, '2026-10-23 07:35:56', '2026-10-23 07:35:56', 1, 0.00, 'Per Unit', 1, NULL, 1),
+(188, 'AST-GPRO-VID-036', 'Besi dasar 200', 'Mushsin', 'Videotron', NULL, NULL, NULL, NULL, 'GUDANG', 'Galeria Production', 'Siap Digunakan', NULL, NULL, NULL, '2026-10-23 07:35:56', '2026-10-23 07:35:56', 1, 0.00, 'Per Unit', 1, NULL, 1),
+(189, 'AST-GPRO-VID-037', 'Besi dasar 100', 'Mushsin', 'Videotron', NULL, NULL, NULL, NULL, 'GUDANG', 'Galeria Production', 'Siap Digunakan', NULL, NULL, NULL, '2026-10-23 07:35:56', '2026-10-23 07:35:56', 1, 0.00, 'Per Unit', 1, NULL, 1),
+(190, 'AST-GPRO-VID-038', 'Penyambung', 'Mushsin', 'Videotron', NULL, NULL, NULL, NULL, 'GUDANG', 'Galeria Production', 'Siap Digunakan', NULL, NULL, NULL, '2026-10-23 07:35:56', '2026-10-23 07:35:56', 1, 0.00, 'Per Unit', 1, NULL, 1),
+(191, 'AST-GPRO-VID-039', 'Penyangga', 'Mushsin', 'Videotron', NULL, NULL, NULL, NULL, 'GUDANG', 'Galeria Production', 'Siap Digunakan', NULL, NULL, NULL, '2026-10-23 07:35:56', '2026-10-23 07:35:56', 1, 0.00, 'Per Unit', 1, NULL, 1),
+(192, 'AST-GPRO-VID-040', 'Dudukan', 'Mushsin', 'Videotron', NULL, NULL, NULL, NULL, 'GUDANG', 'Galeria Production', 'Siap Digunakan', NULL, NULL, NULL, '2026-10-23 07:35:56', '2026-10-23 07:35:56', 1, 0.00, 'Per Unit', 1, NULL, 1),
+(193, 'AST-GPRO-VID-041', 'T kecil', 'Mushsin', 'Videotron', NULL, NULL, NULL, NULL, 'GUDANG', 'Galeria Production', 'Siap Digunakan', NULL, NULL, NULL, '2026-10-23 07:35:56', '2026-10-23 07:35:56', 1, 0.00, 'Per Unit', 1, NULL, 1),
+(194, 'AST-GPRO-VID-042', 'T besar', 'Mushsin', 'Videotron', NULL, NULL, NULL, NULL, 'GUDANG', 'Galeria Production', 'Siap Digunakan', NULL, NULL, NULL, '2026-10-23 07:35:56', '2026-10-23 07:35:56', 1, 0.00, 'Per Unit', 1, NULL, 1),
+(195, 'AST-GPRO-VID-043', 'Galon air', 'Mushsin', 'Videotron', NULL, NULL, NULL, NULL, 'GUDANG', 'Galeria Production', 'Siap Digunakan', NULL, NULL, NULL, '2026-10-23 07:35:56', '2026-10-23 07:35:56', 1, 0.00, 'Per Unit', 1, NULL, 1),
+(196, 'AST-GPRO-VID-044', 'Panel listrik led', 'Mushsin', 'Videotron', NULL, NULL, NULL, NULL, 'GUDANG', 'Galeria Production', 'Siap Digunakan', NULL, NULL, NULL, '2026-10-23 07:35:56', '2026-10-23 07:35:56', 1, 0.00, 'Per Unit', 1, NULL, 1);
+
 -- --------------------------------------------------------
 
 --
@@ -113,13 +163,168 @@ CREATE TABLE `asset_units` (
   `kode_unit` varchar(60) NOT NULL,
   `nama_unit` varchar(255) DEFAULT NULL,
   `no_sn` varchar(100) DEFAULT NULL,
-  `kondisi` enum('Siap Digunakan','Rusak','Rusak Berat','Maintenance','Dijual') DEFAULT 'Siap Digunakan',
+  `kondisi` enum('Siap Digunakan','Maintenance','Rusak') DEFAULT 'Siap Digunakan',
   `status_pinjam` enum('Tersedia','Dipinjam') DEFAULT 'Tersedia',
   `lokasi_unit` varchar(255) DEFAULT NULL,
   `keterangan` text DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data untuk tabel `asset_units`
+--
+
+INSERT INTO `asset_units` (`id`, `asset_id`, `kode_unit`, `nama_unit`, `no_sn`, `kondisi`, `status_pinjam`, `lokasi_unit`, `keterangan`, `created_at`, `updated_at`) VALUES
+(299, 153, 'AST-GPRO-VID-001-01', 'A1', NULL, 'Maintenance', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: a1, a2, a3, a4, a5, a6', '2026-10-23 07:35:56', '2026-10-23 10:23:37'),
+(300, 153, 'AST-GPRO-VID-001-02', 'A2', NULL, 'Maintenance', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: a1, a2, a3, a4, a5, a6', '2026-10-23 07:35:56', '2026-10-23 10:23:39'),
+(301, 153, 'AST-GPRO-VID-001-03', 'A3', NULL, 'Rusak', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: a1, a2, a3, a4, a5, a6', '2026-10-23 07:35:56', '2026-10-23 10:23:40'),
+(302, 153, 'AST-GPRO-VID-001-04', 'A4', NULL, 'Rusak', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: a1, a2, a3, a4, a5, a6', '2026-10-23 07:35:56', '2026-10-23 10:23:42'),
+(303, 153, 'AST-GPRO-VID-001-05', 'A5', NULL, 'Siap Digunakan', 'Dipinjam', 'GUDANG', 'Berisi 6 kabinet: a1, a2, a3, a4, a5, a6', '2026-10-23 07:35:56', '2026-10-31 07:04:02'),
+(304, 153, 'AST-GPRO-VID-001-06', 'A6', NULL, 'Siap Digunakan', 'Dipinjam', 'GUDANG', 'Berisi 6 kabinet: a1, a2, a3, a4, a5, a6', '2026-10-23 07:35:56', '2026-10-31 07:04:02'),
+(305, 154, 'AST-GPRO-VID-002-01', 'B1', NULL, 'Siap Digunakan', 'Dipinjam', 'GUDANG', 'Berisi 6 kabinet: b1, b2, b3, b4, b5, b6', '2026-10-23 07:35:56', '2026-10-31 07:04:02'),
+(306, 154, 'AST-GPRO-VID-002-02', 'B2', NULL, 'Siap Digunakan', 'Dipinjam', 'GUDANG', 'Berisi 6 kabinet: b1, b2, b3, b4, b5, b6', '2026-10-23 07:35:56', '2026-10-31 07:04:02'),
+(307, 154, 'AST-GPRO-VID-002-03', 'B3', NULL, 'Siap Digunakan', 'Dipinjam', 'GUDANG', 'Berisi 6 kabinet: b1, b2, b3, b4, b5, b6', '2026-10-23 07:35:56', '2026-10-31 07:04:02'),
+(308, 154, 'AST-GPRO-VID-002-04', 'B4', NULL, 'Siap Digunakan', 'Dipinjam', 'GUDANG', 'Berisi 6 kabinet: b1, b2, b3, b4, b5, b6', '2026-10-23 07:35:56', '2026-10-31 07:04:02'),
+(309, 154, 'AST-GPRO-VID-002-05', 'B5', NULL, 'Siap Digunakan', 'Dipinjam', 'GUDANG', 'Berisi 6 kabinet: b1, b2, b3, b4, b5, b6', '2026-10-23 07:35:56', '2026-10-31 07:04:02'),
+(310, 154, 'AST-GPRO-VID-002-06', 'B6', NULL, 'Siap Digunakan', 'Dipinjam', 'GUDANG', 'Berisi 6 kabinet: b1, b2, b3, b4, b5, b6', '2026-10-23 07:35:56', '2026-10-31 07:04:02'),
+(311, 155, 'AST-GPRO-VID-003-01', 'C1', NULL, 'Siap Digunakan', 'Dipinjam', 'GUDANG', 'Berisi 6 kabinet: c1, c2, c3, c4, c5, c6', '2026-10-23 07:35:56', '2026-10-31 07:04:02'),
+(312, 155, 'AST-GPRO-VID-003-02', 'C2', NULL, 'Siap Digunakan', 'Dipinjam', 'GUDANG', 'Berisi 6 kabinet: c1, c2, c3, c4, c5, c6', '2026-10-23 07:35:56', '2026-10-31 07:04:02'),
+(313, 155, 'AST-GPRO-VID-003-03', 'C3', NULL, 'Siap Digunakan', 'Dipinjam', 'GUDANG', 'Berisi 6 kabinet: c1, c2, c3, c4, c5, c6', '2026-10-23 07:35:56', '2026-10-31 07:04:02'),
+(314, 155, 'AST-GPRO-VID-003-04', 'C4', NULL, 'Siap Digunakan', 'Dipinjam', 'GUDANG', 'Berisi 6 kabinet: c1, c2, c3, c4, c5, c6', '2026-10-23 07:35:56', '2026-10-31 07:04:02'),
+(315, 155, 'AST-GPRO-VID-003-05', 'C5', NULL, 'Siap Digunakan', 'Dipinjam', 'GUDANG', 'Berisi 6 kabinet: c1, c2, c3, c4, c5, c6', '2026-10-23 07:35:56', '2026-10-31 07:04:02'),
+(316, 155, 'AST-GPRO-VID-003-06', 'C6', NULL, 'Siap Digunakan', 'Dipinjam', 'GUDANG', 'Berisi 6 kabinet: c1, c2, c3, c4, c5, c6', '2026-10-23 07:35:56', '2026-10-31 07:04:02'),
+(317, 156, 'AST-GPRO-VID-004-01', 'D1', NULL, 'Siap Digunakan', 'Dipinjam', 'GUDANG', 'Berisi 6 kabinet: d1, d2, d3, d4, d5, d6', '2026-10-23 07:35:56', '2026-10-31 07:04:02'),
+(318, 156, 'AST-GPRO-VID-004-02', 'D2', NULL, 'Siap Digunakan', 'Dipinjam', 'GUDANG', 'Berisi 6 kabinet: d1, d2, d3, d4, d5, d6', '2026-10-23 07:35:56', '2026-10-31 07:04:02'),
+(319, 156, 'AST-GPRO-VID-004-03', 'D3', NULL, 'Siap Digunakan', 'Dipinjam', 'GUDANG', 'Berisi 6 kabinet: d1, d2, d3, d4, d5, d6', '2026-10-23 07:35:56', '2026-10-31 07:04:02'),
+(320, 156, 'AST-GPRO-VID-004-04', 'D4', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: d1, d2, d3, d4, d5, d6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(321, 156, 'AST-GPRO-VID-004-05', 'D5', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: d1, d2, d3, d4, d5, d6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(322, 156, 'AST-GPRO-VID-004-06', 'D6', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: d1, d2, d3, d4, d5, d6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(323, 157, 'AST-GPRO-VID-005-01', 'E1', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: e1, e2, e3, e4, e5, e6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(324, 157, 'AST-GPRO-VID-005-02', 'E2', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: e1, e2, e3, e4, e5, e6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(325, 157, 'AST-GPRO-VID-005-03', 'E3', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: e1, e2, e3, e4, e5, e6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(326, 157, 'AST-GPRO-VID-005-04', 'E4', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: e1, e2, e3, e4, e5, e6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(327, 157, 'AST-GPRO-VID-005-05', 'E5', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: e1, e2, e3, e4, e5, e6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(328, 157, 'AST-GPRO-VID-005-06', 'E6', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: e1, e2, e3, e4, e5, e6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(329, 158, 'AST-GPRO-VID-006-01', 'F1', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: f1, f2, f3, f4, f5, f6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(330, 158, 'AST-GPRO-VID-006-02', 'F2', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: f1, f2, f3, f4, f5, f6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(331, 158, 'AST-GPRO-VID-006-03', 'F3', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: f1, f2, f3, f4, f5, f6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(332, 158, 'AST-GPRO-VID-006-04', 'F4', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: f1, f2, f3, f4, f5, f6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(333, 158, 'AST-GPRO-VID-006-05', 'F5', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: f1, f2, f3, f4, f5, f6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(334, 158, 'AST-GPRO-VID-006-06', 'F6', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: f1, f2, f3, f4, f5, f6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(335, 159, 'AST-GPRO-VID-007-01', 'G1', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: g1, g2, g3, g4, g5, g6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(336, 159, 'AST-GPRO-VID-007-02', 'G2', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: g1, g2, g3, g4, g5, g6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(337, 159, 'AST-GPRO-VID-007-03', 'G3', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: g1, g2, g3, g4, g5, g6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(338, 159, 'AST-GPRO-VID-007-04', 'G4', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: g1, g2, g3, g4, g5, g6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(339, 159, 'AST-GPRO-VID-007-05', 'G5', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: g1, g2, g3, g4, g5, g6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(340, 159, 'AST-GPRO-VID-007-06', 'G6', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: g1, g2, g3, g4, g5, g6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(341, 160, 'AST-GPRO-VID-008-01', 'H1', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: h1, h2, h3, h4, h5, h6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(342, 160, 'AST-GPRO-VID-008-02', 'H2', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: h1, h2, h3, h4, h5, h6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(343, 160, 'AST-GPRO-VID-008-03', 'H3', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: h1, h2, h3, h4, h5, h6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(344, 160, 'AST-GPRO-VID-008-04', 'H4', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: h1, h2, h3, h4, h5, h6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(345, 160, 'AST-GPRO-VID-008-05', 'H5', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: h1, h2, h3, h4, h5, h6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(346, 160, 'AST-GPRO-VID-008-06', 'H6', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: h1, h2, h3, h4, h5, h6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(347, 161, 'AST-GPRO-VID-009-01', 'I1', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: i1, i2, i3, i4, i5, i6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(348, 161, 'AST-GPRO-VID-009-02', 'I2', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: i1, i2, i3, i4, i5, i6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(349, 161, 'AST-GPRO-VID-009-03', 'I3', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: i1, i2, i3, i4, i5, i6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(350, 161, 'AST-GPRO-VID-009-04', 'I4', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: i1, i2, i3, i4, i5, i6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(351, 161, 'AST-GPRO-VID-009-05', 'I5', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: i1, i2, i3, i4, i5, i6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(352, 161, 'AST-GPRO-VID-009-06', 'I6', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: i1, i2, i3, i4, i5, i6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(353, 162, 'AST-GPRO-VID-010-01', 'J1', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: j1, j2, j3, j4, j5, j6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(354, 162, 'AST-GPRO-VID-010-02', 'J2', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: j1, j2, j3, j4, j5, j6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(355, 162, 'AST-GPRO-VID-010-03', 'J3', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: j1, j2, j3, j4, j5, j6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(356, 162, 'AST-GPRO-VID-010-04', 'J4', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: j1, j2, j3, j4, j5, j6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(357, 162, 'AST-GPRO-VID-010-05', 'J5', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: j1, j2, j3, j4, j5, j6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(358, 162, 'AST-GPRO-VID-010-06', 'J6', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: j1, j2, j3, j4, j5, j6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(359, 163, 'AST-GPRO-VID-011-01', 'K1', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: k1, k2, k3, k4, k5, k6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(360, 163, 'AST-GPRO-VID-011-02', 'K2', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: k1, k2, k3, k4, k5, k6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(361, 163, 'AST-GPRO-VID-011-03', 'K3', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: k1, k2, k3, k4, k5, k6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(362, 163, 'AST-GPRO-VID-011-04', 'K4', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: k1, k2, k3, k4, k5, k6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(363, 163, 'AST-GPRO-VID-011-05', 'K5', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: k1, k2, k3, k4, k5, k6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(364, 163, 'AST-GPRO-VID-011-06', 'K6', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: k1, k2, k3, k4, k5, k6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(365, 164, 'AST-GPRO-VID-012-01', 'L1', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: l1, l2, l3, l4, l5, l6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(366, 164, 'AST-GPRO-VID-012-02', 'L2', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: l1, l2, l3, l4, l5, l6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(367, 164, 'AST-GPRO-VID-012-03', 'L3', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: l1, l2, l3, l4, l5, l6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(368, 164, 'AST-GPRO-VID-012-04', 'L4', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: l1, l2, l3, l4, l5, l6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(369, 164, 'AST-GPRO-VID-012-05', 'L5', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: l1, l2, l3, l4, l5, l6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(370, 164, 'AST-GPRO-VID-012-06', 'L6', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: l1, l2, l3, l4, l5, l6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(371, 165, 'AST-GPRO-VID-013-01', 'M1', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: m1, m2, m3, m4, m5, m6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(372, 165, 'AST-GPRO-VID-013-02', 'M2', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: m1, m2, m3, m4, m5, m6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(373, 165, 'AST-GPRO-VID-013-03', 'M3', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: m1, m2, m3, m4, m5, m6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(374, 165, 'AST-GPRO-VID-013-04', 'M4', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: m1, m2, m3, m4, m5, m6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(375, 165, 'AST-GPRO-VID-013-05', 'M5', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: m1, m2, m3, m4, m5, m6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(376, 165, 'AST-GPRO-VID-013-06', 'M6', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: m1, m2, m3, m4, m5, m6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(377, 166, 'AST-GPRO-VID-014-01', 'N1', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: n1, n2, n3, n4, n5, n6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(378, 166, 'AST-GPRO-VID-014-02', 'N2', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: n1, n2, n3, n4, n5, n6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(379, 166, 'AST-GPRO-VID-014-03', 'N3', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: n1, n2, n3, n4, n5, n6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(380, 166, 'AST-GPRO-VID-014-04', 'N4', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: n1, n2, n3, n4, n5, n6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(381, 166, 'AST-GPRO-VID-014-05', 'N5', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: n1, n2, n3, n4, n5, n6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(382, 166, 'AST-GPRO-VID-014-06', 'N6', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: n1, n2, n3, n4, n5, n6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(383, 167, 'AST-GPRO-VID-015-01', 'O1', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: o1, o2, o3, o4, o5, o6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(384, 167, 'AST-GPRO-VID-015-02', 'O2', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: o1, o2, o3, o4, o5, o6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(385, 167, 'AST-GPRO-VID-015-03', 'O3', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: o1, o2, o3, o4, o5, o6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(386, 167, 'AST-GPRO-VID-015-04', 'O4', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: o1, o2, o3, o4, o5, o6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(387, 167, 'AST-GPRO-VID-015-05', 'O5', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: o1, o2, o3, o4, o5, o6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(388, 167, 'AST-GPRO-VID-015-06', 'O6', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: o1, o2, o3, o4, o5, o6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(389, 168, 'AST-GPRO-VID-016-01', 'P1', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: p1, p2, p3, p4, p5, p6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(390, 168, 'AST-GPRO-VID-016-02', 'P2', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: p1, p2, p3, p4, p5, p6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(391, 168, 'AST-GPRO-VID-016-03', 'P3', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: p1, p2, p3, p4, p5, p6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(392, 168, 'AST-GPRO-VID-016-04', 'P4', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: p1, p2, p3, p4, p5, p6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(393, 168, 'AST-GPRO-VID-016-05', 'P5', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: p1, p2, p3, p4, p5, p6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(394, 168, 'AST-GPRO-VID-016-06', 'P6', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: p1, p2, p3, p4, p5, p6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(395, 169, 'AST-GPRO-VID-017-01', 'Q1', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: q1, q2, q3, q4, q5, q6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(396, 169, 'AST-GPRO-VID-017-02', 'Q2', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: q1, q2, q3, q4, q5, q6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(397, 169, 'AST-GPRO-VID-017-03', 'Q3', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: q1, q2, q3, q4, q5, q6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(398, 169, 'AST-GPRO-VID-017-04', 'Q4', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: q1, q2, q3, q4, q5, q6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(399, 169, 'AST-GPRO-VID-017-05', 'Q5', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: q1, q2, q3, q4, q5, q6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(400, 169, 'AST-GPRO-VID-017-06', 'Q6', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: q1, q2, q3, q4, q5, q6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(401, 170, 'AST-GPRO-VID-018-01', 'R1', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: r1, r2, r3, r4, r5, r6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(402, 170, 'AST-GPRO-VID-018-02', 'R2', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: r1, r2, r3, r4, r5, r6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(403, 170, 'AST-GPRO-VID-018-03', 'R3', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: r1, r2, r3, r4, r5, r6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(404, 170, 'AST-GPRO-VID-018-04', 'R4', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: r1, r2, r3, r4, r5, r6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(405, 170, 'AST-GPRO-VID-018-05', 'R5', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: r1, r2, r3, r4, r5, r6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(406, 170, 'AST-GPRO-VID-018-06', 'R6', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: r1, r2, r3, r4, r5, r6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(407, 171, 'AST-GPRO-VID-019-01', 'S1', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: s1, s2, s3, s4, s5, s6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(408, 171, 'AST-GPRO-VID-019-02', 'S2', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: s1, s2, s3, s4, s5, s6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(409, 171, 'AST-GPRO-VID-019-03', 'S3', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: s1, s2, s3, s4, s5, s6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(410, 171, 'AST-GPRO-VID-019-04', 'S4', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: s1, s2, s3, s4, s5, s6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(411, 171, 'AST-GPRO-VID-019-05', 'S5', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: s1, s2, s3, s4, s5, s6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(412, 171, 'AST-GPRO-VID-019-06', 'S6', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: s1, s2, s3, s4, s5, s6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(413, 172, 'AST-GPRO-VID-020-01', 'T1', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: t1, t2, t3, t4, t5, t6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(414, 172, 'AST-GPRO-VID-020-02', 'T2', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: t1, t2, t3, t4, t5, t6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(415, 172, 'AST-GPRO-VID-020-03', 'T3', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: t1, t2, t3, t4, t5, t6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(416, 172, 'AST-GPRO-VID-020-04', 'T4', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: t1, t2, t3, t4, t5, t6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(417, 172, 'AST-GPRO-VID-020-05', 'T5', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: t1, t2, t3, t4, t5, t6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(418, 172, 'AST-GPRO-VID-020-06', 'T6', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: t1, t2, t3, t4, t5, t6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(419, 173, 'AST-GPRO-VID-021-01', 'U1', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: u1, u2, u3, u4, u5, u6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(420, 173, 'AST-GPRO-VID-021-02', 'U2', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: u1, u2, u3, u4, u5, u6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(421, 173, 'AST-GPRO-VID-021-03', 'U3', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: u1, u2, u3, u4, u5, u6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(422, 173, 'AST-GPRO-VID-021-04', 'U4', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: u1, u2, u3, u4, u5, u6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(423, 173, 'AST-GPRO-VID-021-05', 'U5', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: u1, u2, u3, u4, u5, u6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(424, 173, 'AST-GPRO-VID-021-06', 'U6', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', 'Berisi 6 kabinet: u1, u2, u3, u4, u5, u6', '2026-10-23 07:35:56', '2026-10-23 09:49:01'),
+(425, 174, 'AST-GPRO-VID-022-01', 'Kabel lan 50cm', NULL, 'Siap Digunakan', 'Dipinjam', 'GUDANG', NULL, '2026-10-23 07:35:56', '2026-10-31 07:04:02'),
+(426, 175, 'AST-GPRO-VID-023-01', 'Kabel lan 30 meter', NULL, 'Siap Digunakan', 'Dipinjam', 'GUDANG', NULL, '2026-10-23 07:35:56', '2026-10-31 07:04:02'),
+(427, 176, 'AST-GPRO-VID-024-01', 'Kabel lan 50 meter', NULL, 'Siap Digunakan', 'Dipinjam', 'GUDANG', NULL, '2026-10-23 07:35:56', '2026-10-31 07:04:02'),
+(428, 177, 'AST-GPRO-VID-025-01', 'Kabel lan 100 meter', NULL, 'Siap Digunakan', 'Dipinjam', 'GUDANG', NULL, '2026-10-23 07:35:56', '2026-10-31 07:04:02'),
+(429, 178, 'AST-GPRO-VID-026-01', 'Kabel powercon 50cm', NULL, 'Siap Digunakan', 'Dipinjam', 'GUDANG', NULL, '2026-10-23 07:35:56', '2026-10-31 07:04:02'),
+(430, 179, 'AST-GPRO-VID-027-01', 'Kabel powercon listrik biasa', NULL, 'Siap Digunakan', 'Dipinjam', 'GUDANG', NULL, '2026-10-23 07:35:56', '2026-10-31 07:04:02'),
+(431, 180, 'AST-GPRO-VID-028-01', 'Kabel powercon listrik tiga', NULL, 'Siap Digunakan', 'Dipinjam', 'GUDANG', NULL, '2026-10-23 07:35:56', '2026-10-31 07:04:02'),
+(432, 181, 'AST-GPRO-VID-029-01', 'Prosecessor vx 10', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', NULL, '2026-10-23 07:35:56', '2026-10-23 07:35:56'),
+(433, 182, 'AST-GPRO-VID-030-01', 'Processor x2m', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', NULL, '2026-10-23 07:35:56', '2026-10-23 07:35:56'),
+(434, 183, 'AST-GPRO-VID-031-01', 'Processor x4', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', NULL, '2026-10-23 07:35:56', '2026-10-23 07:35:56'),
+(435, 184, 'AST-GPRO-VID-032-01', 'Rangka besi 180', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', NULL, '2026-10-23 07:35:56', '2026-10-23 07:35:56'),
+(436, 185, 'AST-GPRO-VID-033-01', 'Rabgka besi 150', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', NULL, '2026-10-23 07:35:56', '2026-10-23 07:35:56'),
+(437, 186, 'AST-GPRO-VID-034-01', 'Rangka besi 100', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', NULL, '2026-10-23 07:35:56', '2026-10-23 07:35:56'),
+(438, 187, 'AST-GPRO-VID-035-01', 'Rangka besi 50', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', NULL, '2026-10-23 07:35:56', '2026-10-23 07:35:56'),
+(439, 188, 'AST-GPRO-VID-036-01', 'Besi dasar 200', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', NULL, '2026-10-23 07:35:56', '2026-10-23 07:35:56'),
+(440, 189, 'AST-GPRO-VID-037-01', 'Besi dasar 100', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', NULL, '2026-10-23 07:35:56', '2026-10-23 07:35:56'),
+(441, 190, 'AST-GPRO-VID-038-01', 'Penyambung', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', NULL, '2026-10-23 07:35:56', '2026-10-23 07:35:56'),
+(442, 191, 'AST-GPRO-VID-039-01', 'Penyangga', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', NULL, '2026-10-23 07:35:56', '2026-10-23 07:35:56'),
+(443, 192, 'AST-GPRO-VID-040-01', 'Dudukan', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', NULL, '2026-10-23 07:35:56', '2026-10-23 07:35:56'),
+(444, 193, 'AST-GPRO-VID-041-01', 'T kecil', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', NULL, '2026-10-23 07:35:56', '2026-10-23 07:35:56'),
+(445, 194, 'AST-GPRO-VID-042-01', 'T besar', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', NULL, '2026-10-23 07:35:56', '2026-10-23 07:35:56'),
+(446, 195, 'AST-GPRO-VID-043-01', 'Galon air', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', NULL, '2026-10-23 07:35:56', '2026-10-23 07:35:56'),
+(447, 196, 'AST-GPRO-VID-044-01', 'Panel listrik led', NULL, 'Siap Digunakan', 'Tersedia', 'GUDANG', NULL, '2026-10-23 07:35:56', '2026-10-23 07:35:56');
 
 -- --------------------------------------------------------
 
@@ -339,7 +544,21 @@ INSERT INTO `audit_logs` (`id`, `user_id`, `user_name`, `action`, `entity_type`,
 (194, 1, 'CEO Ultima', 'CREATE', 'Aset', '20', 'Import massal 44 aset dari file Excel', '2026-10-22 09:56:47'),
 (195, 1, 'CEO Ultima', 'UPDATE', 'Aset', '20', 'Pemisahan (Split) aset AST-GPRO-VID-001: 3 unit dipindah ke kondisi \"Siap Digunakan\" (Kode baru: AST-GPRO-VID-001-P1), sisa 3 unit.', '2026-10-22 09:57:38'),
 (196, 1, 'CEO Ultima', 'UPDATE', 'Aset', '64', 'Mengubah kondisi aset AST-GPRO-VID-001-P1 menjadi: Rusak', '2026-10-22 09:58:02'),
-(197, 1, 'CEO Ultima', 'DELETE', 'System', 'ALL', 'SUPER ADMIN menghapus seluruh data: Aset & Aksesoris', '2026-10-22 10:11:58');
+(197, 1, 'CEO Ultima', 'DELETE', 'System', 'ALL', 'SUPER ADMIN menghapus seluruh data: Aset & Aksesoris', '2026-10-22 10:11:58'),
+(198, 1, 'CEO Ultima', 'DELETE', 'Peminjaman', '15', 'Menghapus peminjaman: GKM-PJM-7', '2026-10-23 07:21:08'),
+(199, 1, 'CEO Ultima', 'DELETE', 'Peminjaman', '14', 'Menghapus peminjaman: GKM-PJM-6', '2026-10-23 07:21:10'),
+(200, 1, 'CEO Ultima', 'DELETE', 'Peminjaman', '13', 'Menghapus peminjaman: GKM-PJM-5', '2026-10-23 07:21:11'),
+(201, 1, 'CEO Ultima', 'DELETE', 'Peminjaman', '10', 'Menghapus peminjaman: GKM-PJM-2', '2026-10-23 07:21:13'),
+(202, 1, 'CEO Ultima', 'DELETE', 'Peminjaman', '9', 'Menghapus peminjaman: GKM-PJM-1', '2026-10-23 07:21:15'),
+(203, 1, 'CEO Ultima', 'CREATE', 'Aset', '65', 'Import massal 44 aset dari file Excel', '2026-10-23 07:21:35'),
+(204, 1, 'CEO Ultima', 'CREATE', 'Aset', '109', 'Import massal 44 aset dari file Excel', '2026-10-23 07:35:34'),
+(205, 1, 'CEO Ultima', 'DELETE', 'System', 'ALL', 'SUPER ADMIN menghapus seluruh data: Aset & Aksesoris', '2026-10-23 07:35:47'),
+(206, 1, 'CEO Ultima', 'CREATE', 'Aset', '153', 'Import massal 44 aset dari file Excel', '2026-10-23 07:35:56'),
+(207, 1, 'CEO Ultima', 'UPDATE', 'Aset Unit', '299', 'Mengubah unit AST-GPRO-VID-001-01: kondisi menjadi Maintenance', '2026-10-23 10:23:37'),
+(208, 1, 'CEO Ultima', 'UPDATE', 'Aset Unit', '300', 'Mengubah unit AST-GPRO-VID-001-02: kondisi menjadi Maintenance', '2026-10-23 10:23:39'),
+(209, 1, 'CEO Ultima', 'UPDATE', 'Aset Unit', '301', 'Mengubah unit AST-GPRO-VID-001-03: kondisi menjadi Rusak', '2026-10-23 10:23:40'),
+(210, 1, 'CEO Ultima', 'UPDATE', 'Aset Unit', '302', 'Mengubah unit AST-GPRO-VID-001-04: kondisi menjadi Rusak', '2026-10-23 10:23:42'),
+(211, 17, 'Aditya Kurniawan', 'CREATE', 'Peminjaman', NULL, 'Membuat peminjaman baru (GKM-PJM-1) untuk Aditya Kurniawan', '2026-10-31 07:04:02');
 
 -- --------------------------------------------------------
 
@@ -524,7 +743,19 @@ INSERT INTO `notifications` (`id`, `type`, `message`, `reference_id`, `target_ro
 (74, 'dikembalikan', 'Peminjaman GKM-PJM-4 menunggu verifikasi pengembalian dari Eko Prasetyo', 12, 'super admin,admin,supervisor', 0, '2026-10-03 06:24:21'),
 (75, 'approved', 'Peminjaman GKM-PJM-4 telah diverifikasi pengembaliannya oleh CEO Ultima [Peminjam: Eko Prasetyo] [By: Eko Prasetyo]', 12, 'super admin,admin,supervisor,user', 0, '2026-10-03 06:24:26'),
 (76, 'dikembalikan', 'Peminjaman GKM-PJM-3 menunggu verifikasi pengembalian dari Bayu Pratama', 11, 'super admin,admin,supervisor', 0, '2026-10-03 06:25:07'),
-(77, 'approved', 'Peminjaman GKM-PJM-3 telah diverifikasi pengembaliannya oleh CEO Ultima [Peminjam: Bayu Pratama] [By: Bayu Pratama]', 11, 'super admin,admin,supervisor,user', 0, '2026-10-03 06:25:13');
+(77, 'approved', 'Peminjaman GKM-PJM-3 telah diverifikasi pengembaliannya oleh CEO Ultima [Peminjam: Bayu Pratama] [By: Bayu Pratama]', 11, 'super admin,admin,supervisor,user', 0, '2026-10-03 06:25:13'),
+(78, 'peminjaman_baru', 'Aditya Kurniawan membuat peminjaman baru (GKM-PJM-1)', NULL, 'super admin,admin,supervisor', 0, '2026-10-31 07:04:02'),
+(79, 'stok_rendah_aset', 'Stok Videotron a - 50 x 100 ncled tersisa 0 unit', 153, 'super admin,admin', 0, '2026-10-31 07:04:02'),
+(80, 'stok_rendah_aset', 'Stok Videotron b - 50 x 100 ncled tersisa 0 unit', 154, 'super admin,admin', 0, '2026-10-31 07:04:02'),
+(81, 'stok_rendah_aset', 'Stok Videotron c - 50 x 100 ncled tersisa 0 unit', 155, 'super admin,admin', 0, '2026-10-31 07:04:02'),
+(82, 'stok_rendah_aset', 'Stok Videotron d - 50 x 100 ncled tersisa 3 unit', 156, 'super admin,admin', 0, '2026-10-31 07:04:02'),
+(83, 'stok_rendah_aset', 'Stok Kabel powercon listrik tiga tersisa 0 unit', 180, 'super admin,admin', 0, '2026-10-31 07:04:02'),
+(84, 'stok_rendah_aset', 'Stok Kabel powercon listrik biasa tersisa 0 unit', 179, 'super admin,admin', 0, '2026-10-31 07:04:02'),
+(85, 'stok_rendah_aset', 'Stok Kabel powercon 50cm tersisa 0 unit', 178, 'super admin,admin', 0, '2026-10-31 07:04:02'),
+(86, 'stok_rendah_aset', 'Stok Kabel lan 100 meter tersisa 0 unit', 177, 'super admin,admin', 0, '2026-10-31 07:04:02'),
+(87, 'stok_rendah_aset', 'Stok Kabel lan 50 meter tersisa 0 unit', 176, 'super admin,admin', 0, '2026-10-31 07:04:02'),
+(88, 'stok_rendah_aset', 'Stok Kabel lan 30 meter tersisa 0 unit', 175, 'super admin,admin', 0, '2026-10-31 07:04:02'),
+(89, 'stok_rendah_aset', 'Stok Kabel lan 50cm tersisa 0 unit', 174, 'super admin,admin', 0, '2026-10-31 07:04:02');
 
 -- --------------------------------------------------------
 
@@ -557,11 +788,7 @@ CREATE TABLE `peminjaman` (
 --
 
 INSERT INTO `peminjaman` (`id`, `kode_pinjam`, `nama_peminjam`, `penerima_aset`, `alasan_peminjaman`, `keperluan_list`, `tanggal_peminjaman`, `tanggal_pengembalian`, `status`, `yang_menyerahkan`, `approved_by`, `return_approved_by`, `created_at`, `updated_at`, `bukti_peminjaman`, `bukti_pengembalian`, `user_id`) VALUES
-(9, 'GKM-PJM-1', 'Aditya Kurniawan', 'Eko Prasetyo', 'Event horeg', '[{\"keperluan\":\"Event horeg\"}]', '2026-09-23 13:30:46', '2026-09-25 14:19:57', 'Peminjaman Selesai', 'Eko Prasetyo', 'Bayu Pratama', 'Eko Prasetyo', '2026-09-23 06:30:47', '2026-09-23 07:20:57', '[\"/uploads/bukti_pinjam-1790145047515-368149330-0.webp\"]', '[\"/uploads/bukti_kembali-1790147998116-14222515-0.webp\"]', 17),
-(10, 'GKM-PJM-2', 'Aditya Kurniawan', 'super admin', 'Wedding', '[{\"keperluan\":\"Wedding\"}]', '2026-09-23 13:39:39', '2026-09-26 14:20:17', 'Peminjaman Selesai', 'Eko Prasetyo', 'Eko Prasetyo', 'super admin', '2026-09-23 06:39:40', '2026-09-23 07:21:08', '[\"/uploads/bukti_pinjam-1790145579986-734434246-0.webp\"]', '[\"/uploads/bukti_kembali-1790148018509-252968415-0.webp\"]', 17),
-(13, 'GKM-PJM-5', 'Aditya Kurniawan', 'super admin', 'Wisuda', '[{\"keperluan\":\"Wisuda\"}]', '2026-09-23 14:11:08', '2026-09-24 14:19:43', 'Peminjaman Selesai', 'super admin', 'super admin', 'super admin', '2026-09-23 07:11:09', '2026-09-26 04:34:07', '[\"/uploads/bukti_pinjam-1790147469176-166631472-0.webp\"]', '[\"/uploads/bukti_kembali-1790147984122-125081841-0.webp\"]', 17),
-(14, 'GKM-PJM-6', 'Aditya Kurniawan', 'super admin', 'Foto Studio', '[{\"keperluan\":\"Foto Studio\"}]', '2026-09-26 11:38:17', '2026-09-27 11:39:36', 'Peminjaman Selesai', 'super admin', 'super admin', 'super admin', '2026-09-26 04:38:18', '2026-09-26 04:40:01', '[\"/uploads/bukti_pinjam-1790397497707-245980895-0.webp\"]', '[\"/uploads/bukti_kembali-1790397576858-79869449-0.webp\"]', 17),
-(15, 'GKM-PJM-7', 'Aurelia Karisma', 'CEO Ultima', 'Wedding', '[{\"keperluan\":\"Wedding\"}]', '2026-10-03 13:22:52', '2026-10-03 13:23:33', 'Peminjaman Selesai', 'CEO Ultima', 'CEO Ultima', 'CEO Ultima', '2026-10-03 06:22:51', '2026-10-03 06:23:40', '[\"/uploads/bukti_pinjam-1791008571432-982397599-0.webp\"]', '[\"/uploads/bukti_kembali-1791008613414-568723901-0.webp\"]', NULL);
+(16, 'GKM-PJM-1', 'Aditya Kurniawan', NULL, 'Wedding', '[{\"keperluan\":\"Wedding\"}]', '2026-11-01 14:03:58', NULL, 'Menunggu Persetujuan', NULL, NULL, NULL, '2026-10-31 07:04:02', '2026-10-31 07:04:02', '[\"/uploads/bukti_pinjam-1793430242695-426470549-0.webp\",\"/uploads/bukti_pinjam-1793430242699-164397085-1.webp\",\"/uploads/bukti_pinjam-1793430242699-838679262-2.webp\",\"/uploads/bukti_pinjam-1793430242700-849974888-3.webp\",\"/uploads/bukti_pinjam-1793430242700-85816634-4.webp\"]', NULL, 17);
 
 -- --------------------------------------------------------
 
@@ -575,8 +802,39 @@ CREATE TABLE `peminjaman_items` (
   `asset_id` int(11) DEFAULT NULL,
   `unit_id` int(11) DEFAULT NULL,
   `aksesoris_id` int(11) DEFAULT NULL,
+  `aksesoris_unit_id` int(11) DEFAULT NULL,
   `jumlah` int(11) NOT NULL DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data untuk tabel `peminjaman_items`
+--
+
+INSERT INTO `peminjaman_items` (`id`, `peminjaman_id`, `asset_id`, `unit_id`, `aksesoris_id`, `aksesoris_unit_id`, `jiumlah`) VALUES
+(29, 16, 153, 303, NULL, NULL, 1),
+(30, 16, 153, 304, NULL, NULL, 1),
+(31, 16, 154, 305, NULL, NULL, 1),
+(32, 16, 154, 306, NULL, NULL, 1),
+(33, 16, 154, 307, NULL, NULL, 1),
+(34, 16, 154, 308, NULL, NULL, 1),
+(35, 16, 154, 309, NULL, NULL, 1),
+(36, 16, 154, 310, NULL, NULL, 1),
+(37, 16, 155, 311, NULL, NULL, 1),
+(38, 16, 155, 312, NULL, NULL, 1),
+(39, 16, 155, 313, NULL, NULL, 1),
+(40, 16, 155, 314, NULL, NULL, 1),
+(41, 16, 155, 315, NULL, NULL, 1),
+(42, 16, 155, 316, NULL, NULL, 1),
+(43, 16, 156, 317, NULL, NULL, 1),
+(44, 16, 156, 318, NULL, NULL, 1),
+(45, 16, 156, 319, NULL, NULL, 1),
+(46, 16, 180, 431, NULL, NULL, 1),
+(47, 16, 179, 430, NULL, NULL, 1),
+(48, 16, 178, 429, NULL, NULL, 1),
+(49, 16, 177, 428, NULL, NULL, 1),
+(50, 16, 176, 427, NULL, NULL, 1),
+(51, 16, 175, 426, NULL, NULL, 1),
+(52, 16, 174, 425, NULL, NULL, 1);
 
 -- --------------------------------------------------------
 
@@ -659,8 +917,8 @@ CREATE TABLE `users` (
 
 INSERT INTO `users` (`id`, `pegawai_id`, `nama_lengkap`, `email`, `password`, `role`, `created_at`, `updated_at`, `foto_profil`, `nomor_hp`, `keterangan`, `is_guest`, `is_active`) VALUES
 (1, 13, 'CEO Ultima', 'superadmin@galeria.com', '$2a$12$GZxcV0xlojxkuo5PxA1yw.WCFnXW724TCCFJLljkGzI08vs6sZ1h.', 'super admin', '2026-06-11 09:54:11', '2026-09-28 09:42:56', '/uploads/profiles/profile-1790477854271-789885295.webp', NULL, NULL, 0, 1),
-(17, 28, 'Aditya Kurniawan', 'aditya.kurniawan@email.com', '$2b$10$s9Tso4Ry9A2jh4GX7WRuYu7aLlF7KPi9WmvCAxUb3/2nvJ2kGgH2e', 'user', '2026-09-16 04:53:50', '2026-10-07 07:32:55', NULL, NULL, NULL, 0, 1),
-(18, 20, 'Bayu Pratama', 'bayu.pratama@email.com', '$2b$10$lNq5IgWQVpT9X6n63TqZVuJLhFvZO9RXrT8uh3yzm0HxzOdCk/0M.', 'supervisor', '2026-09-16 04:54:36', '2026-09-16 04:54:36', NULL, NULL, NULL, 0, 1);
+(17, 28, 'Aditya Kurniawan', 'aditya.kurniawan@email.com', '$2b$10$xnzrV6GFVC5CacEysCA2mecPt0A5NimFZ3FJVVnsRz9LU2.yxyTRK', 'user', '2026-09-16 04:53:50', '2026-10-23 11:56:13', NULL, NULL, NULL, 0, 1),
+(18, 20, 'Bayu Pratama', 'bayu.pratama@email.com', '$2b$10$LmLaT3DbyJcEN99aG8LJiePqHFChjWgtFBA1pveeeMnqvHGMrwFb6', 'supervisor', '2026-09-16 04:54:36', '2026-10-23 11:56:05', NULL, NULL, NULL, 0, 1);
 
 --
 -- Indexes for dumped tables
@@ -694,6 +952,16 @@ ALTER TABLE `assets`
   ADD KEY `fk_asset_user` (`user_id`);
 
 --
+-- Indeks untuk tabel `asset_units`
+--
+ALTER TABLE `asset_units`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `kode_unit` (`kode_unit`),
+  ADD KEY `asset_id` (`asset_id`),
+  ADD KEY `idx_kondisi` (`kondisi`),
+  ADD KEY `idx_status_pinjam` (`status_pinjam`);
+
+--
 -- Indeks untuk tabel `audit_logs`
 --
 ALTER TABLE `audit_logs`
@@ -717,16 +985,6 @@ ALTER TABLE `peminjaman`
   ADD KEY `idx_created_at` (`created_at`);
 
 --
--- Indeks untuk tabel `asset_units`
---
-ALTER TABLE `asset_units`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `kode_unit` (`kode_unit`),
-  ADD KEY `asset_id` (`asset_id`),
-  ADD KEY `idx_kondisi` (`kondisi`),
-  ADD KEY `idx_status_pinjam` (`status_pinjam`);
-
---
 -- Indeks untuk tabel `peminjaman_items`
 --
 ALTER TABLE `peminjaman_items`
@@ -735,7 +993,8 @@ ALTER TABLE `peminjaman_items`
   ADD KEY `asset_id` (`asset_id`),
   ADD KEY `unit_id` (`unit_id`),
   ADD KEY `fk_peminjaman_items_aksesoris` (`aksesoris_id`),
-  ADD KEY `idx_asset_aksesoris` (`asset_id`,`aksesoris_id`);
+  ADD KEY `idx_asset_aksesoris` (`asset_id`,`aksesoris_id`),
+  ADD KEY `fk_peminjaman_items_aksesoris_unit` (`aksesoris_unit_id`);
 
 --
 -- Indeks untuk tabel `tbl_pegawai`
@@ -773,37 +1032,37 @@ ALTER TABLE `aksesoris_units`
 -- AUTO_INCREMENT untuk tabel `assets`
 --
 ALTER TABLE `assets`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=65;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=197;
 
 --
 -- AUTO_INCREMENT untuk tabel `asset_units`
 --
 ALTER TABLE `asset_units`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=448;
 
 --
 -- AUTO_INCREMENT untuk tabel `audit_logs`
 --
 ALTER TABLE `audit_logs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=198;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=212;
 
 --
 -- AUTO_INCREMENT untuk tabel `notifications`
 --
 ALTER TABLE `notifications`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=78;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=90;
 
 --
 -- AUTO_INCREMENT untuk tabel `peminjaman`
 --
 ALTER TABLE `peminjaman`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
 
 --
 -- AUTO_INCREMENT untuk tabel `peminjaman_items`
 --
 ALTER TABLE `peminjaman_items`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=53;
 
 --
 -- AUTO_INCREMENT untuk tabel `tbl_pegawai`
@@ -856,15 +1115,22 @@ ALTER TABLE `peminjaman`
 --
 ALTER TABLE `peminjaman_items`
   ADD CONSTRAINT `fk_peminjaman_items_aksesoris` FOREIGN KEY (`aksesoris_id`) REFERENCES `aksesoris` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_peminjaman_items_aksesoris_unit` FOREIGN KEY (`aksesoris_unit_id`) REFERENCES `aksesoris_units` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_peminjaman_items_unit` FOREIGN KEY (`unit_id`) REFERENCES `asset_units` (`id`) ON DELETE SET NULL,
   ADD CONSTRAINT `peminjaman_items_ibfk_1` FOREIGN KEY (`peminjaman_id`) REFERENCES `peminjaman` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `peminjaman_items_ibfk_2` FOREIGN KEY (`asset_id`) REFERENCES `assets` (`id`),
-  ADD CONSTRAINT `fk_peminjaman_items_unit` FOREIGN KEY (`unit_id`) REFERENCES `asset_units` (`id`) ON DELETE SET NULL;
+  ADD CONSTRAINT `peminjaman_items_ibfk_2` FOREIGN KEY (`asset_id`) REFERENCES `assets` (`id`);
 
 --
 -- Ketidakleluasaan untuk tabel `users`
 --
 ALTER TABLE `users`
   ADD CONSTRAINT `fk_users_pegawai` FOREIGN KEY (`pegawai_id`) REFERENCES `tbl_pegawai` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+COMMIT;
+
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+E CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

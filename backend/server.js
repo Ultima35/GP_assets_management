@@ -97,7 +97,7 @@ async function initAksesorisUnitsTable() {
         \`kode_unit\` varchar(60) NOT NULL,
         \`nama_unit\` varchar(255) DEFAULT NULL,
         \`no_sn\` varchar(100) DEFAULT NULL,
-        \`kondisi\` enum('Siap Digunakan','Rusak','Rusak Berat','Maintenance','Dijual') DEFAULT 'Siap Digunakan',
+        \`kondisi\` enum('Siap Digunakan','Maintenance','Rusak') DEFAULT 'Siap Digunakan',
         \`status_pinjam\` enum('Tersedia','Dipinjam') DEFAULT 'Tersedia',
         \`lokasi_unit\` varchar(255) DEFAULT NULL,
         \`keterangan\` text DEFAULT NULL,

@@ -12,9 +12,9 @@ async function syncAssetTotals(assetId, conn = db) {
     const [counts] = await conn.query(`
       SELECT 
         COUNT(*) as total_units,
-        SUM(CASE WHEN kondisi = 'Siap Digunakan' AND status_pinjam = 'Tersedia' THEN 1 ELSE 0 END) as ready_units,
-        SUM(CASE WHEN kondisi = 'Rusak' THEN 1 ELSE 0 END) as rusak_units,
-        SUM(CASE WHEN kondisi = 'Rusak Berat' THEN 1 ELSE 0 END) as rusak_berat_units,
+        SUM(CASE WHEN (kondisi = 'Siap Digunakan' OR kondisi IS NULL) AND status_pinjam = 'Tersedia' THEN 1 ELSE 0 END) as ready_units,
+        SUM(CASE WHEN status_pinjam = 'Dipinjam' THEN 1 ELSE 0 END) as dipinjam_units,
+        SUM(CASE WHEN kondisi = 'Rusak' OR kondisi = 'Rusak Berat' THEN 1 ELSE 0 END) as rusak_units,
         SUM(CASE WHEN kondisi = 'Maintenance' THEN 1 ELSE 0 END) as maintenance_units
       FROM asset_units 
       WHERE asset_id = ?
@@ -27,8 +27,8 @@ async function syncAssetTotals(assetId, conn = db) {
     let masterKondisi = "Siap Digunakan";
     if (totalUnits > 0) {
       if (readyUnits === totalUnits) masterKondisi = "Siap Digunakan";
-      else if (readyUnits === 0 && (row.rusak_units > 0 || row.rusak_berat_units > 0)) masterKondisi = "Rusak";
-      else if (readyUnits === 0 && row.maintenance_units > 0) masterKondisi = "Maintenance";
+      else if (row.rusak_units === totalUnits) masterKondisi = "Rusak";
+      else if (row.maintenance_units === totalUnits) masterKondisi = "Maintenance";
       else masterKondisi = "Siap Digunakan";
     }
 
@@ -44,6 +44,44 @@ async function syncAssetTotals(assetId, conn = db) {
   } catch (err) {
     console.error("Error syncAssetTotals:", err);
   }
+}
+
+// Helper: Format tanggal dari berbagai format Excel (DD-MM-YYYY, YYYY-MM-DD, serial, dll) ke YYYY-MM-DD
+function normalizeDate(val) {
+  if (!val) return null;
+  if (typeof val === "number" || (!isNaN(val) && !isNaN(parseFloat(val)) && isFinite(val) && Number(val) > 10000 && Number(val) < 100000)) {
+    const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+    const date = new Date(excelEpoch.getTime() + Number(val) * 86400000);
+    if (!isNaN(date.getTime())) {
+      return date.toISOString().split("T")[0];
+    }
+  }
+  const str = String(val).trim();
+  if (!str) return null;
+  const ymdMatch = str.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
+  if (ymdMatch) {
+    const year = ymdMatch[1];
+    const month = String(ymdMatch[2]).padStart(2, "0");
+    const day = String(ymdMatch[3]).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+  const dmyMatch = str.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})/);
+  if (dmyMatch) {
+    const day = String(dmyMatch[1]).padStart(2, "0");
+    const month = String(dmyMatch[2]).padStart(2, "0");
+    const year = dmyMatch[3];
+    return `${year}-${month}-${day}`;
+  }
+  const parsed = new Date(str);
+  if (!isNaN(parsed.getTime())) {
+    const y = parsed.getFullYear();
+    const m = String(parsed.getMonth() + 1).padStart(2, "0");
+    const d = String(parsed.getDate()).padStart(2, "0");
+    if (y > 1900 && y < 2100) {
+      return `${y}-${m}-${d}`;
+    }
+  }
+  return null;
 }
 
 const assetController = {
@@ -751,15 +789,15 @@ const assetController = {
         const jumlah = !isNaN(rawJumlah) && rawJumlah > 0 ? rawJumlah : 1;
         const rawHarga = parseFloat(item.hargaAset || item.harga_aset);
         const hargaAset = !isNaN(rawHarga) && rawHarga >= 0 ? rawHarga : 0;
-        const kondisi = ["Siap Digunakan", "Rusak", "Rusak Berat", "Maintenance", "Dijual"].includes(item.kondisi)
+        const kondisi = ["Siap Digunakan", "Maintenance", "Rusak"].includes(item.kondisi)
           ? item.kondisi
-          : "Siap Digunakan";
+          : (item.kondisi === "Rusak Berat" ? "Rusak" : "Siap Digunakan");
         const lokasiAset = (item.lokasiAset || item.lokasi_aset || "").trim() || null;
         const pengguna = (item.pengguna || "").trim() || null;
         const noSn = (item.noSN || item.no_sn || "").trim() || null;
         const spesifikasi = (item.spesifikasi || "").trim() || null;
         const keterangan = (item.keterangan || "").trim() || null;
-        const tanggalPembelian = (item.tanggalPembelian || item.tanggal_pembelian || "").trim() || null;
+        const tanggalPembelian = normalizeDate(item.tanggalPembelian || item.tanggal_pembelian);
         let tipeHarga = (item.tipeHarga || item.tipe_harga || item["Tipe Perhitungan Harga"] || item["Tipe Harga"] || "").trim();
         if (tipeHarga.toLowerCase().includes("paket") || tipeHarga.toLowerCase().includes("set") || tipeHarga.toLowerCase().includes("box")) {
           tipeHarga = "Per Paket";
@@ -983,10 +1021,6 @@ const assetController = {
         const oldVal = unit.keterangan ? `"${unit.keterangan}"` : "-";
         const newVal = String(keterangan).trim() ? `"${String(keterangan).trim()}"` : "-";
         changes.push(`keterangan diubah dari ${oldVal} menjadi ${newVal}`);
-      }
-
-      if (kode_unit && kode_unit !== unit.kode_unit) {
-        changes.push(`kode unit diubah dari "${unit.kode_unit}" menjadi "${kode_unit}"`);
       }
 
       await db.query(

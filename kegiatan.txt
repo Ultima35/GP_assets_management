@@ -1,0 +1,10 @@
+Kegiatan:
+- Menambahkan kolom tipe_harga dengan opsi "Per Unit" dan "Per Paket" pada tabel assets dan aksesoris di basis data MySQL.
+- Memperbarui berkas skema basis data gp_asset_management.sql serta menjalankan migrasi data inventaris videotron agar bertipe "Per Paket".
+- Menyesuaikan formula kalkulasi total nilai inventaris pada dashboard utama agar dapat membedakan perhitungan aset satuan dan barang berbasis paket secara akurat.
+- Menyesuaikan logika kalkulasi harga peminjaman alat agar perhitungan biaya sewa unit paket terbagi secara proporsional per unit fisik barang.
+- Menambahkan komponen input pilihan "Tipe Perhitungan Harga" pada form tambah dan edit di modul aset maupun aksesoris.
+- Mengimplementasikan tampilan badge status harga dan rincian breakdown harga per unit paket pada tabel inventaris serta modal detail barang.
+- Menambahkan kolom "Tipe Perhitungan Harga" pada template unduhan berkas impor Excel untuk panduan pengguna.
+- Menyederhanakan dan menstandardisasi pilihan kondisi fisik aset menjadi 3 status konsisten: "Siap Digunakan", "Maintenance", dan "Rusak".
+- Memperbaiki kalkulasi pembulatan nilai aset bertipe "Per Paket" (seperti Videotron 1 set Rp 25.000.000 isi 6 kabinet) agar akumulasi eceran unit tidak mengalami selisih pembulatan dan tetap presisi pas Rp 25.000.000 tanpa kelebihan 2 rupiah.
