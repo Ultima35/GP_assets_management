@@ -671,7 +671,7 @@ export default function PeminjamanAsetPage() {
                       {item.totalItems || 0}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-xs text-slate-600 border-r border-slate-200 align-top">
+                  <td className="w-[200px] px-4 py-3 text-xs text-slate-600 border-r border-slate-200 align-middle">
                     {keperluanArr.length > 1 ? (
                       <ol className="list-decimal list-inside space-y-0.5">
                         {keperluanArr.map((k, i) => (

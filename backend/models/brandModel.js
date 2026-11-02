@@ -5,10 +5,21 @@ const Brand = {
     const [rows] = await db.query(`
       SELECT b.*, 
              CASE 
-               WHEN b.tipe = 'aset' THEN (SELECT COUNT(*) FROM assets a WHERE a.merek = b.nama)
-               WHEN b.tipe = 'aksesoris' THEN (SELECT COUNT(*) FROM aksesoris ak WHERE ak.merek = b.nama)
-               ELSE 0
-             END AS qty
+               WHEN b.tipe = 'aset' THEN (SELECT COUNT(*) FROM assets a WHERE TRIM(LOWER(a.merek)) = TRIM(LOWER(b.nama)))
+               WHEN b.tipe = 'aksesoris' THEN (SELECT COUNT(*) FROM aksesoris ak WHERE TRIM(LOWER(ak.merek)) = TRIM(LOWER(b.nama)))
+               ELSE (
+                 (SELECT COUNT(*) FROM assets a WHERE TRIM(LOWER(a.merek)) = TRIM(LOWER(b.nama))) +
+                 (SELECT COUNT(*) FROM aksesoris ak WHERE TRIM(LOWER(ak.merek)) = TRIM(LOWER(b.nama)))
+               )
+             END AS qty,
+             CASE 
+               WHEN b.tipe = 'aset' THEN (SELECT COALESCE(SUM(COALESCE(a.jumlah_total, a.jumlah, 1)), 0) FROM assets a WHERE TRIM(LOWER(a.merek)) = TRIM(LOWER(b.nama)))
+               WHEN b.tipe = 'aksesoris' THEN (SELECT COALESCE(SUM(COALESCE(ak.jumlah_total, ak.jumlah_unit, 1)), 0) FROM aksesoris ak WHERE TRIM(LOWER(ak.merek)) = TRIM(LOWER(b.nama)))
+               ELSE (
+                 (SELECT COALESCE(SUM(COALESCE(a.jumlah_total, a.jumlah, 1)), 0) FROM assets a WHERE TRIM(LOWER(a.merek)) = TRIM(LOWER(b.nama))) +
+                 (SELECT COALESCE(SUM(COALESCE(ak.jumlah_total, ak.jumlah_unit, 1)), 0) FROM aksesoris ak WHERE TRIM(LOWER(ak.merek)) = TRIM(LOWER(b.nama)))
+               )
+             END AS total_units
       FROM brands b 
       ORDER BY b.nama ASC
     `);
@@ -19,10 +30,15 @@ const Brand = {
     const [rows] = await db.query(`
       SELECT b.*, 
              CASE 
-               WHEN b.tipe = 'aset' THEN (SELECT COUNT(*) FROM assets a WHERE a.merek = b.nama)
-               WHEN b.tipe = 'aksesoris' THEN (SELECT COUNT(*) FROM aksesoris ak WHERE ak.merek = b.nama)
+               WHEN b.tipe = 'aset' THEN (SELECT COUNT(*) FROM assets a WHERE TRIM(LOWER(a.merek)) = TRIM(LOWER(b.nama)))
+               WHEN b.tipe = 'aksesoris' THEN (SELECT COUNT(*) FROM aksesoris ak WHERE TRIM(LOWER(ak.merek)) = TRIM(LOWER(b.nama)))
                ELSE 0
-             END AS qty
+             END AS qty,
+             CASE 
+               WHEN b.tipe = 'aset' THEN (SELECT COALESCE(SUM(COALESCE(a.jumlah_total, a.jumlah, 1)), 0) FROM assets a WHERE TRIM(LOWER(a.merek)) = TRIM(LOWER(b.nama)))
+               WHEN b.tipe = 'aksesoris' THEN (SELECT COALESCE(SUM(COALESCE(ak.jumlah_total, ak.jumlah_unit, 1)), 0) FROM aksesoris ak WHERE TRIM(LOWER(ak.merek)) = TRIM(LOWER(b.nama)))
+               ELSE 0
+             END AS total_units
       FROM brands b 
       WHERE b.tipe = ? 
       ORDER BY b.nama ASC
@@ -36,7 +52,10 @@ const Brand = {
   },
 
   findByNama: async (nama, tipe = "aset") => {
-    const [rows] = await db.query("SELECT * FROM brands WHERE nama = ? AND tipe = ?", [nama, tipe]);
+    const [rows] = await db.query(
+      "SELECT * FROM brands WHERE TRIM(LOWER(nama)) = TRIM(LOWER(?)) AND tipe = ?",
+      [nama, tipe]
+    );
     return rows[0];
   },
 

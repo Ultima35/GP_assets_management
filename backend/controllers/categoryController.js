@@ -1,4 +1,6 @@
 const Category = require("../models/categoryModel");
+const db = require("../config/db");
+const AuditLog = require("../models/auditModel");
 
 const categoryController = {
   getAll: async (req, res) => {
@@ -77,6 +79,60 @@ const categoryController = {
     } catch (error) {
       console.error("Error delete category:", error);
       res.status(500).json({ success: false, message: "Gagal menghapus kategori" });
+    }
+  },
+
+  // DELETE /api/categories/bulk/delete-all (Super Admin only)
+  deleteAll: async (req, res) => {
+    const connection = await db.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      const { target = "both" } = req.body || {}; // "both", "categories", "brands"
+
+      let detailTarget = "";
+      if (target === "categories" || target === "both") {
+        await connection.query("DELETE FROM categories");
+        await connection.query("ALTER TABLE categories AUTO_INCREMENT = 1");
+        await connection.query("UPDATE assets SET kategori = NULL");
+        await connection.query("UPDATE aksesoris SET kategori = NULL");
+        detailTarget += "Kategori";
+      }
+
+      if (target === "brands" || target === "both") {
+        await connection.query("DELETE FROM brands");
+        await connection.query("ALTER TABLE brands AUTO_INCREMENT = 1");
+        await connection.query("UPDATE assets SET merek = NULL");
+        await connection.query("UPDATE aksesoris SET merek = NULL");
+        if (detailTarget) detailTarget += " & Merek";
+        else detailTarget = "Merek";
+      }
+
+      await connection.commit();
+
+      await AuditLog.create({
+        userId: req.user?.userId,
+        userName: req.user?.nama,
+        action: 'DELETE',
+        entityType: 'System',
+        entityId: 'ALL',
+        details: `SUPER ADMIN menghapus seluruh data: ${detailTarget}`
+      });
+
+      res.json({
+        success: true,
+        message: `Berhasil menghapus seluruh data ${detailTarget}!`,
+      });
+    } catch (error) {
+      await connection.rollback();
+      console.error("Error deleteAll categories/brands:", error);
+      res.status(500).json({
+        success: false,
+        message: "Gagal menghapus seluruh data",
+        error: error.message,
+      });
+    } finally {
+      connection.release();
     }
   },
 };

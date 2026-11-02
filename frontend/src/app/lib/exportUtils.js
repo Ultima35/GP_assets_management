@@ -2,6 +2,8 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import ExcelJS from "exceljs";
+import { getAllCategories } from "./categoryService";
+import { getAllBrands } from "./brandService";
 
 /**
  * Export data to PDF using jsPDF and jspdf-autotable
@@ -133,7 +135,13 @@ export const exportTemplateToExcel = async (
   workbook.creator = "Galeria Asset Management";
   workbook.created = new Date();
 
+  // 1. Lembar utama (Template input)
   const worksheet = workbook.addWorksheet(sheetName, {
+    views: [{ showGridLines: true }],
+  });
+
+  // 2. Lembar referensi (Daftar Opsi / Dropdown)
+  const refSheet = workbook.addWorksheet("Referensi", {
     views: [{ showGridLines: true }],
   });
 
@@ -168,22 +176,84 @@ export const exportTemplateToExcel = async (
     rows: rows.length > 0 ? rows : [columns.map(() => "")],
   });
 
-  // Apply dropdown data validation to template rows (rows 2 to 500)
+  // Helper konversi index kolom (1-based) ke huruf Excel (A, B, ..., Z, AA, AB, ...)
+  const getColLetter = (n) => {
+    let s = "";
+    while (n > 0) {
+      const m = (n - 1) % 26;
+      s = String.fromCharCode(65 + m) + s;
+      n = Math.floor((n - m) / 26);
+    }
+    return s;
+  };
+
+  // Isi data referensi ke sheet "Referensi"
+  let refColIdx = 1;
+  const validationMap = {};
+
+  Object.entries(validations).forEach(([key, options]) => {
+    if (Array.isArray(options) && options.length > 0) {
+      const letter = getColLetter(refColIdx);
+      const colHeader = columns.find(c => c.dataKey === key)?.header || key;
+
+      // Header kolom di sheet Referensi
+      const headerCell = refSheet.getCell(1, refColIdx);
+      headerCell.value = colHeader;
+      headerCell.font = { bold: true, color: { argb: "FFFFFFFF" } };
+      headerCell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FF334155" }, // slate-700
+      };
+
+      // Tulis opsi baris per baris
+      options.forEach((opt, rIdx) => {
+        refSheet.getCell(rIdx + 2, refColIdx).value = opt;
+      });
+
+      refSheet.getColumn(refColIdx).width = Math.min(Math.max(colHeader.length + 4, 18), 40);
+
+      validationMap[key] = {
+        colLetter: letter,
+        count: options.length,
+        // Kategori dan merek diizinkan custom (jika tidak ada di dropdown, pengguna bisa ketik sendiri)
+        isCustomAllowed: ["kategori", "merek"].includes(key),
+      };
+
+      refColIdx++;
+    }
+  });
+
+  // Terapkan data validation ke baris 2 s.d 500 di sheet utama
   columns.forEach((col, idx) => {
     const colNumber = idx + 1;
-    const options = validations[col.dataKey];
-    if (options && options.length > 0) {
-      const formulaeStr = `"${options.join(",")}"`;
+    const vInfo = validationMap[col.dataKey];
+    if (vInfo) {
+      const formula = `'Referensi'!$${vInfo.colLetter}$2:$${vInfo.colLetter}$${vInfo.count + 1}`;
       for (let r = 2; r <= 500; r++) {
         const cell = worksheet.getCell(r, colNumber);
-        cell.dataValidation = {
-          type: "list",
-          allowBlank: true,
-          formulae: [formulaeStr],
-          showErrorMessage: true,
-          errorTitle: "Pilihan Tidak Valid",
-          error: `Pilih salah satu dari: ${options.join(", ")}`,
-        };
+        if (vInfo.isCustomAllowed) {
+          // Dropdown aktif, dan TIDAK diblokir jika user mengetikkan kategori/merek baru
+          cell.dataValidation = {
+            type: "list",
+            allowBlank: true,
+            formulae: [formula],
+            showErrorMessage: false, // Bebas ketik nilai baru jika belum terdaftar
+            showInputMessage: true,
+            promptTitle: `Pilihan ${col.header}`,
+            prompt: `Pilih ${col.header} dari daftar dropdown, atau ketik nama baru jika belum terdaftar di sistem.`,
+          };
+        } else {
+          // Dropdown ketat untuk pilihan enum tetap (jenis brand, kondisi, tipe perhitungan harga)
+          cell.dataValidation = {
+            type: "list",
+            allowBlank: true,
+            formulae: [formula],
+            showErrorMessage: true,
+            errorTitle: "Pilihan Tidak Valid",
+            error: `Silakan pilih salah satu opsi dari daftar pilihan ${col.header}.`,
+          };
+        }
       }
     }
   });
@@ -223,8 +293,10 @@ export const exportTemplateToExcel = async (
 
 /**
  * Download Template Excel untuk Import Aset
+ * @param {Array} customCats - Opsional daftar kategori
+ * @param {Array} customBrands - Opsional daftar merek
  */
-export const downloadAssetTemplate = async () => {
+export const downloadAssetTemplate = async (customCats = null, customBrands = null) => {
   const columns = [
     { header: "Nama Aset", dataKey: "namaAset" },
     { header: "Jenis Brand", dataKey: "jenisAset" },
@@ -280,8 +352,44 @@ export const downloadAssetTemplate = async () => {
     },
   ];
 
+  // Ambil daftar kategori & merek dari Kelola Kategori & Merek
+  let categoriesList = [];
+  let brandsList = [];
+
+  if (Array.isArray(customCats) && customCats.length > 0) {
+    categoriesList = customCats.map(c => typeof c === "string" ? c : c.nama).filter(Boolean);
+  } else {
+    try {
+      const cats = await getAllCategories("aset");
+      categoriesList = (cats || []).map(c => c.nama).filter(Boolean);
+    } catch (e) {
+      console.warn("Gagal mengambil data kategori dari server:", e);
+    }
+  }
+
+  if (Array.isArray(customBrands) && customBrands.length > 0) {
+    brandsList = customBrands.map(b => typeof b === "string" ? b : b.nama).filter(Boolean);
+  } else {
+    try {
+      const brands = await getAllBrands("aset");
+      brandsList = (brands || []).map(b => b.nama).filter(Boolean);
+    } catch (e) {
+      console.warn("Gagal mengambil data merek dari server:", e);
+    }
+  }
+
+  // Fallback defaults jika server offline / data kosong
+  if (categoriesList.length === 0) {
+    categoriesList = ["Kamera", "Videotron", "Lensa", "Audio", "Lighting", "Monitor", "Drone", "Broadcast"];
+  }
+  if (brandsList.length === 0) {
+    brandsList = ["Sony", "Canon", "Blackmagic", "DJI", "Absen", "Aputure", "Sennheiser", "Yamaha"];
+  }
+
   const templateValidations = {
     jenisAset: ["Galeria Production", "Galeria Studio"],
+    kategori: categoriesList,
+    merek: brandsList,
     tipeHarga: ["Per Unit", "Per Paket"],
     kondisi: ["Siap Digunakan", "Maintenance", "Rusak"],
   };
@@ -291,8 +399,10 @@ export const downloadAssetTemplate = async () => {
 
 /**
  * Download Template Excel untuk Import Aksesoris
+ * @param {Array} customCats - Opsional daftar kategori
+ * @param {Array} customBrands - Opsional daftar merek
  */
-export const downloadAksesorisTemplate = async () => {
+export const downloadAksesorisTemplate = async (customCats = null, customBrands = null) => {
   const columns = [
     { header: "Nama Aksesoris", dataKey: "namaAksesoris" },
     { header: "Jenis Brand", dataKey: "jenisAset" },
@@ -339,8 +449,43 @@ export const downloadAksesorisTemplate = async () => {
     },
   ];
 
+  // Ambil daftar kategori & merek dari Kelola Kategori & Merek
+  let categoriesList = [];
+  let brandsList = [];
+
+  if (Array.isArray(customCats) && customCats.length > 0) {
+    categoriesList = customCats.map(c => typeof c === "string" ? c : c.nama).filter(Boolean);
+  } else {
+    try {
+      const cats = await getAllCategories("aksesoris");
+      categoriesList = (cats || []).map(c => c.nama).filter(Boolean);
+    } catch (e) {
+      console.warn("Gagal mengambil data kategori aksesoris dari server:", e);
+    }
+  }
+
+  if (Array.isArray(customBrands) && customBrands.length > 0) {
+    brandsList = customBrands.map(b => typeof b === "string" ? b : b.nama).filter(Boolean);
+  } else {
+    try {
+      const brands = await getAllBrands("aksesoris");
+      brandsList = (brands || []).map(b => b.nama).filter(Boolean);
+    } catch (e) {
+      console.warn("Gagal mengambil data merek aksesoris dari server:", e);
+    }
+  }
+
+  if (categoriesList.length === 0) {
+    categoriesList = ["Baterai", "Kabel", "Charger", "Media Simpan", "Audio", "Lighting Stand", "Filter Lensa"];
+  }
+  if (brandsList.length === 0) {
+    brandsList = ["Sony", "Canare", "Godox", "SmallRig", "SanDisk", "Uticon", "Broco"];
+  }
+
   const templateValidations = {
     jenisAset: ["Galeria Production", "Galeria Studio"],
+    kategori: categoriesList,
+    merek: brandsList,
     tipeHarga: ["Per Unit", "Per Paket"],
     kondisi: ["Siap Digunakan", "Maintenance", "Rusak"],
   };

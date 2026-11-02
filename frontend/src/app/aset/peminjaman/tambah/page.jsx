@@ -11,7 +11,7 @@ import { getActivePegawai, getApprovers } from "../../../lib/pegawaiService";
 import api from "../../../lib/api";
 import { getUserContext } from "../../../lib/authService";
 import { toCapitalEachWord, toSentenceCase } from "../../../lib/stringUtils";
-import { ChevronLeft, FileText, Package, Plus, X, Check, AlertTriangle, Camera, Trash2, Grid, List, Image as ImageIcon, Search, Layers, Minus, Info } from "lucide-react";
+import { ChevronLeft, FileText, Package, Plus, X, Check, AlertTriangle, Camera, Trash2, Grid, List, Image as ImageIcon, Search, Layers, Minus, Info, Upload } from "lucide-react";
 
 const getBackendURL = () => {
   if (process.env.NEXT_PUBLIC_API_URL) {
@@ -85,6 +85,7 @@ export default function TambahPeminjamanPage() {
   const [detailModalItem, setDetailModalItem] = useState(null);
   const [modalSelectedUnitIds, setModalSelectedUnitIds] = useState([]);
   const [modalJumlah, setModalJumlah] = useState(1);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
 
@@ -95,7 +96,7 @@ export default function TambahPeminjamanPage() {
       setUserRole(ctx.role || "");
       setUserId(ctx.id);
       setUserName(ctx.namaLengkap || "");
-      
+
       // Untuk non-super admin, autofill nama peminjam
       if (ctx.role !== "super admin") {
         setNamaPeminjam(ctx.namaLengkap || "");
@@ -209,7 +210,7 @@ export default function TambahPeminjamanPage() {
           if (parsed.tanggalPeminjaman) setTanggalPeminjaman(parsed.tanggalPeminjaman);
           if (parsed.keperluanList) setKeperluanList(parsed.keperluanList);
           if (parsed.items) setItems(parsed.items);
-        } catch (e) {}
+        } catch (e) { }
       }
       setIsLoaded(true);
     }
@@ -232,9 +233,8 @@ export default function TambahPeminjamanPage() {
   }, [namaPeminjam, yangMenyerahkan, tanggalPeminjaman, keperluanList, items, isLoaded]);
 
   // File handling
-  const handleFileChange = (e) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
+  const processFiles = (files) => {
+    if (!files || files.length === 0) return;
     const validTypes = ["image/jpeg", "image/jpg", "image/png", "image/heic", "image/heif", "image/webp"];
     const validExts = [".jpg", ".jpeg", ".png", ".heic", ".heif", ".webp"];
     let filesToAdd = [];
@@ -243,7 +243,6 @@ export default function TambahPeminjamanPage() {
       const ext = "." + (file.name.split(".").pop() || "").toLowerCase();
       if (!validTypes.includes(file.type) && !validExts.includes(ext)) {
         showToast("Format file harus JPG, JPEG, PNG, HEIC, atau WebP", "error");
-        e.target.value = "";
         return;
       }
       filesToAdd.push(file);
@@ -251,7 +250,6 @@ export default function TambahPeminjamanPage() {
 
     if (buktiFiles.length + filesToAdd.length > 5) {
       showToast("Maksimal 5 gambar", "error");
-      e.target.value = "";
       return;
     }
 
@@ -260,7 +258,20 @@ export default function TambahPeminjamanPage() {
 
     const previews = updated.map((f) => URL.createObjectURL(f));
     setBuktiPreviews(previews);
+  };
+
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files || []);
+    processFiles(files);
     e.target.value = "";
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    const files = Array.from(e.dataTransfer.files || []);
+    processFiles(files);
   };
 
   const removeFile = (index) => {
@@ -687,690 +698,713 @@ export default function TambahPeminjamanPage() {
 
   return (
     <div>
-        {/* Header */}
-        <div className="mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => router.back()}
-              className="cursor-pointer p-2 bg-primary rounded-lg transition hover:bg-primary-hover"
-            >
-              <ChevronLeft className="w-5 h-5 text-white" />
-            </button>
+      {/* Header */}
+      <div className="mb-6 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => router.back()}
+            className="cursor-pointer p-2 bg-primary rounded-lg transition hover:bg-primary-hover"
+          >
+            <ChevronLeft className="w-5 h-5 text-white" />
+          </button>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">Tambah Peminjaman Alat</h1>
+            <p className="text-sm text-slate-500">Kode: {kodePinjam}</p>
+          </div>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Section 1: Data Peminjam & Keperluan (Merged) */}
+        <div className="bg-white rounded-lg shadow-sm border border-slate-200 border-t-4 border-t-primary p-4 sm:p-6">
+          <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+            <FileText className="w-5 h-5" />
+            Informasi Peminjaman
+          </h2>
+
+          <div className="grid md:grid-cols-2 gap-4">
+            {/* Nama Peminjam - Manual Input */}
             <div>
-              <h1 className="text-2xl font-bold text-slate-900">Tambah Peminjaman Alat</h1>
-              <p className="text-sm text-slate-500">Kode: {kodePinjam}</p>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Nama Peminjam *
+              </label>
+              <p className="mb-2 -mt-1 text-xs text-slate-400 italic">↳ Nama orang yang meminjam alat</p>
+              <input
+                type="text"
+                placeholder="Masukkan nama peminjam"
+                value={namaPeminjam}
+                onChange={(e) => setNamaPeminjam(toCapitalEachWord(e.target.value))}
+                readOnly={userRole !== "super admin"}
+                className={`w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none ${userRole !== "super admin" ? "bg-slate-50 cursor-not-allowed text-slate-500" : ""}`}
+                required
+              />
             </div>
+
+            {/* Tanggal Peminjaman */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Tanggal Peminjaman *
+              </label>
+              <p className="mb-2 -mt-1 text-xs text-slate-400 italic">↳ Tanggal alat mulai dipinjam</p>
+              <input
+                type="date"
+                value={tanggalPeminjaman}
+                onChange={(e) => setTanggalPeminjaman(e.target.value)}
+                min={userRole !== "super admin" ? new Date().toISOString().split("T")[0] : undefined}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
+                required
+              />
+            </div>
+
+            {/* Yang Menyerahkan - Hanya visible untuk super admin */}
+            {userRole === "super admin" && (
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Yang Menyerahkan *
+                </label>
+                <p className="mb-2 -mt-1 text-xs text-slate-400 italic">↳ Penanggung jawab yang menyerahkan alat</p>
+                <input
+                  type="text"
+                  placeholder="Masukkan nama yang menyerahkan"
+                  value={yangMenyerahkan}
+                  onChange={(e) => setYangMenyerahkan(toCapitalEachWord(e.target.value))}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
+                  required
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Divider */}
+          <hr className="my-6 border-slate-200" />
+
+          {/* Keperluan Peminjaman (merged into this card) */}
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-base font-semibold text-slate-800 flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              Keperluan Peminjaman
+            </h3>
+            <button
+              type="button"
+              onClick={addKeperluan}
+              className="cursor-pointer flex items-center gap-2 px-3 py-1 bg-primary text-white text-sm rounded-lg hover:bg-primary-hover transition"
+            >
+              <Plus className="w-4 h-4" /> Tambah Keperluan
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            {keperluanList.map((k, idx) => (
+              <div key={idx} className="flex gap-3">
+                <input
+                  type="text"
+                  placeholder="Keperluan peminjaman (misal: Acara, Dokumentasi, dsb)"
+                  value={k.keperluan}
+                  onChange={(e) => updateKeperluan(idx, "keperluan", e.target.value)}
+                  className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
+                  required={idx === 0}
+                />
+                <button
+                  type="button"
+                  onClick={() => removeKeperluan(idx)}
+                  className="cursor-pointer p-2 text-red-600 hover:bg-red-50 rounded-lg transition shrink-0"
+                  disabled={keperluanList.length === 1}
+                  style={{ opacity: keperluanList.length === 1 ? 0.5 : 1 }}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Section 1: Data Peminjam & Keperluan (Merged) */}
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200 border-t-4 border-t-primary p-4 sm:p-6">
-            <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-              <FileText className="w-5 h-5" />
-              Informasi Peminjaman
-            </h2>
-
-            <div className="grid md:grid-cols-2 gap-4">
-              {/* Nama Peminjam - Manual Input */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Nama Peminjam *
-                </label>
-                <p className="mb-2 -mt-1 text-xs text-slate-400 italic">↳ Nama orang yang meminjam alat</p>
-                <input
-                  type="text"
-                  placeholder="Masukkan nama peminjam"
-                  value={namaPeminjam}
-                  onChange={(e) => setNamaPeminjam(toCapitalEachWord(e.target.value))}
-                  readOnly={userRole !== "super admin"}
-                  className={`w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none ${userRole !== "super admin" ? "bg-slate-50 cursor-not-allowed text-slate-500" : ""}`}
-                  required
-                />
-              </div>
-
-              {/* Tanggal Peminjaman */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Tanggal Peminjaman *
-                </label>
-                <p className="mb-2 -mt-1 text-xs text-slate-400 italic">↳ Tanggal alat mulai dipinjam</p>
-                <input
-                  type="date"
-                  value={tanggalPeminjaman}
-                  onChange={(e) => setTanggalPeminjaman(e.target.value)}
-                  min={userRole !== "super admin" ? new Date().toISOString().split("T")[0] : undefined}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
-                  required
-                />
-              </div>
-
-              {/* Yang Menyerahkan - Hanya visible untuk super admin */}
-              {userRole === "super admin" && (
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Yang Menyerahkan *
-                  </label>
-                  <p className="mb-2 -mt-1 text-xs text-slate-400 italic">↳ Penanggung jawab yang menyerahkan alat</p>
-                  <input
-                    type="text"
-                    placeholder="Masukkan nama yang menyerahkan"
-                    value={yangMenyerahkan}
-                    onChange={(e) => setYangMenyerahkan(toCapitalEachWord(e.target.value))}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
-                    required
-                  />
-                </div>
-              )}
+        {/* Section 2: Item Selection */}
+        <div className="bg-white rounded-lg shadow-sm border border-slate-200 border-t-4 border-t-primary p-4 sm:p-6">
+          {/* Header Row: Title & View Mode Toggle */}
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <Package className="w-5 h-5 text-primary shrink-0" />
+              <h2 className="text-base sm:text-lg font-semibold text-slate-900 truncate">
+                Pilih Item
+              </h2>
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary shrink-0">
+                {items.length} terpilih
+              </span>
             </div>
 
-            {/* Divider */}
-            <hr className="my-6 border-slate-200" />
-
-            {/* Keperluan Peminjaman (merged into this card) */}
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-semibold text-slate-800 flex items-center gap-2">
-                <FileText className="w-4 h-4" />
-                Keperluan Peminjaman
-              </h3>
+            {/* View Mode Toggle: Clean Segmented Pill */}
+            <div className="inline-flex items-center p-1 bg-slate-100 rounded-lg border border-slate-200/80 shrink-0">
               <button
                 type="button"
-                onClick={addKeperluan}
-                className="cursor-pointer flex items-center gap-2 px-3 py-1 bg-primary text-white text-sm rounded-lg hover:bg-primary-hover transition"
+                onClick={() => setViewMode("list")}
+                className={`cursor-pointer px-2.5 sm:px-3 py-1 text-xs sm:text-sm font-medium rounded-md transition-all flex items-center gap-1.5 ${viewMode === "list"
+                    ? "bg-white text-primary shadow-xs font-semibold"
+                    : "text-slate-600 hover:text-slate-900"
+                  }`}
+                title="Tampilan List"
               >
-                <Plus className="w-4 h-4" /> Tambah Keperluan
+                <List className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span>List</span>
               </button>
-            </div>
-
-            <div className="space-y-3">
-              {keperluanList.map((k, idx) => (
-                <div key={idx} className="flex gap-3">
-                  <input
-                    type="text"
-                    placeholder="Keperluan peminjaman (misal: Acara, Dokumentasi, dsb)"
-                    value={k.keperluan}
-                    onChange={(e) => updateKeperluan(idx, "keperluan", e.target.value)}
-                    className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
-                    required={idx === 0}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeKeperluan(idx)}
-                    className="cursor-pointer p-2 text-red-600 hover:bg-red-50 rounded-lg transition shrink-0"
-                    disabled={keperluanList.length === 1}
-                    style={{ opacity: keperluanList.length === 1 ? 0.5 : 1 }}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
+              <button
+                type="button"
+                onClick={() => setViewMode("grid")}
+                className={`cursor-pointer px-2.5 sm:px-3 py-1 text-xs sm:text-sm font-medium rounded-md transition-all flex items-center gap-1.5 ${viewMode === "grid"
+                    ? "bg-white text-primary shadow-xs font-semibold"
+                    : "text-slate-600 hover:text-slate-900"
+                  }`}
+                title="Tampilan Grid"
+              >
+                <Grid className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span>Grid</span>
+              </button>
             </div>
           </div>
 
-          {/* Section 2: Item Selection */}
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200 border-t-4 border-t-primary p-4 sm:p-6">
-            {/* Header Row: Title & View Mode Toggle */}
-            <div className="flex items-center justify-between gap-3 mb-3">
-              <div className="flex items-center gap-2 min-w-0">
-                <Package className="w-5 h-5 text-primary shrink-0" />
-                <h2 className="text-base sm:text-lg font-semibold text-slate-900 truncate">
-                  Pilih Item
-                </h2>
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary shrink-0">
-                  {items.length} terpilih
-                </span>
-              </div>
-
-              {/* View Mode Toggle: Clean Segmented Pill */}
-              <div className="inline-flex items-center p-1 bg-slate-100 rounded-lg border border-slate-200/80 shrink-0">
+          {/* Controls Row: Search Input + 2 Filter Dropdowns */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 mb-4">
+            {/* Search */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Cari nama, kode, kategori..."
+                value={itemSearch}
+                onChange={(e) => setItemSearch(e.target.value)}
+                className="w-full rounded-lg border border-slate-300 py-2 pl-9 pr-8 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none bg-white transition-colors"
+              />
+              {itemSearch && (
                 <button
                   type="button"
-                  onClick={() => setViewMode("list")}
-                  className={`cursor-pointer px-2.5 sm:px-3 py-1 text-xs sm:text-sm font-medium rounded-md transition-all flex items-center gap-1.5 ${
-                    viewMode === "list"
-                      ? "bg-white text-primary shadow-xs font-semibold"
-                      : "text-slate-600 hover:text-slate-900"
-                  }`}
-                  title="Tampilan List"
+                  onClick={() => setItemSearch("")}
+                  className="cursor-pointer absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 p-0.5"
+                  title="Hapus pencarian"
                 >
-                  <List className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  <span>List</span>
+                  <X className="w-3.5 h-3.5" />
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setViewMode("grid")}
-                  className={`cursor-pointer px-2.5 sm:px-3 py-1 text-xs sm:text-sm font-medium rounded-md transition-all flex items-center gap-1.5 ${
-                    viewMode === "grid"
-                      ? "bg-white text-primary shadow-xs font-semibold"
-                      : "text-slate-600 hover:text-slate-900"
-                  }`}
-                  title="Tampilan Grid"
-                >
-                  <Grid className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  <span>Grid</span>
-                </button>
-              </div>
+              )}
             </div>
 
-            {/* Controls Row: Search Input + 2 Filter Dropdowns */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 mb-4">
-              {/* Search */}
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Cari nama, kode, kategori..."
-                  value={itemSearch}
-                  onChange={(e) => setItemSearch(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 py-2 pl-9 pr-8 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none bg-white transition-colors"
-                />
-                {itemSearch && (
-                  <button
-                    type="button"
-                    onClick={() => setItemSearch("")}
-                    className="cursor-pointer absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 p-0.5"
-                    title="Hapus pencarian"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
-
-              {/* Filter Dropdowns (2 columns on mobile, inline flex on tablet/desktop) */}
-              <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-2.5 shrink-0">
-                <select
-                  value={itemFilter}
-                  onChange={(e) => setItemFilter(e.target.value)}
-                  className="cursor-pointer rounded-lg border border-slate-300 px-3 py-2 text-xs sm:text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none bg-white w-full sm:w-auto"
-                >
-                  <option value="semua">Semua Tipe</option>
-                  <option value="asset">Aset</option>
-                  <option value="aksesoris">Aksesoris</option>
-                </select>
-                <select
-                  value={brandFilter}
-                  onChange={(e) => setBrandFilter(e.target.value)}
-                  className="cursor-pointer rounded-lg border border-slate-300 px-3 py-2 text-xs sm:text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none bg-white w-full sm:w-auto"
-                >
-                  <option value="semua">Semua Brand</option>
-                  <option value="Galeria Studio">Galeria Studio</option>
-                  <option value="Galeria Production">Galeria Production</option>
-                </select>
-              </div>
+            {/* Filter Dropdowns (2 columns on mobile, inline flex on tablet/desktop) */}
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-2.5 shrink-0">
+              <select
+                value={itemFilter}
+                onChange={(e) => setItemFilter(e.target.value)}
+                className="cursor-pointer rounded-lg border border-slate-300 px-3 py-2 text-xs sm:text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none bg-white w-full sm:w-auto"
+              >
+                <option value="semua">Semua Tipe</option>
+                <option value="asset">Aset</option>
+                <option value="aksesoris">Aksesoris</option>
+              </select>
+              <select
+                value={brandFilter}
+                onChange={(e) => setBrandFilter(e.target.value)}
+                className="cursor-pointer rounded-lg border border-slate-300 px-3 py-2 text-xs sm:text-sm text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none bg-white w-full sm:w-auto"
+              >
+                <option value="semua">Semua Brand</option>
+                <option value="Galeria Studio">Galeria Studio</option>
+                <option value="Galeria Production">Galeria Production</option>
+              </select>
             </div>
+          </div>
 
-            {/* Item Selection - Grid View */}
-            {viewMode === "grid" && (
-              <div className="grid grid-cols-1 min-[520px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 max-h-[460px] overflow-y-auto pr-1">
-                {filteredItems.map((item) => {
-                  const stats = getItemUnitStats(item);
-                  const isSelected = items.some((it) => it.id === item.id && it.tipe === item.tipe);
-                  const selectedItem = items.find((it) => it.id === item.id && it.tipe === item.tipe);
-                  const isDisabled = !stats.isAvailable;
+          {/* Item Selection - Grid View */}
+          {viewMode === "grid" && (
+            <div className="grid grid-cols-1 min-[520px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 max-h-[460px] overflow-y-auto pr-1">
+              {filteredItems.map((item) => {
+                const stats = getItemUnitStats(item);
+                const isSelected = items.some((it) => it.id === item.id && it.tipe === item.tipe);
+                const selectedItem = items.find((it) => it.id === item.id && it.tipe === item.tipe);
+                const isDisabled = !stats.isAvailable;
 
-                  return (
-                    <div
-                      key={`${item.tipe}-${item.id}`}
-                      onClick={() => handleItemClick(item)}
-                      className={`p-3 sm:p-3.5 rounded-xl border-2 transition-all flex flex-col justify-between select-none ${
-                        isSelected
-                          ? "border-primary bg-blue-50/70 shadow-xs"
-                          : isDisabled
+                return (
+                  <div
+                    key={`${item.tipe}-${item.id}`}
+                    onClick={() => handleItemClick(item)}
+                    className={`p-3 sm:p-3.5 rounded-xl border-2 transition-all flex flex-col justify-between select-none ${isSelected
+                        ? "border-primary bg-blue-50/70 shadow-xs"
+                        : isDisabled
                           ? "border-slate-200 bg-slate-50/50 opacity-60 cursor-not-allowed"
                           : "border-slate-200 hover:border-primary hover:bg-slate-50 cursor-pointer hover:shadow-xs active:scale-[0.99]"
                       }`}
-                    >
-                      <div>
-                        {/* Gambar */}
-                        <div className="mb-2.5 h-36 sm:h-40 bg-slate-100 rounded-lg overflow-hidden flex items-center justify-center relative">
-                          <ItemThumbnail
-                            src={item.gambar}
-                            alt={item.nama}
-                            width={160}
-                            height={160}
-                            className="w-full h-full object-cover"
-                            iconSize="w-8 h-8"
-                          />
-                          {isSelected && (
-                            <div className="absolute top-2 right-2 bg-primary text-white p-1 rounded-full shadow-md">
-                              <Check className="w-3.5 h-3.5 stroke-[3]" />
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Info */}
-                        <p className="font-semibold text-slate-900 text-sm truncate" title={item.nama}>
-                          {item.nama}
-                        </p>
-                        <p className="text-xs text-slate-500 truncate mt-0.5">{item.kode}</p>
-
-                        {/* Badges (Wrap smoothly on mobile) */}
-                        <div className="flex flex-wrap gap-1 mt-2 items-center">
-                          {renderBrandBadge(item.jenisAset, false)}
-                          <span className={`text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-semibold ${
-                            item.tipe === "asset"
-                              ? "bg-blue-100 text-blue-700"
-                              : "bg-purple-100 text-purple-700"
-                          }`}>
-                            {item.tipe === "asset" ? "Aset" : "Aksesoris"}
-                          </span>
-                          <span className={`text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-semibold ${getKondisiBadge(item.kondisi, false)}`}>
-                            {item.kondisi}
-                          </span>
-                        </div>
-
-                        {/* Stok & Harga */}
-                        <div className="mt-2.5 pt-2 border-t border-slate-200 text-xs">
-                          <div className="flex items-center justify-between">
-                            <span className="text-slate-600">
-                              Stok: <strong className={stats.ready > 0 ? "text-slate-800" : "text-red-500 font-bold"}>{stats.ready}</strong>
-                            </span>
-                            {item.harga > 0 && (
-                              <span className="font-semibold text-emerald-600">
-                                {item.tipeHarga === "Per Paket" ? "~ " : ""}Rp {(item.harga || 0).toLocaleString('id-ID')}{item.tipeHarga === "Per Paket" ? "/unit" : ""}
-                              </span>
-                            )}
-                          </div>
-                          {item.harga > 0 && item.tipeHarga === "Per Paket" && (
-                            <p className="text-[10px] text-purple-600 font-medium text-right mt-0.5">
-                              (Paket: Rp {Number(item.hargaAsetOriginal).toLocaleString('id-ID')})
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Indikator Unit Ringkas */}
-                        {stats.hasUnits && (
-                          <div className="mt-2 pt-2 border-t border-slate-100 flex items-center gap-1.5 text-[11px] text-slate-500">
-                            <Layers className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                            <span>
-                              <strong className={stats.ready > 0 ? "text-emerald-600" : "text-red-500"}>{stats.ready}</strong>/{stats.total} unit tersedia
-                            </span>
+                  >
+                    <div>
+                      {/* Gambar */}
+                      <div className="mb-2.5 h-36 sm:h-40 bg-slate-100 rounded-lg overflow-hidden flex items-center justify-center relative">
+                        <ItemThumbnail
+                          src={item.gambar}
+                          alt={item.nama}
+                          width={160}
+                          height={160}
+                          className="w-full h-full object-cover"
+                          iconSize="w-8 h-8"
+                        />
+                        {isSelected && (
+                          <div className="absolute top-2 right-2 bg-primary text-white p-1 rounded-full shadow-md">
+                            <Check className="w-3.5 h-3.5 stroke-[3]" />
                           </div>
                         )}
                       </div>
 
-                      {isSelected && (
-                        <div className="mt-3 pt-2 border-t border-blue-200/80 flex items-center justify-center text-primary text-xs font-bold gap-1 bg-blue-100/40 py-1.5 rounded-b-lg -mx-3 sm:-mx-3.5 -mb-3 sm:-mb-3.5">
-                          <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+                      {/* Info */}
+                      <p className="font-semibold text-slate-900 text-sm truncate" title={item.nama}>
+                        {item.nama}
+                      </p>
+                      <p className="text-xs text-slate-500 truncate mt-0.5">{item.kode}</p>
+
+                      {/* Badges (Wrap smoothly on mobile) */}
+                      <div className="flex flex-wrap gap-1 mt-2 items-center">
+                        {renderBrandBadge(item.jenisAset, false)}
+                        <span className={`text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-semibold ${item.tipe === "asset"
+                            ? "bg-blue-100 text-blue-700"
+                            : "bg-purple-100 text-purple-700"
+                          }`}>
+                          {item.tipe === "asset" ? "Aset" : "Aksesoris"}
+                        </span>
+                        <span className={`text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-semibold ${getKondisiBadge(item.kondisi, false)}`}>
+                          {item.kondisi}
+                        </span>
+                      </div>
+
+                      {/* Stok & Harga */}
+                      <div className="mt-2.5 pt-2 border-t border-slate-200 text-xs">
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-600">
+                            Stok: <strong className={stats.ready > 0 ? "text-slate-800" : "text-red-500 font-bold"}>{stats.ready}</strong>
+                          </span>
+                          {item.harga > 0 && (
+                            <span className="font-semibold text-emerald-600">
+                              {item.tipeHarga === "Per Paket" ? "~ " : ""}Rp {(item.harga || 0).toLocaleString('id-ID')}{item.tipeHarga === "Per Paket" ? "/unit" : ""}
+                            </span>
+                          )}
+                        </div>
+                        {item.harga > 0 && item.tipeHarga === "Per Paket" && (
+                          <p className="text-[10px] text-purple-600 font-medium text-right mt-0.5">
+                            (Paket: Rp {Number(item.hargaAsetOriginal).toLocaleString('id-ID')})
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Indikator Unit Ringkas */}
+                      {stats.hasUnits && (
+                        <div className="mt-2 pt-2 border-t border-slate-100 flex items-center gap-1.5 text-[11px] text-slate-500">
+                          <Layers className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                           <span>
-                            {selectedItem?.hasUnits
-                              ? `${selectedItem.unitIds?.length || selectedItem.jumlah} Unit Terpilih`
-                              : `${selectedItem?.jumlah || 1} Terpilih`}
+                            <strong className={stats.ready > 0 ? "text-emerald-600" : "text-red-500"}>{stats.ready}</strong>/{stats.total} unit tersedia
                           </span>
                         </div>
                       )}
                     </div>
-                  );
-                })}
-              </div>
-            )}
 
-            {/* Item Selection - List View */}
-            {viewMode === "list" && (
-              <div className="space-y-2.5 mb-4 max-h-[460px] overflow-y-auto pr-1">
-                {filteredItems.map((item) => {
-                  const stats = getItemUnitStats(item);
-                  const isSelected = items.some((it) => it.id === item.id && it.tipe === item.tipe);
-                  const selectedItem = items.find((it) => it.id === item.id && it.tipe === item.tipe);
-                  const isDisabled = !stats.isAvailable;
-
-                  return (
-                    <div
-                      key={`${item.tipe}-${item.id}`}
-                      onClick={() => handleItemClick(item)}
-                      className={`p-3 rounded-xl border-2 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 select-none ${
-                        isSelected
-                          ? "border-primary bg-blue-50/70 shadow-xs"
-                          : isDisabled
-                          ? "border-slate-200 bg-slate-50/50 opacity-60 cursor-not-allowed"
-                          : "border-slate-200 hover:border-primary hover:bg-slate-50 cursor-pointer active:scale-[0.99]"
-                      }`}
-                    >
-                      {/* Left: Thumbnail & Details */}
-                      <div className="flex items-start sm:items-center gap-3 flex-1 min-w-0">
-                        {/* Thumbnail */}
-                        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center relative">
-                          <ItemThumbnail
-                            src={item.gambar}
-                            alt={item.nama}
-                            width={56}
-                            height={56}
-                            className="w-full h-full object-cover"
-                            iconSize="w-6 h-6"
-                          />
-                          {isSelected && (
-                            <div className="absolute top-1 right-1 bg-primary text-white p-0.5 rounded-full shadow-sm">
-                              <Check className="w-2.5 h-2.5 stroke-[3]" />
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Text & Badges */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 flex-wrap mb-1">
-                            {renderBrandBadge(item.jenisAset, true)}
-                            <span className={`text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-semibold border ${
-                              item.tipe === "asset"
-                                ? "bg-blue-100 text-blue-700 border-blue-200"
-                                : "bg-purple-100 text-purple-700 border-purple-200"
-                            }`}>
-                              {item.tipe === "asset" ? "Aset" : "Aksesoris"}
-                            </span>
-                            <span className={`text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-semibold border ${getKondisiBadge(item.kondisi, true)}`}>
-                              {item.kondisi}
-                            </span>
-                            {isSelected && (
-                              <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold border border-blue-200 ml-auto sm:ml-0">
-                                <Check className="w-3 h-3" />
-                                {selectedItem?.hasUnits ? `${selectedItem.jumlah} Unit` : `${selectedItem?.jumlah} Terpilih`}
-                              </span>
-                            )}
-                          </div>
-
-                          <p className="font-semibold text-slate-900 text-sm truncate" title={item.nama}>
-                            {item.nama}
-                          </p>
-                          <p className="text-xs text-slate-500 truncate mt-0.5">
-                            {item.kode} • {item.kategori} • {item.merek}
-                          </p>
-
-                          {stats.hasUnits && (
-                            <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mt-1">
-                              <Layers className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                              <span>
-                                <strong className={stats.ready > 0 ? "text-emerald-600 font-semibold" : "text-red-500 font-semibold"}>
-                                  {stats.ready}
-                                </strong>
-                                /{stats.total} unit tersedia
-                              </span>
-                            </div>
-                          )}
-                        </div>
+                    {isSelected && (
+                      <div className="mt-3 pt-2 border-t border-blue-200/80 flex items-center justify-center text-primary text-xs font-bold gap-1 bg-blue-100/40 py-1.5 rounded-b-lg -mx-3 sm:-mx-3.5 -mb-3 sm:-mb-3.5">
+                        <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+                        <span>
+                          {selectedItem?.hasUnits
+                            ? `${selectedItem.unitIds?.length || selectedItem.jumlah} Unit Terpilih`
+                            : `${selectedItem?.jumlah || 1} Terpilih`}
+                        </span>
                       </div>
-
-                      {/* Right: Stok, Harga & Select Button */}
-                      <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 border-t sm:border-0 border-slate-100 pt-2 sm:pt-0 w-full sm:w-auto">
-                        <div className="flex items-center gap-3 sm:flex-col sm:items-end sm:gap-0.5">
-                          <span className={`text-xs font-semibold ${stats.ready > 0 ? "text-slate-700" : "text-red-500"}`}>
-                            Stok: {stats.ready}
-                          </span>
-                          {item.harga > 0 && (
-                            <div className="flex items-center gap-1 sm:text-right">
-                              <span className="text-xs font-semibold text-emerald-600">
-                                {item.tipeHarga === "Per Paket" ? "~ " : ""}Rp {(item.harga || 0).toLocaleString('id-ID')}
-                              </span>
-                              {item.tipeHarga === "Per Paket" && (
-                                <span className="text-[10px] text-purple-600 font-medium">(Paket)</span>
-                              )}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Touch-friendly Action Button */}
-                        <div
-                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 shrink-0 ${
-                            isSelected
-                              ? "bg-primary text-white shadow-xs"
-                              : isDisabled
-                              ? "bg-slate-100 text-slate-400 cursor-not-allowed"
-                              : "bg-slate-100 text-slate-700 hover:bg-primary hover:text-white"
-                          }`}
-                        >
-                          {isSelected ? (
-                            <>
-                              <Check className="w-3.5 h-3.5 stroke-[2.5]" />
-                              <span>Terpilih</span>
-                            </>
-                          ) : (
-                            <>
-                              <Plus className="w-3.5 h-3.5" />
-                              <span>Pilih</span>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Empty state */}
-            {filteredItems.length === 0 && (
-              <div className="text-center py-8 text-slate-400">
-                <Package className="w-10 h-10 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">Tidak ada item yang cocok dengan pencarian</p>
-              </div>
-            )}
-          </div>
-
-          {/* Section 3: Selected Items */}
-          {items.length > 0 && (
-            <div className="bg-white rounded-lg shadow-sm border border-slate-200 border-t-4 border-t-primary p-4 sm:p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-base sm:text-lg font-semibold text-slate-900 flex items-center gap-2">
-                  <Package className="w-5 h-5 text-primary" />
-                  Item Terpilih ({items.length})
-                </h3>
-                <span className="text-xs text-slate-500 hidden sm:inline">
-                  Total {items.reduce((s, it) => s + (it.jumlah || 1), 0)} unit alat
-                </span>
-              </div>
-
-              <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1">
-                {items.map((item, idx) => {
-                  const itemGambar = item.gambar || allItems.find((it) => it.id === item.id && it.tipe === item.tipe)?.gambar;
-                  const subtotal = getItemSubtotal(item);
-
-                  return (
-                    <div
-                      key={`${item.tipe}-${item.id}-${idx}`}
-                      className="p-3 sm:p-3.5 rounded-xl border-2 border-slate-200 bg-white hover:border-slate-300 transition-all shadow-xs flex flex-col gap-3"
-                    >
-                      {/* Top Part: Thumbnail + Badges + Item Info */}
-                      <div className="flex items-start gap-3 min-w-0">
-                        {/* Thumbnail */}
-                        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
-                          <ItemThumbnail
-                            src={itemGambar}
-                            alt={item.nama}
-                            width={56}
-                            height={56}
-                            className="w-full h-full object-cover"
-                            iconSize="w-6 h-6"
-                          />
-                        </div>
-
-                        {/* Info */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 flex-wrap mb-1">
-                            {renderBrandBadge(item.jenisAset, true)}
-                            <span className={`text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-semibold border ${
-                              item.tipe === "asset"
-                                ? "bg-blue-100 text-blue-700 border-blue-200"
-                                : "bg-purple-100 text-purple-700 border-purple-200"
-                            }`}>
-                              {item.tipe === "asset" ? "Aset" : "Aksesoris"}
-                            </span>
-                            {item.kondisi && (
-                              <span className={`text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-semibold border ${getKondisiBadge(item.kondisi, true)}`}>
-                                {item.kondisi}
-                              </span>
-                            )}
-                          </div>
-
-                          <p className="font-semibold text-slate-900 text-sm truncate" title={item.nama}>
-                            {item.nama}
-                          </p>
-                          <p className="text-xs text-slate-500 truncate mt-0.5">
-                            {item.kode} • Stok: {item.stok}
-                          </p>
-
-                          {/* Unit Chips or Setting Links */}
-                          {item.hasUnits && (
-                            <div className="flex flex-wrap items-center gap-1.5 mt-2">
-                              <span className="text-[11px] text-slate-500 font-semibold">Unit:</span>
-                              {(item.units || [])
-                                .filter((u) => item.unitIds?.includes(u.id))
-                                .map((u) => (
-                                  <span
-                                    key={u.id}
-                                    className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 font-bold rounded-md border border-blue-200"
-                                  >
-                                    {u.nama_unit || u.kode_unit}
-                                  </span>
-                                ))}
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const orig = allItems.find((it) => it.id === item.id && it.tipe === item.tipe) || item;
-                                  openDetailModal(orig);
-                                }}
-                                className="cursor-pointer text-xs px-2 py-0.5 rounded bg-blue-50 hover:bg-blue-100 text-primary font-semibold transition"
-                              >
-                                Ubah Unit
-                              </button>
-                            </div>
-                          )}
-
-                          {!item.hasUnits && item.stok > 1 && (
-                            <div className="mt-2">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const orig = allItems.find((it) => it.id === item.id && it.tipe === item.tipe) || item;
-                                  openDetailModal(orig);
-                                }}
-                                className="cursor-pointer text-xs px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold transition inline-flex items-center gap-1"
-                              >
-                                Atur Jumlah
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Bottom Row / Action Bar: Subtotal, Quantity Control & Delete */}
-                      <div className="flex items-center justify-between border-t border-slate-100 pt-2.5 mt-1">
-                        {/* Left: Price Calculation */}
-                        <div className="flex flex-col">
-                          {item.harga > 0 ? (
-                            <>
-                              <span className="text-xs font-bold text-emerald-600 sm:text-sm">
-                                Rp {subtotal.toLocaleString('id-ID')}
-                              </span>
-                              <span className="text-[10px] text-slate-400">
-                                {item.tipeHarga === "Per Paket" ? "~ " : "@ "}Rp {(item.harga || 0).toLocaleString('id-ID')} / unit
-                                {item.tipeHarga === "Per Paket" && ` (Paket: Rp ${Number(item.hargaAsetOriginal || 0).toLocaleString('id-ID')})`}
-                              </span>
-                            </>
-                          ) : (
-                            <span className="text-xs text-slate-400 italic">Tanpa biaya</span>
-                          )}
-                        </div>
-
-                        {/* Right: Quantity Badge / Stepper & Delete */}
-                        <div className="flex items-center gap-2.5 sm:gap-3">
-                          {item.hasUnits ? (
-                            <div className="flex items-center gap-1.5 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200">
-                              <span className="text-xs font-bold text-blue-800">{item.jumlah} Unit</span>
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded-lg border border-slate-200">
-                              <label className="text-xs text-slate-600 font-medium mr-1">Jml:</label>
-                              <input
-                                type="number"
-                                min="1"
-                                max={item.stok}
-                                value={item.jumlah}
-                                onChange={(e) => updateItemJumlah(idx, parseInt(e.target.value))}
-                                className="w-12 sm:w-14 text-center rounded bg-white border border-slate-300 py-0.5 text-xs sm:text-sm font-semibold text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
-                              />
-                            </div>
-                          )}
-
-                          <button
-                            type="button"
-                            onClick={() => removeItemFromList(idx)}
-                            className="cursor-pointer p-1.5 sm:p-2 text-rose-600 hover:bg-rose-50 hover:text-rose-700 rounded-lg transition"
-                            title="Hapus Item"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Total Value */}
-              {items.some((it) => it.harga > 0) && (
-                <div className="mt-5 p-4 rounded-xl bg-gradient-to-r from-emerald-50/80 to-slate-50 border border-emerald-200/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div>
-                    <span className="text-xs font-semibold uppercase tracking-wider text-emerald-800">
-                      Total Nilai Aset yang Dipinjam
-                    </span>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Peminjam bertanggung jawab penuh atas keutuhan dan kondisi aset di atas
-                    </p>
+                    )}
                   </div>
-                  <div className="text-left sm:text-right shrink-0">
-                    <span className="text-2xl font-extrabold text-emerald-600 tracking-tight">
-                      Rp {calculateTotal().toLocaleString('id-ID')}
-                    </span>
-                  </div>
-                </div>
-              )}
+                );
+              })}
             </div>
           )}
 
-          {/* Section 4: Bukti Peminjaman */}
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200 border-t-4 border-t-primary p-4 sm:p-6">
-            <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-              <Camera className="w-5 h-5" />
-              Bukti Peminjaman ({buktiFiles.length}/5)
-            </h2>
+          {/* Item Selection - List View */}
+          {viewMode === "list" && (
+            <div className="space-y-2.5 mb-4 max-h-[460px] overflow-y-auto pr-1">
+              {filteredItems.map((item) => {
+                const stats = getItemUnitStats(item);
+                const isSelected = items.some((it) => it.id === item.id && it.tipe === item.tipe);
+                const selectedItem = items.find((it) => it.id === item.id && it.tipe === item.tipe);
+                const isDisabled = !stats.isAvailable;
 
-            <div className="space-y-4">
-              {/* Upload Area */}
-              <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center hover:border-primary/50 transition">
-                <ImageIcon className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                <p className="text-sm font-medium text-slate-700">Upload Bukti Peminjaman</p>
-                <p className="text-xs text-slate-400 mb-4">PNG, JPG, HEIC, WebP (maks. 5 gambar)</p>
+                return (
+                  <div
+                    key={`${item.tipe}-${item.id}`}
+                    onClick={() => handleItemClick(item)}
+                    className={`p-3 rounded-xl border-2 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 select-none ${isSelected
+                        ? "border-primary bg-blue-50/70 shadow-xs"
+                        : isDisabled
+                          ? "border-slate-200 bg-slate-50/50 opacity-60 cursor-not-allowed"
+                          : "border-slate-200 hover:border-primary hover:bg-slate-50 cursor-pointer active:scale-[0.99]"
+                      }`}
+                  >
+                    {/* Left: Thumbnail & Details */}
+                    <div className="flex items-start sm:items-center gap-3 flex-1 min-w-0">
+                      {/* Thumbnail */}
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center relative">
+                        <ItemThumbnail
+                          src={item.gambar}
+                          alt={item.nama}
+                          width={56}
+                          height={56}
+                          className="w-full h-full object-cover"
+                          iconSize="w-6 h-6"
+                        />
+                        {isSelected && (
+                          <div className="absolute top-1 right-1 bg-primary text-white p-0.5 rounded-full shadow-sm">
+                            <Check className="w-2.5 h-2.5 stroke-[3]" />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Text & Badges */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                          {renderBrandBadge(item.jenisAset, true)}
+                          <span className={`text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-semibold border ${item.tipe === "asset"
+                              ? "bg-blue-100 text-blue-700 border-blue-200"
+                              : "bg-purple-100 text-purple-700 border-purple-200"
+                            }`}>
+                            {item.tipe === "asset" ? "Aset" : "Aksesoris"}
+                          </span>
+                          <span className={`text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-semibold border ${getKondisiBadge(item.kondisi, true)}`}>
+                            {item.kondisi}
+                          </span>
+                          {isSelected && (
+                            <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold border border-blue-200 ml-auto sm:ml-0">
+                              <Check className="w-3 h-3" />
+                              {selectedItem?.hasUnits ? `${selectedItem.jumlah} Unit` : `${selectedItem?.jumlah} Terpilih`}
+                            </span>
+                          )}
+                        </div>
+
+                        <p className="font-semibold text-slate-900 text-sm truncate" title={item.nama}>
+                          {item.nama}
+                        </p>
+                        <p className="text-xs text-slate-500 truncate mt-0.5">
+                          {item.kode} • {item.kategori} • {item.merek}
+                        </p>
+
+                        {stats.hasUnits && (
+                          <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mt-1">
+                            <Layers className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                            <span>
+                              <strong className={stats.ready > 0 ? "text-emerald-600 font-semibold" : "text-red-500 font-semibold"}>
+                                {stats.ready}
+                              </strong>
+                              /{stats.total} unit tersedia
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Right: Stok, Harga & Select Button */}
+                    <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 border-t sm:border-0 border-slate-100 pt-2 sm:pt-0 w-full sm:w-auto">
+                      <div className="flex items-center gap-3 sm:flex-col sm:items-end sm:gap-0.5">
+                        <span className={`text-xs font-semibold ${stats.ready > 0 ? "text-slate-700" : "text-red-500"}`}>
+                          Stok: {stats.ready}
+                        </span>
+                        {item.harga > 0 && (
+                          <div className="flex items-center gap-1 sm:text-right">
+                            <span className="text-xs font-semibold text-emerald-600">
+                              {item.tipeHarga === "Per Paket" ? "~ " : ""}Rp {(item.harga || 0).toLocaleString('id-ID')}
+                            </span>
+                            {item.tipeHarga === "Per Paket" && (
+                              <span className="text-[10px] text-purple-600 font-medium">(Paket)</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Touch-friendly Action Button */}
+                      <div
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 shrink-0 ${isSelected
+                            ? "bg-primary text-white shadow-xs"
+                            : isDisabled
+                              ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                              : "bg-slate-100 text-slate-700 hover:bg-primary hover:text-white"
+                          }`}
+                      >
+                        {isSelected ? (
+                          <>
+                            <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+                            <span>Terpilih</span>
+                          </>
+                        ) : (
+                          <>
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Pilih</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Empty state */}
+          {filteredItems.length === 0 && (
+            <div className="text-center py-8 text-slate-400">
+              <Package className="w-10 h-10 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">Tidak ada item yang cocok dengan pencarian</p>
+            </div>
+          )}
+        </div>
+
+        {/* Section 3: Selected Items */}
+        {items.length > 0 && (
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 border-t-4 border-t-primary p-4 sm:p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base sm:text-lg font-semibold text-slate-900 flex items-center gap-2">
+                <Package className="w-5 h-5 text-primary" />
+                Item Terpilih ({items.length})
+              </h3>
+              <span className="text-xs text-slate-500 hidden sm:inline">
+                Total {items.reduce((s, it) => s + (it.jumlah || 1), 0)} unit alat
+              </span>
+            </div>
+
+            <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1">
+              {items.map((item, idx) => {
+                const itemGambar = item.gambar || allItems.find((it) => it.id === item.id && it.tipe === item.tipe)?.gambar;
+                const subtotal = getItemSubtotal(item);
+
+                return (
+                  <div
+                    key={`${item.tipe}-${item.id}-${idx}`}
+                    className="p-3 sm:p-3.5 rounded-xl border-2 border-slate-200 bg-white hover:border-slate-300 transition-all shadow-xs flex flex-col gap-3"
+                  >
+                    {/* Top Part: Thumbnail + Badges + Item Info */}
+                    <div className="flex items-start gap-3 min-w-0">
+                      {/* Thumbnail */}
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
+                        <ItemThumbnail
+                          src={itemGambar}
+                          alt={item.nama}
+                          width={56}
+                          height={56}
+                          className="w-full h-full object-cover"
+                          iconSize="w-6 h-6"
+                        />
+                      </div>
+
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                          {renderBrandBadge(item.jenisAset, true)}
+                          <span className={`text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-semibold border ${item.tipe === "asset"
+                              ? "bg-blue-100 text-blue-700 border-blue-200"
+                              : "bg-purple-100 text-purple-700 border-purple-200"
+                            }`}>
+                            {item.tipe === "asset" ? "Aset" : "Aksesoris"}
+                          </span>
+                          {item.kondisi && (
+                            <span className={`text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-semibold border ${getKondisiBadge(item.kondisi, true)}`}>
+                              {item.kondisi}
+                            </span>
+                          )}
+                        </div>
+
+                        <p className="font-semibold text-slate-900 text-sm truncate" title={item.nama}>
+                          {item.nama}
+                        </p>
+                        <p className="text-xs text-slate-500 truncate mt-0.5">
+                          {item.kode} • Stok: {item.stok}
+                        </p>
+
+                        {/* Unit Chips or Setting Links */}
+                        {item.hasUnits && (
+                          <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                            <span className="text-[11px] text-slate-500 font-semibold">Unit:</span>
+                            {(item.units || [])
+                              .filter((u) => item.unitIds?.includes(u.id))
+                              .map((u) => (
+                                <span
+                                  key={u.id}
+                                  className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 font-bold rounded-md border border-blue-200"
+                                >
+                                  {u.nama_unit || u.kode_unit}
+                                </span>
+                              ))}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const orig = allItems.find((it) => it.id === item.id && it.tipe === item.tipe) || item;
+                                openDetailModal(orig);
+                              }}
+                              className="cursor-pointer text-xs px-2 py-0.5 rounded bg-blue-50 hover:bg-blue-100 text-primary font-semibold transition"
+                            >
+                              Ubah Unit
+                            </button>
+                          </div>
+                        )}
+
+                        {!item.hasUnits && item.stok > 1 && (
+                          <div className="mt-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const orig = allItems.find((it) => it.id === item.id && it.tipe === item.tipe) || item;
+                                openDetailModal(orig);
+                              }}
+                              className="cursor-pointer text-xs px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold transition inline-flex items-center gap-1"
+                            >
+                              Atur Jumlah
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Bottom Row / Action Bar: Subtotal, Quantity Control & Delete */}
+                    <div className="flex items-center justify-between border-t border-slate-100 pt-2.5 mt-1">
+                      {/* Left: Price Calculation */}
+                      <div className="flex flex-col">
+                        {item.harga > 0 ? (
+                          <>
+                            <span className="text-xs font-bold text-emerald-600 sm:text-sm">
+                              Rp {subtotal.toLocaleString('id-ID')}
+                            </span>
+                            <span className="text-[10px] text-slate-400">
+                              {item.tipeHarga === "Per Paket" ? "~ " : "@ "}Rp {(item.harga || 0).toLocaleString('id-ID')} / unit
+                              {item.tipeHarga === "Per Paket" && ` (Paket: Rp ${Number(item.hargaAsetOriginal || 0).toLocaleString('id-ID')})`}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-xs text-slate-400 italic">Tanpa biaya</span>
+                        )}
+                      </div>
+
+                      {/* Right: Quantity Badge / Stepper & Delete */}
+                      <div className="flex items-center gap-2.5 sm:gap-3">
+                        {item.hasUnits ? (
+                          <div className="flex items-center gap-1.5 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200">
+                            <span className="text-xs font-bold text-blue-800">{item.jumlah} Unit</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded-lg border border-slate-200">
+                            <label className="text-xs text-slate-600 font-medium mr-1">Jml:</label>
+                            <input
+                              type="number"
+                              min="1"
+                              max={item.stok}
+                              value={item.jumlah}
+                              onChange={(e) => updateItemJumlah(idx, parseInt(e.target.value))}
+                              className="w-12 sm:w-14 text-center rounded bg-white border border-slate-300 py-0.5 text-xs sm:text-sm font-semibold text-slate-900 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
+                            />
+                          </div>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => removeItemFromList(idx)}
+                          className="cursor-pointer p-1.5 sm:p-2 text-rose-600 hover:bg-rose-50 hover:text-rose-700 rounded-lg transition"
+                          title="Hapus Item"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Total Value */}
+            {items.some((it) => it.harga > 0) && (
+              <div className="mt-5 p-4 rounded-xl bg-gradient-to-r from-emerald-50/80 to-slate-50 border border-emerald-200/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                  <span className="text-xs font-semibold uppercase tracking-wider text-emerald-800">
+                    Total Nilai Aset yang Dipinjam
+                  </span>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Peminjam bertanggung jawab penuh atas keutuhan dan kondisi aset di atas
+                  </p>
+                </div>
+                <div className="text-left sm:text-right shrink-0">
+                  <span className="text-2xl font-extrabold text-emerald-600 tracking-tight">
+                    Rp {calculateTotal().toLocaleString('id-ID')}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Section 4: Bukti Peminjaman */}
+        <div className="bg-white rounded-lg shadow-sm border border-slate-200 border-t-4 border-t-primary p-4 sm:p-6">
+          <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+            <Camera className="w-5 h-5" />
+            Bukti Peminjaman ({buktiFiles.length}/5)
+          </h2>
+
+          <div className="space-y-4">
+            {/* Upload Area */}
+            <div 
+              onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }}
+              onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }}
+              onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(false); }}
+              onDrop={handleDrop}
+              className={`border-2 border-dashed rounded-xl p-5 text-center transition-all ${
+                isDragging 
+                  ? "border-primary bg-primary/5 ring-4 ring-primary/10 scale-[1.01]" 
+                  : "border-slate-300 bg-slate-50 hover:border-slate-400"
+              }`}
+            >
+              {/* TAMPILAN WEB / DESKTOP (Layar sm ke atas) */}
+              <div className="hidden sm:block">
+                <div 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="cursor-pointer group flex flex-col items-center justify-center p-3"
+                >
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2.5 shadow-sm border transition-all ${
+                    isDragging 
+                      ? "bg-primary text-white scale-110" 
+                      : "bg-white text-primary border-slate-100 group-hover:scale-110"
+                  }`}>
+                    <Upload className="w-6 h-6" />
+                  </div>
+                  <p className="text-sm font-bold text-slate-800 mb-0.5">
+                    {isDragging ? "Lepaskan file foto di sini..." : "Tarik & Lepas Foto di Sini, atau"}
+                  </p>
+                  <p className="text-xs text-slate-400 mb-3">
+                    PNG, JPG, HEIC, WebP (Maks. 5 file)
+                  </p>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      fileInputRef.current?.click();
+                    }}
+                    className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 shadow-xs rounded-xl hover:border-primary hover:text-primary transition-all text-xs font-semibold text-slate-700 active:scale-95"
+                  >
+                    <Upload className="h-3.5 w-3.5 text-primary" />
+                    Pilih File dari Komputer
+                  </button>
+                </div>
+              </div>
+
+              {/* TAMPILAN PONSEL / MOBILE (Layar di bawah sm) */}
+              <div className="block sm:hidden">
+                <div className="bg-white w-11 h-11 rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm border border-slate-100">
+                  <Camera className="w-5 h-5 text-primary" />
+                </div>
+                <p className="text-xs font-bold text-slate-700 mb-0.5">
+                  Upload Bukti Peminjaman
+                </p>
+                <p className="text-[11px] text-slate-500 mb-3">Maks. 5 file (PNG, JPG, HEIC, WebP)</p>
                 
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                  {/* Opsi Kamera */}
-                  <input
-                    ref={cameraInputRef}
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    onChange={handleFileChange}
-                    className="hidden"
-                  />
+                <div className="flex flex-col gap-2">
                   <button
                     type="button"
                     onClick={() => cameraInputRef.current?.click()}
-                    className="cursor-pointer w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 bg-white border border-slate-200 shadow-sm rounded-xl hover:border-primary hover:text-primary transition-colors text-sm font-semibold text-slate-700"
+                    className="cursor-pointer w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-slate-200 shadow-sm rounded-xl hover:border-primary hover:text-primary transition-colors text-xs font-semibold text-slate-700"
                   >
                     <Camera className="h-4 w-4 text-primary" />
                     Buka Kamera
                   </button>
 
-                  {/* Opsi Galeri */}
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    multiple
-                    accept="image/jpeg,image/jpg,image/png,image/heic,image/heif,image/webp"
-                    onChange={handleFileChange}
-                    className="hidden"
-                  />
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="cursor-pointer w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 bg-white border border-slate-200 shadow-sm rounded-xl hover:border-primary hover:text-primary transition-colors text-sm font-semibold text-slate-700"
+                    className="cursor-pointer w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-slate-200 shadow-sm rounded-xl hover:border-primary hover:text-primary transition-colors text-xs font-semibold text-slate-700"
                   >
                     <ImageIcon className="h-4 w-4 text-primary" />
                     Pilih Galeri
@@ -1378,51 +1412,70 @@ export default function TambahPeminjamanPage() {
                 </div>
               </div>
 
-              {/* Preview */}
-              {buktiPreviews.length > 0 && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-                  {buktiPreviews.map((preview, idx) => (
-                    <div key={idx} className="relative group">
-                      <img
-                        src={preview}
-                        alt={`Preview ${idx + 1}`}
-                        className="w-full h-24 object-cover rounded-lg border border-slate-200"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeFile(idx)}
-                        className="cursor-pointer absolute -top-2 -right-2 bg-red-600 hover:bg-red-700 text-white rounded-full p-1 shadow-md opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition z-10"
-                        title="Hapus gambar"
-                        aria-label="Hapus gambar"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
+              {/* Hidden File Inputs */}
+              <input
+                ref={cameraInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept="image/jpeg,image/jpg,image/png,image/heic,image/heif,image/webp"
+                onChange={handleFileChange}
+                className="hidden"
+              />
             </div>
-          </div>
 
-          {/* Submit Button */}
-          <div className="flex flex-col-reverse sm:flex-row gap-3 justify-end">
-            <button
-              type="button"
-              onClick={() => router.back()}
-              className="cursor-pointer w-full sm:w-auto px-6 py-2.5 rounded-lg border-2 border-slate-400 text-slate-700 font-semibold hover:bg-slate-200 hover:border-slate-500 hover:text-slate-900 transition text-center"
-            >
-              Batal
-            </button>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="cursor-pointer w-full sm:w-auto px-6 py-2.5 rounded-lg bg-primary text-white font-medium hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center gap-2"
-            >
-              <Check className="w-4 h-4" />
-              {submitting ? "Menyimpan..." : "Simpan Peminjaman"}
-            </button>
+            {/* Preview */}
+            {buktiPreviews.length > 0 && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                {buktiPreviews.map((preview, idx) => (
+                  <div key={idx} className="relative group">
+                    <img
+                      src={preview}
+                      alt={`Preview ${idx + 1}`}
+                      className="w-full h-24 object-cover rounded-lg border border-slate-200"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeFile(idx)}
+                      className="cursor-pointer absolute -top-2 -right-2 bg-red-600 hover:bg-red-700 text-white rounded-full p-1 shadow-md opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition z-10"
+                      title="Hapus gambar"
+                      aria-label="Hapus gambar"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        </form>
+        </div>
+
+        {/* Submit Button */}
+        <div className="flex flex-col-reverse sm:flex-row gap-3 justify-end">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="cursor-pointer w-full sm:w-auto px-6 py-2.5 rounded-lg border-2 border-slate-400 text-slate-700 font-semibold hover:bg-slate-200 hover:border-slate-500 hover:text-slate-900 transition text-center"
+          >
+            Batal
+          </button>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="cursor-pointer w-full sm:w-auto px-6 py-2.5 rounded-lg bg-primary text-white font-medium hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center gap-2"
+          >
+            <Check className="w-4 h-4" />
+            {submitting ? "Menyimpan..." : "Simpan Peminjaman"}
+          </button>
+        </div>
+      </form>
 
       {/* Modal Pemilihan Item / Unit */}
       {detailModalItem && createPortal(
@@ -1444,11 +1497,10 @@ export default function TambahPeminjamanPage() {
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5 flex-wrap">
                     {renderBrandBadge(detailModalItem.jenisAset, false)}
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
-                      detailModalItem.tipe === "asset"
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${detailModalItem.tipe === "asset"
                         ? "bg-blue-100 text-blue-700"
                         : "bg-purple-100 text-purple-700"
-                    }`}>
+                      }`}>
                       {detailModalItem.tipe === "asset" ? "Aset" : "Aksesoris"}
                     </span>
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${getKondisiBadge(detailModalItem.kondisi, false)}`}>
@@ -1596,13 +1648,12 @@ export default function TambahPeminjamanPage() {
                         <div
                           key={u.id}
                           onClick={() => toggleModalUnit(u.id, isUnavailable)}
-                          className={`relative px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-xl border transition-all flex items-center justify-between gap-2.5 sm:gap-3 select-none ${
-                            isUnavailable
+                          className={`relative px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-xl border transition-all flex items-center justify-between gap-2.5 sm:gap-3 select-none ${isUnavailable
                               ? "bg-slate-100/80 border-slate-200 opacity-60 cursor-not-allowed"
                               : isSelected
-                              ? "bg-blue-50/70 border-primary ring-1 ring-primary shadow-xs cursor-pointer"
-                              : "bg-white border-slate-200 hover:border-primary/50 hover:bg-slate-50 cursor-pointer"
-                          }`}
+                                ? "bg-blue-50/70 border-primary ring-1 ring-primary shadow-xs cursor-pointer"
+                                : "bg-white border-slate-200 hover:border-primary/50 hover:bg-slate-50 cursor-pointer"
+                            }`}
                         >
                           <div className="flex items-center gap-3 min-w-0">
                             {/* Checkbox Icon */}
@@ -1611,16 +1662,14 @@ export default function TambahPeminjamanPage() {
                                 <Check className="w-3.5 h-3.5 stroke-[3]" />
                               </div>
                             ) : (
-                              <div className={`w-5 h-5 rounded-md border shrink-0 ${
-                                isUnavailable ? "border-slate-300 bg-slate-200" : "border-slate-300 bg-white"
-                              }`} />
+                              <div className={`w-5 h-5 rounded-md border shrink-0 ${isUnavailable ? "border-slate-300 bg-slate-200" : "border-slate-300 bg-white"
+                                }`} />
                             )}
 
                             {/* Unit Details: Name & Code */}
                             <div className="min-w-0">
-                              <p className={`text-sm font-semibold truncate ${
-                                isSelected ? "text-primary" : isUnavailable ? "text-slate-500" : "text-slate-800"
-                              }`}>
+                              <p className={`text-sm font-semibold truncate ${isSelected ? "text-primary" : isUnavailable ? "text-slate-500" : "text-slate-800"
+                                }`}>
                                 {u.nama_unit || u.kode_unit}
                               </p>
                               <p className="text-xs text-slate-500 font-mono">
@@ -1688,8 +1737,8 @@ export default function TambahPeminjamanPage() {
                   : modalJumlah;
                 const modalSubtotal = (detailModalItem.tipeHarga === "Per Paket" && (detailModalItem.jumlahTotal || 1) > 0)
                   ? (count === Number(detailModalItem.jumlahTotal || 1)
-                      ? Number(detailModalItem.hargaAsetOriginal) || 0
-                      : Math.round(((Number(detailModalItem.hargaAsetOriginal) || 0) * count) / Number(detailModalItem.jumlahTotal || 1)))
+                    ? Number(detailModalItem.hargaAsetOriginal) || 0
+                    : Math.round(((Number(detailModalItem.hargaAsetOriginal) || 0) * count) / Number(detailModalItem.jumlahTotal || 1)))
                   : (Number(detailModalItem.harga) || 0) * count;
 
                 return (
@@ -1737,13 +1786,12 @@ export default function TambahPeminjamanPage() {
 
       {/* Toast */}
       {typeof document !== 'undefined' && toast && createPortal(
-        <div className={`fixed top-20 right-6 z-[9999] flex items-center gap-2 rounded-xl px-5 py-3 shadow-lg text-sm font-medium text-white transition-all animate-[slideIn_0.3s_ease] ${
-          toast.type === "error"
+        <div className={`fixed top-20 right-6 z-[9999] flex items-center gap-2 rounded-xl px-5 py-3 shadow-lg text-sm font-medium text-white transition-all animate-[slideIn_0.3s_ease] ${toast.type === "error"
             ? "bg-rose-500"
             : toast.type === "info"
-            ? "bg-blue-500"
-            : "bg-emerald-500"
-        }`}>
+              ? "bg-blue-500"
+              : "bg-emerald-500"
+          }`}>
           {toast.type === "error" ? (
             <X className="h-4 w-4" />
           ) : toast.type === "info" ? (

@@ -21,6 +21,7 @@ import {
   Package,
   Camera,
   ImageIcon,
+  Upload,
   Info,
   Search,
   ChevronRight
@@ -160,6 +161,7 @@ export default function EditPeminjamanPage() {
   const [buktiFiles, setBuktiFiles] = useState([]);
   const [buktiPreviews, setBuktiPreviews] = useState([]);
   const [existingBuktiPeminjaman, setExistingBuktiPeminjaman] = useState([]);
+  const [isDragging, setIsDragging] = useState(false);
   
   // Lightbox
   const [lightboxData, setLightboxData] = useState(null);
@@ -216,9 +218,8 @@ export default function EditPeminjamanPage() {
   }, [mounted, fetchData]);
 
   // File handling
-  const handleFileChange = (e) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
+  const processFiles = (files) => {
+    if (!files || files.length === 0) return;
     const validTypes = ["image/jpeg", "image/jpg", "image/png", "image/heic", "image/heif", "image/webp"];
     const validExts = [".jpg", ".jpeg", ".png", ".heic", ".heif", ".webp"];
     let filesToAdd = [];
@@ -227,7 +228,6 @@ export default function EditPeminjamanPage() {
       const ext = "." + (file.name.split(".").pop() || "").toLowerCase();
       if (!validTypes.includes(file.type) && !validExts.includes(ext)) {
         showToast("Format file harus JPG, JPEG, PNG, HEIC, atau WebP", "error");
-        e.target.value = "";
         return;
       }
       filesToAdd.push(file);
@@ -235,14 +235,26 @@ export default function EditPeminjamanPage() {
 
     if (buktiFiles.length + filesToAdd.length > 5) {
       showToast("Maksimal 5 gambar", "error");
-      e.target.value = "";
       return;
     }
 
     const updated = [...buktiFiles, ...filesToAdd];
     setBuktiFiles(updated);
     setBuktiPreviews(updated.map((f) => URL.createObjectURL(f)));
+  };
+
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files || []);
+    processFiles(files);
     e.target.value = "";
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    const files = Array.from(e.dataTransfer.files || []);
+    processFiles(files);
   };
 
   const removeFile = (index) => {
@@ -560,52 +572,100 @@ export default function EditPeminjamanPage() {
                       </span>
                     </div>
                     
-                    <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center transition-all bg-slate-50">
-                      <div className="bg-white w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm border border-slate-100">
-                        <Camera className="w-6 h-6 text-primary" />
-                      </div>
-                      <p className="text-sm font-bold text-slate-700 mb-1">
-                        Upload Bukti Pengembalian
-                      </p>
-                      <p className="text-xs text-slate-500 mb-4">Maks. 5 file (PNG, JPG, HEIC, WebP)</p>
-                      
-                      <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                        {/* Opsi Kamera */}
-                        <input
-                          ref={cameraInputRef}
-                          type="file"
-                          accept="image/*"
-                          capture="environment"
-                          onChange={handleFileChange}
-                          className="hidden"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => cameraInputRef.current?.click()}
-                          className="cursor-pointer w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 bg-white border border-slate-200 shadow-sm rounded-xl hover:border-primary hover:text-primary transition-colors text-sm font-semibold text-slate-700"
-                        >
-                          <Camera className="h-4 w-4 text-primary" />
-                          Buka Kamera
-                        </button>
-
-                        {/* Opsi Galeri */}
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          multiple
-                          accept="image/jpeg,image/jpg,image/png,image/heic,image/heif,image/webp"
-                          onChange={handleFileChange}
-                          className="hidden"
-                        />
-                        <button
-                          type="button"
+                    <div 
+                      onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }}
+                      onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }}
+                      onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(false); }}
+                      onDrop={handleDrop}
+                      className={`border-2 border-dashed rounded-xl p-5 text-center transition-all ${
+                        isDragging 
+                          ? "border-primary bg-primary/5 ring-4 ring-primary/10 scale-[1.01]" 
+                          : "border-slate-300 bg-slate-50 hover:border-slate-400"
+                      }`}
+                    >
+                      {/* TAMPILAN WEB / DESKTOP (Layar sm ke atas) */}
+                      <div className="hidden sm:block">
+                        <div 
                           onClick={() => fileInputRef.current?.click()}
-                          className="cursor-pointer w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 bg-white border border-slate-200 shadow-sm rounded-xl hover:border-primary hover:text-primary transition-colors text-sm font-semibold text-slate-700"
+                          className="cursor-pointer group flex flex-col items-center justify-center p-3"
                         >
-                          <ImageIcon className="h-4 w-4 text-primary" />
-                          Pilih Galeri
-                        </button>
+                          <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2.5 shadow-sm border transition-all ${
+                            isDragging 
+                              ? "bg-primary text-white scale-110" 
+                              : "bg-white text-primary border-slate-100 group-hover:scale-110"
+                          }`}>
+                            <Upload className="w-6 h-6" />
+                          </div>
+                          <p className="text-sm font-bold text-slate-800 mb-0.5">
+                            {isDragging ? "Lepaskan file foto di sini..." : "Tarik & Lepas Foto di Sini, atau"}
+                          </p>
+                          <p className="text-xs text-slate-400 mb-3">
+                            PNG, JPG, HEIC, WebP (Maks. 5 file)
+                          </p>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              fileInputRef.current?.click();
+                            }}
+                            className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 shadow-xs rounded-xl hover:border-primary hover:text-primary transition-all text-xs font-semibold text-slate-700 active:scale-95"
+                          >
+                            <Upload className="h-3.5 w-3.5 text-primary" />
+                            Pilih File dari Komputer
+                          </button>
+                        </div>
                       </div>
+
+                      {/* TAMPILAN PONSEL / MOBILE (Layar di bawah sm) */}
+                      <div className="block sm:hidden">
+                        <div className="bg-white w-11 h-11 rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm border border-slate-100">
+                          <Camera className="w-5 h-5 text-primary" />
+                        </div>
+                        <p className="text-xs font-bold text-slate-700 mb-0.5">
+                          Upload Bukti Pengembalian
+                        </p>
+                        <p className="text-[11px] text-slate-500 mb-3">Maks. 5 file (PNG, JPG, HEIC, WebP)</p>
+                        
+                        <div className="flex flex-col gap-2">
+                          {/* Opsi Kamera */}
+                          <button
+                            type="button"
+                            onClick={() => cameraInputRef.current?.click()}
+                            className="cursor-pointer w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-slate-200 shadow-sm rounded-xl hover:border-primary hover:text-primary transition-colors text-xs font-semibold text-slate-700"
+                          >
+                            <Camera className="h-4 w-4 text-primary" />
+                            Buka Kamera
+                          </button>
+
+                          {/* Opsi Galeri */}
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="cursor-pointer w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-slate-200 shadow-sm rounded-xl hover:border-primary hover:text-primary transition-colors text-xs font-semibold text-slate-700"
+                          >
+                            <ImageIcon className="h-4 w-4 text-primary" />
+                            Pilih Galeri
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Hidden File Inputs */}
+                      <input
+                        ref={cameraInputRef}
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        onChange={handleFileChange}
+                        className="hidden"
+                      />
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        multiple
+                        accept="image/jpeg,image/jpg,image/png,image/heic,image/heif,image/webp"
+                        onChange={handleFileChange}
+                        className="hidden"
+                      />
                     </div>
 
                     {/* Preview */}

@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
-import { getAuditLogs } from "../../lib/auditService";
+import { createPortal } from "react-dom";
+import { getAuditLogs, deleteAllAuditLogs } from "../../lib/auditService";
+import { getUserContext } from "../../lib/authService";
 import { exportToPDF, exportToExcel } from "../../lib/exportUtils";
-import { Search, FileText, Download, Filter, ShieldAlert, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ChevronUp, ChevronDown, Calendar, User, Activity, XCircle, RotateCcw, Printer } from "lucide-react";
+import { Search, FileText, Download, Filter, ShieldAlert, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ChevronUp, ChevronDown, Calendar, User, Activity, XCircle, RotateCcw, Printer, Trash2, AlertTriangle, Check } from "lucide-react";
 
 const ROWS_OPTIONS = [10, 25, 50, 100];
 
@@ -35,7 +37,20 @@ export default function AuditReportPage() {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [sortConfig, setSortConfig] = useState({ key: "createdAt", direction: "desc" });
 
+  // Super Admin Delete All States
+  const [userRole, setUserRole] = useState("user");
+  const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
+  const [deleteAllConfirmation, setDeleteAllConfirmation] = useState("");
+  const [deleteAllLoading, setDeleteAllLoading] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
+    setMounted(true);
+    const ctx = getUserContext();
+    if (ctx) {
+      setUserRole(ctx.role || "user");
+    }
     fetchData();
     
     // Close dropdown when clicking outside
@@ -57,6 +72,33 @@ export default function AuditReportPage() {
       setError(err.message || "Gagal memuat audit log");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
+    setTimeout(() => {
+      setToast(null);
+    }, 4000);
+  };
+
+  const handleDeleteAll = async () => {
+    if (deleteAllConfirmation.trim() !== "HAPUS SEMUA") {
+      showToast("Ketik 'HAPUS SEMUA' dengan huruf besar untuk konfirmasi", "error");
+      return;
+    }
+    try {
+      setDeleteAllLoading(true);
+      const res = await deleteAllAuditLogs();
+      showToast(res.message || "Data audit log berhasil dihapus seluruhnya!", "success");
+      setShowDeleteAllModal(false);
+      setDeleteAllConfirmation("");
+      await fetchData();
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || "Gagal menghapus seluruh audit log";
+      showToast(msg, "error");
+    } finally {
+      setDeleteAllLoading(false);
     }
   };
 
@@ -243,45 +285,63 @@ export default function AuditReportPage() {
           <ShieldAlert className="h-5 w-5 text-primary" />
           <h2 className="text-lg font-bold text-slate-800">Audit Log Sistem</h2>
         </div>
-        <div className="relative w-full sm:w-auto" ref={exportMenuRef}>
-          <button
-            onClick={() => setShowExportMenu(!showExportMenu)}
-            disabled={exporting || loading || filteredData.length === 0}
-            className="flex items-center justify-center w-full sm:w-auto gap-2 px-4 py-2 text-sm font-semibold bg-primary text-white rounded-lg hover:bg-primary-hover transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
-          >
-            <Printer className="h-4 w-4" /> 
-            <span>Cetak Laporan</span>
-            <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${showExportMenu ? "rotate-180" : ""}`} />
-          </button>
-          
-          {showExportMenu && (
-            <div className="absolute right-0 sm:right-0 left-0 sm:left-auto mt-2 w-full sm:w-48 bg-white rounded-xl shadow-xl border border-slate-100 z-50 overflow-hidden animate-in fade-in zoom-in duration-200">
-              <button
-                onClick={handleExportPDF}
-                className="flex items-center w-full gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors border-b border-slate-50 cursor-pointer"
-              >
-                <div className="h-8 w-8 rounded-lg bg-red-100 flex items-center justify-center text-red-600 shrink-0">
-                  <FileText className="h-4 w-4" />
-                </div>
-                <div className="flex flex-col items-start">
-                  <span className="font-bold">Format PDF</span>
-                  <span className="text-[10px] text-slate-400 text-left">Dokumen digital siap cetak</span>
-                </div>
-              </button>
-              <button
-                onClick={handleExportExcel}
-                className="flex items-center w-full gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
-              >
-                <div className="h-8 w-8 rounded-lg bg-green-100 flex items-center justify-center text-green-600 shrink-0">
-                  <Download className="h-4 w-4" />
-                </div>
-                <div className="flex flex-col items-start">
-                  <span className="font-bold">Format Excel</span>
-                  <span className="text-[10px] text-slate-400 text-left">Olah data di spreadsheet</span>
-                </div>
-              </button>
-            </div>
+        <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+          {/* Hapus Seluruh Data - Khusus Super Admin */}
+          {userRole === "super admin" && (
+            <button
+              type="button"
+              onClick={() => {
+                setDeleteAllConfirmation("");
+                setShowDeleteAllModal(true);
+              }}
+              title="Khusus Super Admin: Hapus seluruh audit log sistem"
+              className="cursor-pointer w-full sm:w-auto flex justify-center items-center gap-1.5 rounded-lg bg-rose-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-rose-700 active:scale-95 whitespace-nowrap"
+            >
+              <Trash2 className="h-4 w-4" />
+              Hapus Seluruh Data
+            </button>
           )}
+
+          <div className="relative w-full sm:w-auto" ref={exportMenuRef}>
+            <button
+              onClick={() => setShowExportMenu(!showExportMenu)}
+              disabled={exporting || loading || filteredData.length === 0}
+              className="flex items-center justify-center w-full sm:w-auto gap-2 px-4 py-2 text-sm font-semibold bg-primary text-white rounded-lg hover:bg-primary-hover transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
+            >
+              <Printer className="h-4 w-4" /> 
+              <span>Cetak Laporan</span>
+              <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${showExportMenu ? "rotate-180" : ""}`} />
+            </button>
+            
+            {showExportMenu && (
+              <div className="absolute right-0 sm:right-0 left-0 sm:left-auto mt-2 w-full sm:w-48 bg-white rounded-xl shadow-xl border border-slate-100 z-50 overflow-hidden animate-in fade-in zoom-in duration-200">
+                <button
+                  onClick={handleExportPDF}
+                  className="flex items-center w-full gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors border-b border-slate-50 cursor-pointer"
+                >
+                  <div className="h-8 w-8 rounded-lg bg-red-100 flex items-center justify-center text-red-600 shrink-0">
+                    <FileText className="h-4 w-4" />
+                  </div>
+                  <div className="flex flex-col items-start">
+                    <span className="font-bold">Format PDF</span>
+                    <span className="text-[10px] text-slate-400 text-left">Dokumen digital siap cetak</span>
+                  </div>
+                </button>
+                <button
+                  onClick={handleExportExcel}
+                  className="flex items-center w-full gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+                >
+                  <div className="h-8 w-8 rounded-lg bg-green-100 flex items-center justify-center text-green-600 shrink-0">
+                    <Download className="h-4 w-4" />
+                  </div>
+                  <div className="flex flex-col items-start">
+                    <span className="font-bold">Format Excel</span>
+                    <span className="text-[10px] text-slate-400 text-left">Olah data di spreadsheet</span>
+                  </div>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -444,6 +504,86 @@ export default function AuditReportPage() {
         </div>
         <Pagination />
       </div>
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`fixed bottom-5 right-5 z-70 flex items-center gap-3 rounded-xl px-4 py-3 shadow-lg border text-sm font-semibold transition-all animate-in fade-in slide-in-from-bottom-5 ${toast.type === 'error' ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>
+          {toast.type === 'error' ? <AlertTriangle className="h-5 w-5 text-rose-500" /> : <Check className="h-5 w-5 text-emerald-500" />}
+          <span>{toast.message}</span>
+        </div>
+      )}
+
+      {/* Modal Hapus Seluruh Data (Khusus Super Admin) */}
+      {mounted && typeof document !== "undefined" && createPortal(
+        <>
+          {showDeleteAllModal && (
+            <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/50 p-2.5 sm:p-4 backdrop-blur-xs transition-opacity animate-in fade-in duration-300" onClick={() => setShowDeleteAllModal(false)}>
+              <div className="w-full max-w-lg max-h-[92vh] flex flex-col rounded-2xl bg-white shadow-2xl border-t-4 border-t-rose-600 animate-modal-in overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                <div className="p-4 sm:p-6 overflow-y-auto custom-scrollbar flex-1">
+                  <div className="flex items-start justify-between gap-3 mb-4">
+                    <div className="flex items-start gap-2.5 sm:gap-3 min-w-0">
+                      <div className="p-2 sm:p-2.5 rounded-xl sm:rounded-full bg-rose-100 text-rose-600 shrink-0">
+                        <AlertTriangle className="h-5 w-5 sm:h-6 sm:w-6" />
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="text-base sm:text-lg font-bold text-slate-800">Hapus Seluruh Data</h3>
+                        <p className="text-xs text-slate-500 mt-0.5">Tindakan pembersihan massal (Wipe Data)</p>
+                      </div>
+                    </div>
+                    <span className="shrink-0 px-2 sm:px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-bold tracking-wider uppercase bg-rose-100 text-rose-700 border border-rose-200">
+                      Super Admin
+                    </span>
+                  </div>
+
+                  <div className="p-3 sm:p-3.5 mb-4 sm:mb-5 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 text-xs leading-relaxed space-y-1">
+                    <p className="font-bold flex items-center gap-1.5 text-rose-700">
+                      ⚠️ PERINGATAN KERAS: TINDAKAN INI PERMANEN!
+                    </p>
+                    <p className="text-[11px] sm:text-xs text-rose-800">
+                      Semua data rekam jejak aktivitas (<strong>Audit Log Sistem</strong>) akan <strong>dihapus secara permanen</strong> dan <strong>tidak dapat dipulihkan</strong>.
+                    </p>
+                  </div>
+
+                  <div className="space-y-3.5 sm:space-y-4">
+                    <div className="pt-1 sm:pt-2">
+                      <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                        Ketik <span className="font-mono text-rose-600 font-bold bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">HAPUS SEMUA</span> untuk konfirmasi:
+                      </label>
+                      <input
+                        type="text"
+                        value={deleteAllConfirmation}
+                        onChange={(e) => setDeleteAllConfirmation(e.target.value)}
+                        placeholder="Ketik HAPUS SEMUA di sini..."
+                        className="w-full px-3 sm:px-3.5 py-2 text-xs sm:text-sm border-2 border-slate-200 rounded-xl focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 font-mono tracking-wide text-slate-800 bg-white"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3 border-t border-slate-100 bg-slate-50/70 px-4 py-3 sm:px-6 sm:py-4 shrink-0 rounded-b-2xl">
+                  <button
+                    type="button"
+                    onClick={() => setShowDeleteAllModal(false)}
+                    disabled={deleteAllLoading}
+                    className="cursor-pointer w-full sm:w-auto text-center rounded-lg border border-slate-200 px-4 py-2 text-xs sm:text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDeleteAll}
+                    disabled={deleteAllLoading || deleteAllConfirmation.trim() !== "HAPUS SEMUA"}
+                    className="cursor-pointer w-full sm:w-auto text-center rounded-lg bg-rose-600 px-5 py-2 text-xs sm:text-sm font-semibold text-white shadow-sm transition-colors hover:bg-rose-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {deleteAllLoading ? "Menghapus..." : "Konfirmasi Hapus Permanen"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </>,
+        document.body
+      )}
     </div>
   );
 }

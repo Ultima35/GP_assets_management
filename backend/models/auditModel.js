@@ -75,6 +75,11 @@ const AuditLog = {
       limit: Number(limit),
       totalPages: Math.ceil(countRows[0].total / limit)
     };
+  },
+
+  deleteAll: async () => {
+    await db.query('DELETE FROM audit_logs');
+    await db.query('ALTER TABLE audit_logs AUTO_INCREMENT = 1');
   }
 };
 

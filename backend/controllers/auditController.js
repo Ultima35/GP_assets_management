@@ -21,6 +21,20 @@ const auditController = {
       console.error("Error get audit logs:", error);
       res.status(500).json({ success: false, message: "Server Error", error: error.message });
     }
+  },
+
+  // DELETE /api/audit/bulk/delete-all (Super Admin only)
+  deleteAll: async (req, res) => {
+    try {
+      await AuditLog.deleteAll();
+      return res.status(200).json({
+        success: true,
+        message: "Seluruh data audit log berhasil dihapus!"
+      });
+    } catch (error) {
+      console.error("Error delete all audit logs:", error);
+      res.status(500).json({ success: false, message: "Gagal menghapus seluruh audit log", error: error.message });
+    }
   }
 };
 

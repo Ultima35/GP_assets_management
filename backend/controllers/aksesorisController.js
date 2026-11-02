@@ -155,9 +155,31 @@ const aksesorisController = {
         });
       }
 
-      // Ambil kode_singkat dari kategori
+      // Ambil kode_singkat dari kategori, atau auto-insert jika belum terdaftar
+      let kodeSingkat = "GEN";
       const categoryData = await Category.findByNama(kategori, "aksesoris");
-      const kodeSingkat = categoryData ? categoryData.kode_singkat : "GEN";
+      if (categoryData && categoryData.kode_singkat) {
+        kodeSingkat = categoryData.kode_singkat;
+      } else {
+        const clean = kategori.replace(/[^a-zA-Z0-9\s]/g, "").trim().split(/\s+/).filter(Boolean);
+        kodeSingkat = clean.length >= 2 ? (clean[0].slice(0, 2) + clean[1].slice(0, 2)).toUpperCase() : (clean[0]?.slice(0, 4).toUpperCase() || "GEN");
+        try {
+          await Category.create(kategori.trim(), kodeSingkat, "aksesoris");
+        } catch (catErr) {}
+      }
+
+      // Auto-insert merek jika belum terdaftar
+      if (req.body.merek && req.body.merek.trim()) {
+        try {
+          const [bRows] = await db.query(
+            "SELECT id FROM brands WHERE TRIM(LOWER(nama)) = TRIM(LOWER(?)) AND tipe = 'aksesoris'",
+            [req.body.merek.trim()]
+          );
+          if (!bRows || bRows.length === 0) {
+            await db.query("INSERT INTO brands (nama, tipe) VALUES (?, 'aksesoris')", [req.body.merek.trim()]);
+          }
+        } catch (bErr) {}
+      }
 
       // Auto-generate kode_aksesoris berdasarkan jenis_aset dan kategori
       const generatedKode = await Aksesoris.getNextKode(jenis_aset, kodeSingkat);
@@ -622,18 +644,41 @@ const aksesorisController = {
           else jenisAset = "Galeria Production";
         }
 
-        // Tentukan kode singkat kategori
+        // Tentukan kode singkat kategori & auto-create kategori jika belum ada
         let kodeSingkat = "GEN";
         if (kategori) {
           const [catRows] = await connection.query(
-            "SELECT kode_singkat FROM categories WHERE nama = ? AND tipe = 'aksesoris'",
+            "SELECT id, kode_singkat FROM categories WHERE TRIM(LOWER(nama)) = TRIM(LOWER(?)) AND tipe = 'aksesoris'",
             [kategori]
           );
           if (catRows[0] && catRows[0].kode_singkat) {
             kodeSingkat = catRows[0].kode_singkat.toUpperCase().slice(0, 4);
           } else {
-            kodeSingkat = kategori.replace(/[^a-zA-Z]/g, "").slice(0, 3).toUpperCase() || "GEN";
+            const clean = kategori.replace(/[^a-zA-Z0-9\s]/g, "").trim().split(/\s+/).filter(Boolean);
+            kodeSingkat = clean.length >= 2 ? (clean[0].slice(0, 2) + clean[1].slice(0, 2)).toUpperCase() : (clean[0]?.slice(0, 4).toUpperCase() || "GEN");
+            try {
+              await connection.query(
+                "INSERT INTO categories (nama, kode_singkat, tipe) VALUES (?, ?, 'aksesoris')",
+                [kategori, kodeSingkat]
+              );
+            } catch (catInsertErr) {}
           }
+        }
+
+        // Auto-create merek di tabel brands jika belum ada
+        if (merek) {
+          try {
+            const [brandRows] = await connection.query(
+              "SELECT id FROM brands WHERE TRIM(LOWER(nama)) = TRIM(LOWER(?)) AND tipe = 'aksesoris'",
+              [merek]
+            );
+            if (!brandRows || brandRows.length === 0) {
+              await connection.query(
+                "INSERT INTO brands (nama, tipe) VALUES (?, 'aksesoris')",
+                [merek]
+              );
+            }
+          } catch (brandInsertErr) {}
         }
 
         const jenisKode = jenisAset === "Galeria Production" ? "GPRO" : "GS";

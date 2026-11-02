@@ -21,3 +21,9 @@ export async function updateCategory(id, nama, kodeSingkat) {
   return response.data;
 }
 
+export async function deleteAllCategoriesAndBrands(target = "both") {
+  const response = await api.delete("/categories/bulk/delete-all", {
+    data: { target }
+  });
+  return response.data;
+}

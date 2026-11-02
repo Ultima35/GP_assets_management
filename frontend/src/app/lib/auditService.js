@@ -1,4 +1,4 @@
-﻿import axios from 'axios';
+import axios from 'axios';
 import { mapAuditLogArrayToFrontend } from './api';
 
 const getBackendURL = () => {
@@ -27,5 +27,14 @@ export const getAuditLogs = async (params = {}) => {
     return mapAuditLogArrayToFrontend(res.data.data || []);
   } catch (error) {
     throw new Error(error.response?.data?.message || 'Gagal memuat audit log');
+  }
+};
+
+export const deleteAllAuditLogs = async () => {
+  try {
+    const res = await axios.delete(`${BACKEND_URL}/api/audit/bulk/delete-all`, getAuthHeaders());
+    return res.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || 'Gagal menghapus seluruh audit log');
   }
 };

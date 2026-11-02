@@ -155,18 +155,40 @@ const assetController = {
         });
       }
 
-      // Ambil kode_singkat dari kategori
-      const categoryData = await Category.findByNama(kategori);
-      const kodeSingkat = categoryData ? categoryData.kode_singkat : "GEN";
+      // Ambil kode_singkat dari kategori, atau auto-insert jika belum terdaftar
+      let kodeSingkat = "GEN";
+      const categoryData = await Category.findByNama(kategori, "aset");
+      if (categoryData && categoryData.kode_singkat) {
+        kodeSingkat = categoryData.kode_singkat;
+      } else {
+        const clean = kategori.replace(/[^a-zA-Z0-9\s]/g, "").trim().split(/\s+/).filter(Boolean);
+        kodeSingkat = clean.length >= 2 ? (clean[0].slice(0, 2) + clean[1].slice(0, 2)).toUpperCase() : (clean[0]?.slice(0, 4).toUpperCase() || "GEN");
+        try {
+          await Category.create(kategori.trim(), kodeSingkat, "aset");
+        } catch (catErr) { }
+      }
+
+      // Auto-insert merek jika belum terdaftar
+      if (req.body.merek && req.body.merek.trim()) {
+        try {
+          const [bRows] = await db.query(
+            "SELECT id FROM brands WHERE TRIM(LOWER(nama)) = TRIM(LOWER(?)) AND tipe = 'aset'",
+            [req.body.merek.trim()]
+          );
+          if (!bRows || bRows.length === 0) {
+            await db.query("INSERT INTO brands (nama, tipe) VALUES (?, 'aset')", [req.body.merek.trim()]);
+          }
+        } catch (bErr) { }
+      }
 
       // Auto-generate kode_aset berdasarkan jenis_aset dan kategori
       const generatedKode = await Asset.getNextKodeAset(jenis_aset, kodeSingkat);
 
       // Jika ada file upload, simpan path-nya & Optimize
-      const data = { 
-        ...req.body, 
+      const data = {
+        ...req.body,
         kode_aset: generatedKode,
-        user_id: req.user.id 
+        user_id: req.user.id
       };
       if (req.file) {
         const newFilename = await optimizeImage(
@@ -328,7 +350,7 @@ const assetController = {
         action: 'UPDATE',
         entityType: 'Aset',
         entityId: id,
-        details: changedText 
+        details: changedText
           ? `Memperbarui ${changedText} pada ${updated.nama_aset} (${updated.kode_aset})`
           : `Memperbarui ${updated.nama_aset} (${updated.kode_aset})`
       });
@@ -750,18 +772,41 @@ const assetController = {
           else jenisAset = "Galeria Production";
         }
 
-        // Tentukan kode singkat kategori
+        // Tentukan kode singkat kategori & auto-create kategori jika belum ada
         let kodeSingkat = "GEN";
         if (kategori) {
           const [catRows] = await connection.query(
-            "SELECT kode_singkat FROM categories WHERE nama = ? AND tipe = 'aset'",
+            "SELECT id, kode_singkat FROM categories WHERE TRIM(LOWER(nama)) = TRIM(LOWER(?)) AND tipe = 'aset'",
             [kategori]
           );
           if (catRows[0] && catRows[0].kode_singkat) {
             kodeSingkat = catRows[0].kode_singkat.toUpperCase().slice(0, 4);
           } else {
-            kodeSingkat = kategori.replace(/[^a-zA-Z]/g, "").slice(0, 3).toUpperCase() || "GEN";
+            const clean = kategori.replace(/[^a-zA-Z0-9\s]/g, "").trim().split(/\s+/).filter(Boolean);
+            kodeSingkat = clean.length >= 2 ? (clean[0].slice(0, 2) + clean[1].slice(0, 2)).toUpperCase() : (clean[0]?.slice(0, 4).toUpperCase() || "GEN");
+            try {
+              await connection.query(
+                "INSERT INTO categories (nama, kode_singkat, tipe) VALUES (?, ?, 'aset')",
+                [kategori, kodeSingkat]
+              );
+            } catch (catInsertErr) { }
           }
+        }
+
+        // Auto-create merek di tabel brands jika belum ada
+        if (merek) {
+          try {
+            const [brandRows] = await connection.query(
+              "SELECT id FROM brands WHERE TRIM(LOWER(nama)) = TRIM(LOWER(?)) AND tipe = 'aset'",
+              [merek]
+            );
+            if (!brandRows || brandRows.length === 0) {
+              await connection.query(
+                "INSERT INTO brands (nama, tipe) VALUES (?, 'aset')",
+                [merek]
+              );
+            }
+          } catch (brandInsertErr) { }
         }
 
         const jenisKode = jenisAset === "Galeria Production" ? "GPRO" : "GS";
@@ -1047,8 +1092,8 @@ const assetController = {
 
       await syncAssetTotals(unit.asset_id);
 
-      const changeDetails = changes.length > 0 
-        ? changes.join(", ") 
+      const changeDetails = changes.length > 0
+        ? changes.join(", ")
         : `kondisi menjadi ${kondisi || unit.kondisi}`;
 
       await AuditLog.create({

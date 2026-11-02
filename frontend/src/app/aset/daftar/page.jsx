@@ -114,49 +114,88 @@ function ImageUploadField({ onFileChange, previewUrl, onClear }) {
     <div className="sm:col-span-2">
       <label className="mb-1.5 block text-sm font-medium text-slate-700">Upload Gambar</label>
       <div onDragEnter={handleDragIn} onDragLeave={handleDragOut} onDragOver={handleDrag} onDrop={handleDrop}
-        className={`rounded-xl border-2 border-dashed px-6 py-6 transition-colors ${dragging ? "border-primary bg-primary/5" : "border-slate-200 hover:border-primary/50"}`}>
+        className={`rounded-xl border-2 border-dashed px-5 py-5 transition-all ${dragging ? "border-primary bg-primary/5 ring-4 ring-primary/10 scale-[1.01]" : "border-slate-200 hover:border-slate-300 bg-slate-50/50"}`}>
         <div className="flex flex-col items-center text-center">
           {previewUrl ? (
-            <div className="relative mb-4 h-40 w-full max-w-[200px]">
-              <Image src={previewUrl} alt="Preview" fill unoptimized className="rounded-lg object-contain border border-slate-200" />
+            <div className="relative mb-3 h-36 w-full max-w-[180px]">
+              <Image src={previewUrl} alt="Preview" fill unoptimized className="rounded-lg object-contain border border-slate-200 bg-white" />
               <button type="button" onClick={onClear}
                 className="absolute -top-2 -right-2 cursor-pointer rounded-full bg-rose-500 p-1 text-white shadow-md transition-colors hover:bg-rose-600">
                 <X className="h-3.5 w-3.5" />
               </button>
             </div>
-          ) : (
-            <ImageIcon className="h-8 w-8 text-slate-300 mb-3" />
-          )}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full">
-            {/* Opsi Kamera */}
-            <input
-              ref={cameraRef}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              onChange={onFileChange}
-              className="hidden"
-            />
-            <button type="button" onClick={() => cameraRef.current?.click()}
-              className="cursor-pointer w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 bg-white border border-slate-200 shadow-sm rounded-xl hover:border-primary hover:text-primary transition-colors">
-              <Camera className="h-5 w-5 text-primary" />
-              <span className="text-sm font-semibold text-slate-700">Buka Kamera</span>
-            </button>
-            {/* Opsi Galeri */}
-            <input
-              ref={galeriRef}
-              type="file"
-              accept="image/jpeg,image/jpg,image/png,image/heic,image/heif,image/webp"
-              onChange={onFileChange}
-              className="hidden"
-            />
-            <button type="button" onClick={() => galeriRef.current?.click()}
-              className="cursor-pointer w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 bg-white border border-slate-200 shadow-sm rounded-xl hover:border-primary hover:text-primary transition-colors">
-              <ImageIcon className="h-5 w-5 text-primary" />
-              <span className="text-sm font-semibold text-slate-700">Pilih Galeri</span>
-            </button>
+          ) : null}
+
+          {/* TAMPILAN WEB / DESKTOP (Layar sm ke atas) */}
+          <div className="hidden sm:block w-full">
+            <div 
+              onClick={() => galeriRef.current?.click()}
+              className="cursor-pointer group flex flex-col items-center justify-center p-2"
+            >
+              {!previewUrl && (
+                <div className={`w-11 h-11 rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm border transition-all ${
+                  dragging ? "bg-primary text-white scale-110" : "bg-white text-primary border-slate-100 group-hover:scale-110"
+                }`}>
+                  <Upload className="w-5 h-5" />
+                </div>
+              )}
+              <p className="text-sm font-bold text-slate-800 mb-0.5">
+                {dragging ? "Lepaskan gambar di sini..." : "Tarik & Lepas Gambar ke Sini, atau"}
+              </p>
+              <p className="text-xs text-slate-400 mb-2.5">PNG, JPG, JPEG, WebP, HEIC</p>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  galeriRef.current?.click();
+                }}
+                className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 shadow-xs rounded-xl hover:border-primary hover:text-primary transition-all text-xs font-semibold text-slate-700 active:scale-95"
+              >
+                <Upload className="h-3.5 w-3.5 text-primary" />
+                Pilih File dari Komputer
+              </button>
+            </div>
           </div>
-          <p className="mt-3 text-xs text-slate-400">Seret gambar ke sini atau klik tombol · PNG, JPG, JPEG</p>
+
+          {/* TAMPILAN PONSEL / MOBILE (Layar di bawah sm) */}
+          <div className="block sm:hidden w-full">
+            {!previewUrl && (
+              <div className="bg-white w-11 h-11 rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm border border-slate-100">
+                <Camera className="w-5 h-5 text-primary" />
+              </div>
+            )}
+            <p className="text-xs font-bold text-slate-700 mb-0.5">Upload Foto Aset</p>
+            <p className="text-[11px] text-slate-400 mb-3">PNG, JPG, JPEG, WebP, HEIC</p>
+            <div className="flex flex-col gap-2 w-full">
+              <button type="button" onClick={() => cameraRef.current?.click()}
+                className="cursor-pointer w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-slate-200 shadow-sm rounded-xl hover:border-primary hover:text-primary transition-colors text-xs font-semibold text-slate-700">
+                <Camera className="h-4 w-4 text-primary" />
+                <span>Buka Kamera</span>
+              </button>
+              <button type="button" onClick={() => galeriRef.current?.click()}
+                className="cursor-pointer w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-slate-200 shadow-sm rounded-xl hover:border-primary hover:text-primary transition-colors text-xs font-semibold text-slate-700">
+                <ImageIcon className="h-4 w-4 text-primary" />
+                <span>Pilih Galeri</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Hidden inputs */}
+          <input
+            ref={cameraRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={onFileChange}
+            className="hidden"
+          />
+          <input
+            ref={galeriRef}
+            type="file"
+            accept="image/jpeg,image/jpg,image/png,image/heic,image/heif,image/webp"
+            onChange={onFileChange}
+            className="hidden"
+          />
         </div>
       </div>
     </div>

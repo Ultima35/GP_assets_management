@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
-import { getAllCategories, createCategory, deleteCategory, updateCategory } from "../../lib/categoryService";
+import { getAllCategories, createCategory, deleteCategory, updateCategory, deleteAllCategoriesAndBrands } from "../../lib/categoryService";
 import { getAllBrands, createBrand, deleteBrand, updateBrand } from "../../lib/brandService";
 import { getAllAssets } from "../../lib/assetService";
 import { getAllAksesoris } from "../../lib/aksesorisService";
+import { getUserContext } from "../../lib/authService";
 import { toUpperCaseText } from "../../lib/stringUtils";
 import { Plus, Trash2, X, Check, Tag, Bookmark, AlertTriangle, Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Pencil, Info, ChevronUp, ChevronDown, List } from "lucide-react";
 
@@ -42,6 +43,13 @@ export default function KategoriMerekPage() {
   const [tableLoading, setTableLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
 
+  // Super Admin Delete All States
+  const [userRole, setUserRole] = useState("user");
+  const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
+  const [deleteAllTarget, setDeleteAllTarget] = useState("both");
+  const [deleteAllConfirmation, setDeleteAllConfirmation] = useState("");
+  const [deleteAllLoading, setDeleteAllLoading] = useState(false);
+
   // Tab sliding indicator
   const tabContainerRef = useRef(null);
   const tabKategoriRef = useRef(null);
@@ -49,7 +57,13 @@ export default function KategoriMerekPage() {
   const [indicatorStyle, setIndicatorStyle] = useState({});
   const [isIndicatorReady, setIsIndicatorReady] = useState(false);
 
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    setMounted(true);
+    const ctx = getUserContext();
+    if (ctx) {
+      setUserRole(ctx.role || "user");
+    }
+  }, []);
 
   // Update sliding indicator position when activeTab changes
   useEffect(() => {
@@ -131,6 +145,11 @@ export default function KategoriMerekPage() {
     });
     if (sortConfig.key) {
       filtered.sort((a, b) => {
+        if (sortConfig.key === "qty") {
+          const aVal = Number(a.qty) || 0;
+          const bVal = Number(b.qty) || 0;
+          return sortConfig.direction === "asc" ? aVal - bVal : bVal - aVal;
+        }
         const aVal = (a[sortConfig.key] || "").toString().toLowerCase();
         const bVal = (b[sortConfig.key] || "").toString().toLowerCase();
         if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
@@ -196,14 +215,15 @@ export default function KategoriMerekPage() {
         getAllAksesoris()
       ]);
       
+      const targetName = (item.nama || "").trim().toLowerCase();
       let filtered = [];
       if (type === "kategori") {
-        const fAssets = (assets || []).filter(a => a.kategori === item.nama).map(a => ({...a, source: 'Aset Utama'}));
-        const fAksesoris = (aksesoris || []).filter(a => a.kategori === item.nama).map(a => ({...a, source: 'Aksesoris'}));
+        const fAssets = (assets || []).filter(a => (a.kategori || "").trim().toLowerCase() === targetName).map(a => ({...a, source: 'Aset Utama'}));
+        const fAksesoris = (aksesoris || []).filter(a => (a.kategori || "").trim().toLowerCase() === targetName).map(a => ({...a, source: 'Aksesoris'}));
         filtered = [...fAssets, ...fAksesoris];
       } else {
-        const fAssets = (assets || []).filter(a => a.merek === item.nama).map(a => ({...a, source: 'Aset Utama'}));
-        const fAksesoris = (aksesoris || []).filter(a => a.merek === item.nama).map(a => ({...a, source: 'Aksesoris'}));
+        const fAssets = (assets || []).filter(a => (a.merek || "").trim().toLowerCase() === targetName).map(a => ({...a, source: 'Aset Utama'}));
+        const fAksesoris = (aksesoris || []).filter(a => (a.merek || "").trim().toLowerCase() === targetName).map(a => ({...a, source: 'Aksesoris'}));
         filtered = [...fAssets, ...fAksesoris];
       }
       setRelatedItems(filtered);
@@ -330,6 +350,26 @@ export default function KategoriMerekPage() {
     finally { setSubmitting(false); }
   };
 
+  const handleDeleteAll = async () => {
+    if (deleteAllConfirmation.trim() !== "HAPUS SEMUA") {
+      showToast("Ketik 'HAPUS SEMUA' dengan huruf besar untuk konfirmasi", "error");
+      return;
+    }
+    try {
+      setDeleteAllLoading(true);
+      const res = await deleteAllCategoriesAndBrands(deleteAllTarget);
+      showToast(res.message || "Data berhasil dihapus seluruhnya!", "success");
+      setShowDeleteAllModal(false);
+      setDeleteAllConfirmation("");
+      await fetchData();
+    } catch (err) {
+      const msg = err.response?.data?.message || "Gagal menghapus seluruh data";
+      showToast(msg, "error");
+    } finally {
+      setDeleteAllLoading(false);
+    }
+  };
+
   if (loading) {
     return <div className="p-8 animate-pulse space-y-4"><div className="h-8 w-60 bg-slate-200 rounded"></div><div className="grid grid-cols-1 lg:grid-cols-2 gap-6"><div className="h-64 bg-slate-200 rounded"></div><div className="h-64 bg-slate-200 rounded"></div></div></div>;
   }
@@ -431,16 +471,35 @@ export default function KategoriMerekPage() {
               <option value="aksesoris">Aksesoris</option>
             </select>
           </div>
-          <button 
-            onClick={() => {
-              if (activeTab === "kategori") { setFormKat({ nama: "", kode_singkat: "", tipe: "aset" }); setShowModalKat(true); }
-              else { setFormMerek({ nama: "", tipe: "aset" }); setShowModalMerek(true); }
-            }}
-            className="cursor-pointer w-full sm:w-auto flex justify-center items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-hover"
-          >
-            <Plus className="h-4 w-4" />
-            Tambah {activeTab === "kategori" ? "Kategori" : "Merek"}
-          </button>
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            <button 
+              onClick={() => {
+                if (activeTab === "kategori") { setFormKat({ nama: "", kode_singkat: "", tipe: "aset" }); setShowModalKat(true); }
+                else { setFormMerek({ nama: "", tipe: "aset" }); setShowModalMerek(true); }
+              }}
+              className="cursor-pointer w-full sm:w-auto flex justify-center items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-hover"
+            >
+              <Plus className="h-4 w-4" />
+              Tambah {activeTab === "kategori" ? "Kategori" : "Merek"}
+            </button>
+
+            {/* Hapus Seluruh Data - Khusus Super Admin */}
+            {userRole === "super admin" && (
+              <button
+                type="button"
+                onClick={() => {
+                  setDeleteAllTarget("both");
+                  setDeleteAllConfirmation("");
+                  setShowDeleteAllModal(true);
+                }}
+                title="Khusus Super Admin: Hapus seluruh kategori dan/atau merek"
+                className="cursor-pointer w-full sm:w-auto flex justify-center items-center gap-1.5 rounded-lg bg-rose-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-rose-700 active:scale-95 whitespace-nowrap"
+              >
+                <Trash2 className="h-4 w-4" />
+                Hapus Seluruh Data
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Table Controls Top */}
@@ -488,7 +547,9 @@ export default function KategoriMerekPage() {
                       </span>
                     </td>
                     <td className="w-32 px-4 py-3 text-center border-r border-slate-200 align-middle">
-                      <span className="font-bold text-xs text-slate-600">{item.qty || 0}</span>
+                      <span className="font-bold text-xs text-slate-700 bg-slate-100 px-2.5 py-1 rounded-md shadow-2xs" title={`Total unit fisik: ${item.total_units || item.qty || 0}`}>
+                        {item.qty || 0}
+                      </span>
                     </td>
                     <td className="w-28 px-4 py-3 text-center align-middle">
                       <div className="flex items-center justify-center gap-1.5">
@@ -534,7 +595,9 @@ export default function KategoriMerekPage() {
                       </span>
                     </td>
                     <td className="w-36 px-4 py-3 text-center border-r border-slate-200 align-middle">
-                      <span className="font-bold text-xs text-slate-600">{item.qty || 0}</span>
+                      <span className="font-bold text-xs text-slate-700 bg-slate-100 px-2.5 py-1 rounded-md shadow-2xs" title={`Total unit fisik: ${item.total_units || item.qty || 0}`}>
+                        {item.qty || 0}
+                      </span>
                     </td>
                     <td className="w-28 px-4 py-3 text-center align-middle">
                       <div className="flex items-center justify-center gap-1.5">
@@ -811,6 +874,123 @@ export default function KategoriMerekPage() {
                 </div>
                 <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4 bg-white rounded-b-2xl shrink-0">
                   <button type="button" onClick={() => setShowItems(null)} className="cursor-pointer rounded-lg bg-blue-500 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-600">Tutup</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Modal Hapus Seluruh Data (Khusus Super Admin) */}
+          {showDeleteAllModal && (
+            <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/50 p-2.5 sm:p-4 backdrop-blur-xs transition-opacity animate-in fade-in duration-300" onClick={() => setShowDeleteAllModal(false)}>
+              <div className="w-full max-w-lg max-h-[92vh] flex flex-col rounded-2xl bg-white shadow-2xl border-t-4 border-t-rose-600 animate-modal-in overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                <div className="p-4 sm:p-6 overflow-y-auto custom-scrollbar flex-1">
+                  <div className="flex items-start justify-between gap-3 mb-4">
+                    <div className="flex items-start gap-2.5 sm:gap-3 min-w-0">
+                      <div className="p-2 sm:p-2.5 rounded-xl sm:rounded-full bg-rose-100 text-rose-600 shrink-0">
+                        <AlertTriangle className="h-5 w-5 sm:h-6 sm:w-6" />
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="text-base sm:text-lg font-bold text-slate-800">Hapus Seluruh Data</h3>
+                        <p className="text-xs text-slate-500 mt-0.5">Tindakan pembersihan massal (Wipe Data)</p>
+                      </div>
+                    </div>
+                    <span className="shrink-0 px-2 sm:px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-bold tracking-wider uppercase bg-rose-100 text-rose-700 border border-rose-200">
+                      Super Admin
+                    </span>
+                  </div>
+
+                  <div className="p-3 sm:p-3.5 mb-4 sm:mb-5 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 text-xs leading-relaxed space-y-1">
+                    <p className="font-bold flex items-center gap-1.5 text-rose-700">
+                      ⚠️ PERINGATAN KERAS: TINDAKAN INI PERMANEN!
+                    </p>
+                    <p className="text-[11px] sm:text-xs text-rose-800">
+                      Semua data kategori dan/atau merek yang dipilih akan <strong>dihapus secara permanen</strong> dan <strong>tidak dapat dipulihkan</strong>. Kolom kategori dan merek pada aset & aksesoris terkait akan dikosongkan.
+                    </p>
+                  </div>
+
+                  <div className="space-y-3.5 sm:space-y-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-2">Pilih Data yang Ingin Dihapus:</label>
+                      <div className="grid grid-cols-1 gap-2">
+                        <label className={`cursor-pointer flex items-start gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded-xl border transition-all ${deleteAllTarget === "both" ? "border-rose-500 bg-rose-50/60 ring-1 ring-rose-500/20 text-rose-900 font-semibold" : "border-slate-200 text-slate-700 hover:bg-slate-50"}`}>
+                          <input
+                            type="radio"
+                            name="deleteTarget"
+                            value="both"
+                            checked={deleteAllTarget === "both"}
+                            onChange={(e) => setDeleteAllTarget(e.target.value)}
+                            className="mt-0.5 text-rose-600 focus:ring-rose-500 shrink-0"
+                          />
+                          <div>
+                            <div className="text-xs font-bold text-slate-800">Seluruh Kategori & Merek</div>
+                            <div className="text-[11px] text-slate-500 mt-0.5">Kosongkan semua data tabel Kategori dan Merek</div>
+                          </div>
+                        </label>
+
+                        <label className={`cursor-pointer flex items-start gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded-xl border transition-all ${deleteAllTarget === "categories" ? "border-rose-500 bg-rose-50/60 ring-1 ring-rose-500/20 text-rose-900 font-semibold" : "border-slate-200 text-slate-700 hover:bg-slate-50"}`}>
+                          <input
+                            type="radio"
+                            name="deleteTarget"
+                            value="categories"
+                            checked={deleteAllTarget === "categories"}
+                            onChange={(e) => setDeleteAllTarget(e.target.value)}
+                            className="mt-0.5 text-rose-600 focus:ring-rose-500 shrink-0"
+                          />
+                          <div>
+                            <div className="text-xs font-bold text-slate-800">Hanya Seluruh Kategori</div>
+                            <div className="text-[11px] text-slate-500 mt-0.5">Hanya menghapus data pada tabel Kategori</div>
+                          </div>
+                        </label>
+
+                        <label className={`cursor-pointer flex items-start gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded-xl border transition-all ${deleteAllTarget === "brands" ? "border-rose-500 bg-rose-50/60 ring-1 ring-rose-500/20 text-rose-900 font-semibold" : "border-slate-200 text-slate-700 hover:bg-slate-50"}`}>
+                          <input
+                            type="radio"
+                            name="deleteTarget"
+                            value="brands"
+                            checked={deleteAllTarget === "brands"}
+                            onChange={(e) => setDeleteAllTarget(e.target.value)}
+                            className="mt-0.5 text-rose-600 focus:ring-rose-500 shrink-0"
+                          />
+                          <div>
+                            <div className="text-xs font-bold text-slate-800">Hanya Seluruh Merek</div>
+                            <div className="text-[11px] text-slate-500 mt-0.5">Hanya menghapus data pada tabel Merek</div>
+                          </div>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="pt-1 sm:pt-2">
+                      <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                        Ketik <span className="font-mono text-rose-600 font-bold bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">HAPUS SEMUA</span> untuk konfirmasi:
+                      </label>
+                      <input
+                        type="text"
+                        value={deleteAllConfirmation}
+                        onChange={(e) => setDeleteAllConfirmation(e.target.value)}
+                        placeholder="Ketik HAPUS SEMUA di sini..."
+                        className="w-full px-3 sm:px-3.5 py-2 text-xs sm:text-sm border-2 border-slate-200 rounded-xl focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 font-mono tracking-wide text-slate-800 bg-white"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3 border-t border-slate-100 bg-slate-50/70 px-4 py-3 sm:px-6 sm:py-4 shrink-0 rounded-b-2xl">
+                  <button
+                    type="button"
+                    onClick={() => setShowDeleteAllModal(false)}
+                    disabled={deleteAllLoading}
+                    className="cursor-pointer w-full sm:w-auto text-center rounded-lg border border-slate-200 px-4 py-2 text-xs sm:text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDeleteAll}
+                    disabled={deleteAllLoading || deleteAllConfirmation.trim() !== "HAPUS SEMUA"}
+                    className="cursor-pointer w-full sm:w-auto text-center rounded-lg bg-rose-600 px-5 py-2 text-xs sm:text-sm font-semibold text-white shadow-sm transition-colors hover:bg-rose-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {deleteAllLoading ? "Menghapus..." : "Konfirmasi Hapus Permanen"}
+                  </button>
                 </div>
               </div>
             </div>
