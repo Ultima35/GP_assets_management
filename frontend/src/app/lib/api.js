@@ -250,7 +250,7 @@ export function mapPeminjamanToFrontend(backendData) {
           id: item.id,
           assetId: item.asset_id,
           aksesorisId: item.aksesoris_id,
-          unitId: item.unit_id,
+          unitId: item.unit_id || item.aksesoris_unit_id,
           namaUnit: item.nama_unit,
           kodeUnitFisik: item.kode_unit_fisik,
           namaAset: item.nama_aset,

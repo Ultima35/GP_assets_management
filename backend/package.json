@@ -1,6 +1,6 @@
 {
   "name": "gp-asset-management-backend",
-  "version": "1.0.0",
+  "version": "2.3.1",
   "description": "Backend API untuk Sistem Pencatatan Aset Galeria Production",
   "main": "server.js",
   "scripts": {

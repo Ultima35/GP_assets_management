@@ -61,6 +61,68 @@ const getRoleBadge = (role) => {
   return map[r] || 'bg-slate-100 text-slate-600 border-slate-200';
 };
 
+// Helper: bersihkan nama unit fisik agar tidak berulang dan bebas kata "Kabinet"
+const cleanUnitName = (rawUnit, parentName) => {
+  if (!rawUnit) return null;
+  let str = String(rawUnit).trim().replace(/^kabinet\s+/i, "");
+  const unitParenMatch = str.match(/\((Unit\s*\d+)\)/i);
+  const hashMatch = str.match(/(#\d+)/i);
+  const unitDirectMatch = str.match(/\b(Unit\s*\d+)\b/i);
+
+  if (unitParenMatch) return unitParenMatch[1];
+  if (hashMatch) return hashMatch[1];
+  if (unitDirectMatch) return unitDirectMatch[1];
+  if (parentName && str.toLowerCase().startsWith(parentName.toLowerCase())) {
+    const remainder = str.slice(parentName.length).replace(/^[\s\-–—:()]+|[\s\-–—:()]+$/g, "");
+    return remainder || str;
+  }
+  return str;
+};
+
+// Helper: mengelompokkan item peminjaman berdasarkan alat induk
+const groupBorrowedItems = (rawItems = []) => {
+  if (!rawItems || rawItems.length === 0) return [];
+
+  const groups = new Map();
+
+  rawItems.forEach((it, index) => {
+    const isAksesoris = Boolean(it.aksesorisId);
+    const key = it.assetId 
+      ? `asset_${it.assetId}` 
+      : (it.aksesorisId ? `acc_${it.aksesorisId}` : (it.kodeAset || it.namaAset || it.namaItem || `item_${index}`));
+
+    const parentName = it.namaAset || it.namaAksesoris || it.namaItem || "-";
+    const parentCode = it.kodeAset || "-";
+    const qty = Number(it.jumlah) || 1;
+    const formattedUnit = cleanUnitName(it.namaUnit, parentName);
+
+    if (!groups.has(key)) {
+      groups.set(key, {
+        key,
+        isAksesoris,
+        namaAset: parentName,
+        kodeAset: parentCode,
+        kategori: it.kategori,
+        merek: it.merek,
+        totalJumlah: 0,
+        units: [],
+      });
+    }
+
+    const grp = groups.get(key);
+    grp.totalJumlah += qty;
+    if (it.unitId || it.kodeUnitFisik || it.namaUnit) {
+      grp.units.push({
+        id: it.unitId || it.id || index,
+        namaUnit: formattedUnit,
+        kodeUnitFisik: it.kodeUnitFisik,
+      });
+    }
+  });
+
+  return Array.from(groups.values());
+};
+
 function ImageCarouselInner({ images, title, backendUrl, onImageClick }) {
   const [startIndex, setStartIndex] = useState(0);
   
@@ -737,9 +799,17 @@ export default function PeminjamanAsetPage() {
           {/* Modal Detail */}
           {showDetail && (
             <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowDetail(null)}>
-              <div className="max-h-[90vh] w-full max-w-lg flex flex-col rounded-2xl bg-white shadow-xl border-t-4 border-t-blue-500 animate-modal-in" onClick={(e) => e.stopPropagation()}>
-                <div className="flex items-center justify-between border-b border-slate-100 bg-blue-50 px-6 py-4 rounded-t-2xl shrink-0">
-                  <h2 className="text-lg font-bold text-blue-800">Detail Peminjaman</h2>
+              <div className="max-h-[90vh] w-full max-w-lg sm:max-w-xl flex flex-col rounded-2xl bg-white shadow-xl border-t-4 border-t-blue-500 animate-modal-in" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/90 px-6 py-4 rounded-t-2xl shrink-0">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
+                      <FileText className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h2 className="text-base font-bold text-slate-900 leading-tight">Detail Peminjaman</h2>
+                      <p className="text-xs text-slate-500 font-mono mt-0.5">{showDetail.kodePinjam}</p>
+                    </div>
+                  </div>
                   <button onClick={() => setShowDetail(null)} className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"><X className="h-5 w-5" /></button>
                 </div>
                 <div className="p-6 space-y-5 overflow-y-auto custom-scrollbar flex-1">
@@ -783,41 +853,97 @@ export default function PeminjamanAsetPage() {
                     </div>
 
                     {/* Daftar Alat Dipinjam */}
-                    <div className="flex flex-col gap-2 mt-4">
-                      <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Daftar Alat Dipinjam</span>
-                      {showDetail.items && showDetail.items.length > 0 ? (
-                        <div className="rounded-lg border border-slate-200 overflow-hidden">
-                          <table className="w-full text-sm">
-                            <thead>
-                              <tr className="bg-slate-50 border-b border-slate-200">
-                                <th className="px-3 py-2 text-left font-semibold text-slate-600 w-10">No</th>
-                                <th className="px-3 py-2 text-left font-semibold text-slate-600">Kode</th>
-                                <th className="px-3 py-2 text-left font-semibold text-slate-600">Nama Alat</th>
-                                <th className="px-3 py-2 text-center font-semibold text-slate-600 w-16">Jml</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {showDetail.items.map((it, i) => (
-                                <tr key={it.id || i} className="border-b border-slate-100 last:border-0">
-                                  <td className="px-3 py-2 text-slate-500">{i + 1}</td>
-                                  <td className="px-3 py-2 text-slate-600 font-mono text-xs">{it.kodeAset || "-"}</td>
-                                  <td className="px-3 py-2 text-slate-700 font-medium">
-                                    {it.namaAset || it.namaAksesoris || it.namaItem || "-"}
-                                    {it.namaUnit && (
-                                      <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200">
-                                        Kabinet {it.namaUnit}
-                                      </span>
+                    <div className="flex flex-col gap-2.5 mt-4">
+                      {(() => {
+                        const groupedItems = groupBorrowedItems(showDetail.items);
+                        const totalUnitCount = groupedItems.reduce((acc, g) => acc + g.totalJumlah, 0);
+
+                        return (
+                          <>
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                                Daftar Alat Dipinjam
+                              </span>
+                              {groupedItems.length > 0 && (
+                                <span className="text-xs font-semibold text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200/80">
+                                  {groupedItems.length} Alat • {totalUnitCount} Unit
+                                </span>
+                              )}
+                            </div>
+
+                            {groupedItems.length > 0 ? (
+                              <div className="space-y-2.5">
+                                {groupedItems.map((group, idx) => (
+                                  <div
+                                    key={group.key || idx}
+                                    className="p-3.5 rounded-xl border border-slate-200 bg-white hover:border-slate-300 transition-all shadow-2xs"
+                                  >
+                                    {/* Header Item: Badge Tipe, Kode, dan Total Jumlah */}
+                                    <div className="flex items-start justify-between gap-3">
+                                      <div className="flex items-center gap-2 flex-wrap min-w-0">
+                                        <span className="text-xs font-bold text-slate-400 w-4">
+                                          #{idx + 1}
+                                        </span>
+                                        <span
+                                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold border ${
+                                            group.isAksesoris
+                                              ? "bg-purple-50 text-purple-700 border-purple-200"
+                                              : "bg-blue-50 text-blue-700 border-blue-200"
+                                          }`}
+                                        >
+                                          {group.isAksesoris ? "Aksesoris" : "Aset"}
+                                        </span>
+                                        <span className="font-mono text-xs font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                                          {group.kodeAset}
+                                        </span>
+                                      </div>
+
+                                      <div className="shrink-0">
+                                        <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-900 text-white shadow-2xs">
+                                          {group.totalJumlah} Unit
+                                        </span>
+                                      </div>
+                                    </div>
+
+                                    {/* Nama Alat */}
+                                    <h5 className="font-bold text-slate-800 text-sm mt-2 leading-snug">
+                                      {group.namaAset}
+                                    </h5>
+
+                                    {/* Unit Fisik (Jika ada) */}
+                                    {group.units && group.units.length > 0 && (
+                                      <div className="mt-3 pt-2.5 border-t border-slate-100">
+                                        <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                                          Unit Fisik Dipinjam ({group.units.length}):
+                                        </p>
+                                        <div className="flex flex-wrap gap-1.5">
+                                          {group.units.map((u, uIdx) => (
+                                            <span
+                                              key={u.id || uIdx}
+                                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200/70"
+                                              title={u.kodeUnitFisik ? `Kode Unit: ${u.kodeUnitFisik}` : undefined}
+                                            >
+                                              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                                              <span className="font-semibold">{u.namaUnit || `Unit ${uIdx + 1}`}</span>
+                                              {u.kodeUnitFisik && (
+                                                <span className="text-[10px] text-blue-500 font-mono">
+                                                  ({u.kodeUnitFisik})
+                                                </span>
+                                              )}
+                                            </span>
+                                          ))}
+                                        </div>
+                                      </div>
                                     )}
-                                  </td>
-                                  <td className="px-3 py-2 text-center font-semibold text-slate-700">{it.jumlah}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      ) : (
-                        <span className="text-sm text-slate-500">-</span>
-                      )}
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-sm text-slate-500">-</span>
+                            )}
+                          </>
+                        );
+                      })()}
                     </div>
                     
                     {/* Bukti Peminjaman Images with Carousel */}

@@ -486,7 +486,21 @@ export default function EditPeminjamanPage() {
                             {item.namaAset || item.nama_aset}
                             {(item.namaUnit || item.nama_unit) && (
                               <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200">
-                                Kabinet {item.namaUnit || item.nama_unit}
+                                {(() => {
+                                  const raw = String(item.namaUnit || item.nama_unit).trim().replace(/^kabinet\s+/i, "");
+                                  const mParen = raw.match(/\((Unit\s*\d+)\)/i);
+                                  const mHash = raw.match(/(#\d+)/i);
+                                  const mUnit = raw.match(/\b(Unit\s*\d+)\b/i);
+                                  if (mParen) return mParen[1];
+                                  if (mHash) return mHash[1];
+                                  if (mUnit) return mUnit[1];
+                                  const parentName = item.namaAset || item.nama_aset || "";
+                                  if (parentName && raw.toLowerCase().startsWith(parentName.toLowerCase())) {
+                                    const remainder = raw.slice(parentName.length).replace(/^[\s\-–—:()]+|[\s\-–—:()]+$/g, "");
+                                    return remainder || raw;
+                                  }
+                                  return raw;
+                                })()}
                               </span>
                             )}
                           </p>
