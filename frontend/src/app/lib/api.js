@@ -231,6 +231,8 @@ export function mapPeminjamanToFrontend(backendData) {
     daftarAset: backendData.daftar_aset,
     buktiPeminjaman: backendData.bukti_peminjaman,
     buktiPengembalian: backendData.bukti_pengembalian,
+    alasanPenolakan: backendData.alasan_penolakan,
+    rejectedBy: backendData.rejected_by,
     userId: backendData.user_id,
     createdByName: backendData.created_by_name,
     createdAt: backendData.created_at,
@@ -268,6 +270,8 @@ export function mapPeminjamanToBackend(frontendData) {
   if (frontendData.namaPeminjam !== undefined) mapped.nama_peminjam = frontendData.namaPeminjam;
   if (frontendData.penerimaAset !== undefined) mapped.penerima_aset = frontendData.penerimaAset;
   if (frontendData.alasanPeminjaman !== undefined) mapped.alasan_peminjaman = frontendData.alasanPeminjaman;
+  if (frontendData.alasanPenolakan !== undefined) mapped.alasan_penolakan = frontendData.alasanPenolakan;
+  if (frontendData.rejectedBy !== undefined) mapped.rejected_by = frontendData.rejectedBy;
   if (frontendData.keperluanList !== undefined) mapped.keperluan_list = frontendData.keperluanList;
   if (frontendData.tanggalPeminjaman !== undefined) mapped.tanggal_peminjaman = frontendData.tanggalPeminjaman;
   if (frontendData.tanggalPengembalian !== undefined) mapped.tanggal_pengembalian = frontendData.tanggalPengembalian;

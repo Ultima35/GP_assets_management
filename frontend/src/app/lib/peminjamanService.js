@@ -109,6 +109,53 @@ export const approvePeminjaman = async (id, approvedBy, yangMenyerahkan = null, 
   }
 };
 
+// 6.5 REJECT Peminjaman
+export const rejectPeminjaman = async (id, alasanPenolakan) => {
+  try {
+    const response = await api.put(`/peminjaman/${id}/reject`, {
+      alasan_penolakan: alasanPenolakan
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Error rejecting peminjaman ${id}:`, error);
+    throw error;
+  }
+};
+
+// 6.6 UPDATE Pengajuan Peminjaman (Revisi saat Menunggu Persetujuan / Ditolak)
+export const updatePengajuan = async (id, data, files = []) => {
+  try {
+    const backendData = mapPeminjamanToBackend(data);
+    const formData = new FormData();
+
+    Object.keys(backendData).forEach(key => {
+      if (key === "items" || key === "keperluan_list") {
+        formData.append(key, JSON.stringify(backendData[key]));
+      } else if (backendData[key] !== undefined && backendData[key] !== null) {
+        formData.append(key, backendData[key]);
+      }
+    });
+
+    if (data.existingBukti) {
+      formData.append("existing_bukti", JSON.stringify(data.existingBukti));
+    }
+
+    if (files && files.length > 0) {
+      Array.from(files).forEach((file) => {
+        formData.append("bukti", file);
+      });
+    }
+
+    const response = await api.put(`/peminjaman/${id}/pengajuan`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Error updating pengajuan peminjaman ${id}:`, error);
+    throw error;
+  }
+};
+
 // 7. DELETE Peminjaman
 export const deletePeminjaman = async (id) => {
   try {
