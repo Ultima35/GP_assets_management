@@ -35,6 +35,7 @@ const getStatusBadge = (status) => {
     "Sedang Dipinjam": "bg-blue-100 text-blue-800 border border-blue-300",
     "Menunggu Verifikasi": "bg-violet-100 text-violet-800 border border-violet-300",
     "Peminjaman Selesai": "bg-emerald-100 text-emerald-800 border border-emerald-300",
+    "Ditolak": "bg-rose-100 text-rose-800 border border-rose-300",
   };
   return s[status] || "bg-slate-100 text-slate-800";
 };
@@ -45,6 +46,7 @@ const statusOptions = [
   "Sedang Dipinjam",
   "Menunggu Verifikasi",
   "Peminjaman Selesai",
+  "Ditolak",
 ];
 
 export default function RiwayatPeminjamanPage() {

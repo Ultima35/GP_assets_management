@@ -4,12 +4,12 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createPortal } from "react-dom";
 import Image from "next/image";
-import { getAllPeminjaman, deletePeminjaman, searchPeminjaman, approvePeminjaman, downloadPeminjamanPDF, getPeminjamanById, swapPeminjamanItem, addItemToPeminjaman } from "../../lib/peminjamanService";
+import { getAllPeminjaman, deletePeminjaman, searchPeminjaman, approvePeminjaman, rejectPeminjaman, downloadPeminjamanPDF, getPeminjamanById, swapPeminjamanItem, addItemToPeminjaman } from "../../lib/peminjamanService";
 import { getAllAssets } from "../../lib/assetService";
 import { getAllAksesoris } from "../../lib/aksesorisService";
 import { getUserContext } from "../../lib/authService";
 import { toCapitalEachWord } from "../../lib/stringUtils";
-import { Search, Plus, Info, Pencil, Check, Trash2, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, X, AlertTriangle, ChevronUp, ChevronDown, FileText, ArrowLeftRight, PackagePlus } from "lucide-react";
+import { Search, Plus, Info, Pencil, Check, Trash2, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, X, AlertTriangle, ChevronUp, ChevronDown, FileText, ArrowLeftRight, PackagePlus, RotateCcw } from "lucide-react";
 
 const ROWS_OPTIONS = [10, 20, 30, 40, 50];
 const getBackendURL = () => {
@@ -22,7 +22,7 @@ const getBackendURL = () => {
   return "http://localhost:5000";
 };
 const BACKEND_URL = getBackendURL();
-const statusOptions = ["Menunggu Persetujuan", "Sedang Dipinjam", "Menunggu Verifikasi", "Peminjaman Selesai"];
+const statusOptions = ["Menunggu Persetujuan", "Sedang Dipinjam", "Menunggu Verifikasi", "Peminjaman Selesai", "Ditolak"];
 const APPROVER_ROLES = ["supervisor", "admin", "super admin"];
 
 // Helper: parse bukti data yang bisa berupa string JSON atau array (jika kolom MySQL bertipe JSON)
@@ -200,6 +200,7 @@ const getStatusLabel = (status) => {
     "Sedang Dipinjam": "SEDANG DIPINJAM",
     "Menunggu Verifikasi": "MENUNGGU VERIFIKASI",
     "Peminjaman Selesai": "PEMINJAMAN SELESAI",
+    "Ditolak": "DITOLAK",
   };
   return map[status] || status;
 };
@@ -210,6 +211,7 @@ const getStatusBadge = (status) => {
     "Sedang Dipinjam": "bg-blue-50 text-blue-700 border-blue-500",
     "Menunggu Verifikasi": "bg-violet-50 text-violet-700 border-violet-500",
     "Peminjaman Selesai": "bg-emerald-50 text-emerald-700 border-emerald-500",
+    "Ditolak": "bg-rose-50 text-rose-700 border-rose-500",
   };
   return s[status] || "bg-slate-50 text-slate-700 border-slate-200";
 };
@@ -230,6 +232,8 @@ export default function PeminjamanAsetPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [deleteBlockedAlert, setDeleteBlockedAlert] = useState(null); // { message, item }
   const [showApproveConfirm, setShowApproveConfirm] = useState(null);
+  const [showRejectConfirm, setShowRejectConfirm] = useState(null);
+  const [rejectAlasan, setRejectAlasan] = useState("");
   const [approveYangMenyerahkan, setApproveYangMenyerahkan] = useState("");
   const [yangMenyerahkanSearch, setYangMenyerahkanSearch] = useState("");
   const [approvePenerimaAset, setApprovePenerimaAset] = useState("");
@@ -516,6 +520,26 @@ export default function PeminjamanAsetPage() {
     finally { setSubmitting(false); }
   };
 
+  const handleReject = async () => {
+    if (!showRejectConfirm) return;
+    if (!rejectAlasan.trim()) {
+      showToast("Alasan penolakan wajib diisi", "error");
+      return;
+    }
+    try {
+      setSubmitting(true);
+      await rejectPeminjaman(showRejectConfirm.id, rejectAlasan.trim());
+      showToast(`Peminjaman #${showRejectConfirm.kodePinjam} berhasil ditolak`);
+      setShowRejectConfirm(null);
+      setRejectAlasan("");
+      fetchData();
+    } catch (err) {
+      showToast(err.response?.data?.message || err.message || "Gagal menolak peminjaman", "error");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   // Fetch borrowable items for swap/add modals
   const fetchBorrowableItems = async () => {
     try {
@@ -755,16 +779,17 @@ export default function PeminjamanAsetPage() {
                     <div className="flex items-center justify-center gap-1">
                       {/* Detail */}
                       <button onClick={() => handleShowDetail(item)} className="cursor-pointer rounded-lg bg-blue-100 p-1 text-blue-600 transition-colors hover:bg-blue-600 hover:text-white" title="Detail"><Info className="h-3.5 w-3.5" /></button>
-                      {/* Edit */}
-                      {canEdit && (item.status === "Menunggu Persetujuan" || item.status === "Sedang Dipinjam") && (["super admin", "admin"].includes(userRole) || item.userId === currentUserId) && (
-                        <button onClick={() => {
-                          if (item.status === "Menunggu Persetujuan" && !["admin", "super admin"].includes(userRole.toLowerCase())) {
-                            showToast("Peminjaman belum disetujui, tidak dapat mengembalikan alat.", "error");
-                          } else {
-                            router.push(`/aset/peminjaman/edit/${item.id}`);
-                          }
-                        }} className="cursor-pointer rounded-lg bg-amber-100 p-1 text-amber-600 transition-colors hover:bg-amber-600 hover:text-white" title="Edit / Pengembalian"><Pencil className="h-3.5 w-3.5" /></button>
+                      
+                      {/* Edit Pengajuan (untuk Menunggu Persetujuan atau Ditolak) */}
+                      {canEdit && (item.status === "Menunggu Persetujuan" || item.status === "Ditolak") && (["super admin", "admin"].includes(userRole) || item.userId === currentUserId) && (
+                        <button onClick={() => router.push(`/aset/peminjaman/edit-pengajuan/${item.id}`)} className="cursor-pointer rounded-lg bg-amber-100 p-1 text-amber-600 transition-colors hover:bg-amber-600 hover:text-white" title="Edit Pengajuan"><Pencil className="h-3.5 w-3.5" /></button>
                       )}
+
+                      {/* Pengembalian Alat (hanya saat Sedang Dipinjam) */}
+                      {canEdit && item.status === "Sedang Dipinjam" && (["super admin", "admin"].includes(userRole) || item.userId === currentUserId) && (
+                        <button onClick={() => router.push(`/aset/peminjaman/edit/${item.id}`)} className="cursor-pointer rounded-lg bg-teal-100 p-1 text-teal-700 transition-colors hover:bg-teal-600 hover:text-white" title="Pengembalian Alat"><RotateCcw className="h-3.5 w-3.5" /></button>
+                      )}
+
                       {/* Approve */}
                       {canApprove && (item.status === "Menunggu Persetujuan" || item.status === "Menunggu Verifikasi") && item.namaPeminjam !== userName && (
                         <button onClick={() => {
@@ -778,6 +803,15 @@ export default function PeminjamanAsetPage() {
                           fetchUserList();
                         }} className="cursor-pointer rounded-lg bg-emerald-100 p-1 text-emerald-600 transition-colors hover:bg-emerald-600 hover:text-white" title="Setujui"><Check className="h-3.5 w-3.5" /></button>
                       )}
+
+                      {/* Tolak Pengajuan (Hanya Menunggu Persetujuan) */}
+                      {canApprove && item.status === "Menunggu Persetujuan" && item.namaPeminjam !== userName && (
+                        <button onClick={() => {
+                          setShowRejectConfirm(item);
+                          setRejectAlasan("");
+                        }} className="cursor-pointer rounded-lg bg-rose-100 p-1 text-rose-600 transition-colors hover:bg-rose-600 hover:text-white" title="Tolak Pengajuan"><X className="h-3.5 w-3.5" /></button>
+                      )}
+
                       {/* Delete */}
                       {canDelete && (
                         <button onClick={() => setShowDeleteConfirm(item)} className="cursor-pointer rounded-lg bg-rose-100 p-1 text-rose-600 transition-colors hover:bg-rose-600 hover:text-white" title="Hapus"><Trash2 className="h-3.5 w-3.5" /></button>
@@ -822,7 +856,9 @@ export default function PeminjamanAsetPage() {
                         ["Tanggal Peminjaman", formatDateTime(showDetail.tanggalPeminjaman)],
                         ["Yang Menyerahkan", showDetail.yangMenyerahkan],
                         ["Status", null], // custom render
-                        ["Disetujui Oleh", showDetail.approvedBy],
+                        showDetail.status === "Ditolak"
+                          ? ["Ditolak Oleh", showDetail.rejectedBy]
+                          : ["Disetujui Oleh", showDetail.approvedBy],
                       ].map(([l, v]) => (
                         <div key={l} className="flex flex-col gap-1.5">
                           <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{l}</span>
@@ -834,6 +870,24 @@ export default function PeminjamanAsetPage() {
                         </div>
                       ))}
                     </div>
+
+                    {/* Alert Card jika Ditolak */}
+                    {showDetail.status === "Ditolak" && (
+                      <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-4">
+                        <div className="flex items-start gap-3">
+                          <AlertTriangle className="h-5 w-5 text-rose-600 shrink-0 mt-0.5" />
+                          <div className="space-y-1">
+                            <h5 className="text-sm font-bold text-rose-900">Pengajuan Peminjaman Ditolak</h5>
+                            <p className="text-xs text-rose-700">
+                              <span className="font-semibold">Ditolak oleh:</span> {showDetail.rejectedBy || "Admin"}
+                            </p>
+                            <p className="text-xs text-rose-700">
+                              <span className="font-semibold">Alasan penolakan:</span> {showDetail.alasanPenolakan || "-"}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Keperluan — full list */}
                     <div className="mt-4 flex flex-col gap-1.5">
@@ -1384,6 +1438,53 @@ export default function PeminjamanAsetPage() {
                 <div className="flex items-center justify-center gap-3 border-t border-slate-100 px-6 py-4 bg-white rounded-b-2xl">
                   <button onClick={() => { setShowApproveConfirm(null); setApproveYangMenyerahkan(""); setYangMenyerahkanSearch(""); setShowYangMenyerahkanDropdown(false); setApprovePenerimaAset(""); setPenerimaAsetSearch(""); setShowPenerimaAsetDropdown(false); setYangMenyerahkanChoice(null); setPenerimaAsetChoice(null); }} className="cursor-pointer flex-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">Batal</button>
                   <button onClick={handleApprove} disabled={submitting} className="cursor-pointer flex-1 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-600 disabled:opacity-60">{submitting ? "Memproses..." : "Ya, Setujui"}</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Modal Tolak Peminjaman */}
+          {showRejectConfirm && (
+            <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300" onClick={() => setShowRejectConfirm(null)}>
+              <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl animate-in zoom-in-95 duration-200 border-t-4 border-t-rose-500" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center gap-3 text-rose-600 mb-4">
+                  <div className="p-2.5 bg-rose-100 rounded-xl">
+                    <AlertTriangle className="h-6 w-6 text-rose-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-800">Tolak Pengajuan Peminjaman</h3>
+                    <p className="text-xs text-slate-500 font-mono">#{showRejectConfirm.kodePinjam}</p>
+                  </div>
+                </div>
+                <p className="text-sm text-slate-600 mb-3">
+                  Pengajuan peminjaman atas nama <span className="font-bold text-slate-800">{showRejectConfirm.namaPeminjam}</span> akan ditolak. Seluruh stok barang dan unit fisik yang tertahan akan otomatis dikembalikan ke status tersedia.
+                </p>
+                <div className="space-y-1.5 mb-5">
+                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">
+                    Alasan Penolakan <span className="text-rose-500">*</span>
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={rejectAlasan}
+                    onChange={(e) => setRejectAlasan(e.target.value)}
+                    placeholder="Tuliskan alasan penolakan agar peminjam dapat merevisi..."
+                    className="w-full rounded-xl border border-slate-200 p-3 text-sm text-slate-800 placeholder-slate-400 focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-500/20"
+                  />
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => { setShowRejectConfirm(null); setRejectAlasan(""); }}
+                    className="cursor-pointer flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={handleReject}
+                    disabled={submitting || !rejectAlasan.trim()}
+                    className="cursor-pointer flex-1 rounded-xl bg-rose-600 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-700 disabled:opacity-50"
+                  >
+                    {submitting ? "Memproses..." : "Ya, Tolak"}
+                  </button>
                 </div>
               </div>
             </div>

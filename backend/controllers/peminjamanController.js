@@ -301,6 +301,179 @@ const peminjamanController = {
     }
   },
 
+  // REJECT peminjaman
+  rejectPeminjaman: async (req, res) => {
+    try {
+      const id = req.params.id;
+      const { alasan_penolakan } = req.body;
+
+      if (!alasan_penolakan || !alasan_penolakan.trim()) {
+        return res.status(400).json({ success: false, message: "Alasan penolakan wajib diisi" });
+      }
+
+      const checkData = await Peminjaman.getById(id);
+      if (!checkData) {
+        return res.status(404).json({ success: false, message: "Data peminjaman tidak ditemukan" });
+      }
+
+      if (checkData.status !== "Menunggu Persetujuan") {
+        return res.status(400).json({
+          success: false,
+          message: `Hanya peminjaman berstatus "Menunggu Persetujuan" yang dapat ditolak. Status saat ini: "${checkData.status}"`
+        });
+      }
+
+      const rejectedBy = req.user?.nama || "Admin";
+      await Peminjaman.reject(id, alasan_penolakan.trim(), rejectedBy);
+
+      // Notifikasi: ditolak
+      await Notification.create({
+        type: 'peminjaman_ditolak',
+        message: `Pengajuan peminjaman ${checkData.kode_pinjam} ditolak oleh ${rejectedBy}. Alasan: ${alasan_penolakan.trim()}`,
+        referenceId: id,
+        targetRoles: 'super admin,admin,supervisor,user',
+      });
+
+      await AuditLog.create({
+        userId: req.user?.userId,
+        userName: req.user?.nama,
+        action: 'TOLAK PEMINJAMAN',
+        entityType: 'Peminjaman',
+        entityId: id,
+        details: `Menolak peminjaman ${checkData.kode_pinjam}. Alasan: ${alasan_penolakan.trim()}`
+      });
+
+      res.status(200).json({ success: true, message: "Peminjaman berhasil ditolak" });
+    } catch (error) {
+      console.error("Error tolak peminjaman:", error);
+      res.status(500).json({ success: false, message: "Server Error", error: error.message });
+    }
+  },
+
+  // UPDATE / REVISI pengajuan peminjaman
+  updatePengajuan: async (req, res) => {
+    try {
+      const id = req.params.id;
+      const { nama_peminjam, alasan_peminjaman, keperluan_list, tanggal_peminjaman, items, existing_bukti } = req.body;
+
+      const checkData = await Peminjaman.getById(id);
+      if (!checkData) {
+        return res.status(404).json({ success: false, message: "Data peminjaman tidak ditemukan" });
+      }
+
+      // Akses check: pembuat peminjaman atau admin/super admin
+      const isOwner = checkData.user_id === req.user?.userId;
+      const isAdmin = ["super admin", "admin"].includes(req.user?.role);
+      if (!isOwner && !isAdmin) {
+        return res.status(403).json({
+          success: false,
+          message: "Akses ditolak. Anda hanya dapat merevisi pengajuan yang Anda buat sendiri."
+        });
+      }
+
+      if (checkData.status !== "Menunggu Persetujuan" && checkData.status !== "Ditolak") {
+        return res.status(400).json({
+          success: false,
+          message: `Pengajuan hanya dapat direvisi saat berstatus "Menunggu Persetujuan" atau "Ditolak". Status saat ini: "${checkData.status}"`
+        });
+      }
+
+      if (!nama_peminjam?.trim()) {
+        return res.status(400).json({ success: false, message: "Nama peminjam wajib diisi" });
+      }
+      if (!tanggal_peminjaman?.trim()) {
+        return res.status(400).json({ success: false, message: "Tanggal peminjaman wajib diisi" });
+      }
+
+      let itemsArray = items;
+      if (typeof items === "string") {
+        try {
+          itemsArray = JSON.parse(items);
+        } catch (e) {
+          itemsArray = [];
+        }
+      }
+
+      if (!itemsArray || !Array.isArray(itemsArray) || itemsArray.length === 0) {
+        return res.status(400).json({ success: false, message: "Minimal harus ada 1 barang yang dipinjam" });
+      }
+
+      for (const item of itemsArray) {
+        if ((!item.asset_id && !item.aksesoris_id) || !item.jumlah || item.jumlah < 1) {
+          return res.status(400).json({ success: false, message: "Setiap barang harus memiliki aset/aksesoris dan jumlah yang valid" });
+        }
+      }
+
+      // Handle bukti files
+      let existingFiles = [];
+      if (existing_bukti) {
+        try {
+          existingFiles = typeof existing_bukti === "string" ? JSON.parse(existing_bukti) : existing_bukti;
+          if (!Array.isArray(existingFiles)) existingFiles = [];
+        } catch (e) {
+          existingFiles = [];
+        }
+      }
+
+      let newOptimizedFiles = [];
+      if (req.files && req.files.length > 0) {
+        newOptimizedFiles = await Promise.all(
+          req.files.map(async (f, idx) => {
+            const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+            const newFilename = await optimizeImage(
+              f.path,
+              path.join(__dirname, "..", "public", "uploads"),
+              `bukti_pinjam_revisi-${uniqueSuffix}-${idx}`
+            );
+            return `/uploads/${newFilename}`;
+          })
+        );
+      }
+
+      const combinedBukti = [...existingFiles, ...newOptimizedFiles];
+      const buktiPeminjamanUrls = combinedBukti.length > 0 ? JSON.stringify(combinedBukti) : null;
+
+      let keperluanListParsed = keperluan_list;
+      if (typeof keperluan_list === 'string') {
+        try { keperluanListParsed = JSON.parse(keperluan_list); } catch { keperluanListParsed = null; }
+      }
+
+      await Peminjaman.updatePengajuan(
+        id,
+        {
+          nama_peminjam,
+          alasan_peminjaman,
+          keperluan_list: keperluanListParsed,
+          tanggal_peminjaman,
+          bukti_peminjaman: buktiPeminjamanUrls
+        },
+        itemsArray
+      );
+
+      // Notifikasi: pengajuan direvisi
+      await Notification.create({
+        type: 'peminjaman_direvisi',
+        message: `Pengajuan peminjaman ${checkData.kode_pinjam} telah direvisi dan diajukan ulang oleh ${req.user?.nama || nama_peminjam}`,
+        referenceId: id,
+        targetRoles: 'super admin,admin,supervisor',
+      });
+
+      await AuditLog.create({
+        userId: req.user?.userId,
+        userName: req.user?.nama,
+        action: 'REVISI PENGAJUAN',
+        entityType: 'Peminjaman',
+        entityId: id,
+        details: `Merevisi pengajuan peminjaman: ${checkData.kode_pinjam}`
+      });
+
+      res.status(200).json({ success: true, message: "Pengajuan peminjaman berhasil diperbarui dan diajukan ulang." });
+    } catch (error) {
+      console.error("Error update pengajuan peminjaman:", error);
+      res.status(500).json({ success: false, message: error.message || "Server Error" });
+    }
+  },
+
   // DELETE peminjaman
   deletePeminjaman: async (req, res) => {
     try {
@@ -322,11 +495,11 @@ const peminjamanController = {
         });
       }
 
-      // Cek status peminjaman — hanya boleh hapus jika sudah 'Peminjaman Selesai'
-      if (checkData.status !== 'Peminjaman Selesai') {
+      // Cek status peminjaman — hanya boleh hapus jika sudah 'Peminjaman Selesai' atau 'Ditolak'
+      if (checkData.status !== 'Peminjaman Selesai' && checkData.status !== 'Ditolak') {
         return res.status(400).json({
           success: false,
-          message: `Peminjaman tidak dapat dihapus karena statusnya masih "${checkData.status}". Hanya peminjaman dengan status "Peminjaman Selesai" yang dapat dihapus.`
+          message: `Peminjaman tidak dapat dihapus karena statusnya masih "${checkData.status}". Hanya peminjaman dengan status "Peminjaman Selesai" atau "Ditolak" yang dapat dihapus.`
         });
       }
 

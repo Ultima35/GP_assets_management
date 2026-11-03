@@ -66,6 +66,12 @@ router.put("/:id/add-item", verifyToken, requireRole("super admin", "admin", "su
 // APPROVE peminjaman (must be before PUT /:id)
 router.put("/:id/approve", verifyToken, requireRole("super admin", "admin", "supervisor"), peminjamanController.approvePeminjaman);
 
+// REJECT peminjaman
+router.put("/:id/reject", verifyToken, requireRole("super admin", "admin", "supervisor"), peminjamanController.rejectPeminjaman);
+
+// REVISI pengajuan peminjaman (edit items & details)
+router.put("/:id/pengajuan", verifyToken, upload.array("bukti", 5), peminjamanController.updatePengajuan);
+
 // DOWNLOAD PDF (must be before GET /:id)
 router.get("/:id/pdf", peminjamanController.generatePDF);
 
