@@ -639,7 +639,7 @@ export default function KategoriMerekPage() {
                   </div>
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-slate-700">Nama Kategori</label>
-                    <p className="mb-1.5 text-xs text-slate-400 italic">↳ Nama jenis aset, contoh: "Kamera", "Lensa"</p>
+                    <p className="mb-1.5 text-xs text-slate-400 italic">↳ Nama jenis aset, contoh: &quot;Kamera&quot;, &quot;Lensa&quot;</p>
                     <input type="text" required placeholder="Contoh: KAMERA" value={formKat.nama} onChange={(e) => setFormKat(d => ({ ...d, nama: toUpperCaseText(e.target.value) }))} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" onInvalid={(e) => e.target.setCustomValidity("Nama kategori wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
                   </div>
                   <div>
@@ -689,7 +689,7 @@ export default function KategoriMerekPage() {
                   </div>
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-slate-700">Nama Merek</label>
-                    <p className="mb-1.5 text-xs text-slate-400 italic">↳ Nama produsen/brand, contoh: "Sony", "Canon"</p>
+                    <p className="mb-1.5 text-xs text-slate-400 italic">↳ Nama produsen/brand, contoh: &quot;Sony&quot;, &quot;Canon&quot;</p>
                     <input type="text" required placeholder="Contoh: SONY" value={formMerek.nama} onChange={(e) => setFormMerek(d => ({ ...d, nama: toUpperCaseText(e.target.value) }))} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" onInvalid={(e) => e.target.setCustomValidity("Nama merek wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
                   </div>
 
@@ -728,7 +728,7 @@ export default function KategoriMerekPage() {
                   </div>
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-slate-700">Nama Kategori</label>
-                    <p className="mb-1.5 text-xs text-slate-400 italic">↳ Nama jenis aset, contoh: "Kamera", "Lensa"</p>
+                    <p className="mb-1.5 text-xs text-slate-400 italic">↳ Nama jenis aset, contoh: &quot;Kamera&quot;, &quot;Lensa&quot;</p>
                     <input type="text" required value={showEditKat.nama} onChange={(e) => setShowEditKat(d => ({ ...d, nama: toUpperCaseText(e.target.value) }))} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" onInvalid={(e) => e.target.setCustomValidity("Nama kategori wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
                   </div>
                   <div>
@@ -774,7 +774,7 @@ export default function KategoriMerekPage() {
                   </div>
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-slate-700">Nama Merek</label>
-                    <p className="mb-1.5 text-xs text-slate-400 italic">↳ Nama produsen/brand, contoh: "Sony", "Canon"</p>
+                    <p className="mb-1.5 text-xs text-slate-400 italic">↳ Nama produsen/brand, contoh: &quot;Sony&quot;, &quot;Canon&quot;</p>
                     <input type="text" required value={showEditMerek.nama} onChange={(e) => setShowEditMerek(d => ({ ...d, nama: toUpperCaseText(e.target.value) }))} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" onInvalid={(e) => e.target.setCustomValidity("Nama merek wajib diisi")} onInput={(e) => e.target.setCustomValidity("")} />
                   </div>
 

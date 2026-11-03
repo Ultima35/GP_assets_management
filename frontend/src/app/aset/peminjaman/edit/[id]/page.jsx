@@ -121,7 +121,7 @@ function ImageCarouselInner({ images, title, backendUrl, onImageClick }) {
           {visibleImages.map((img, i) => (
             <div key={`${startIndex}-${i}`} className={`relative h-32 md:h-40 rounded-lg overflow-hidden border border-slate-200 group cursor-zoom-in shadow-sm hover:border-primary/50 transition-colors cursor-pointer ${img.isThird ? 'hidden md:block' : ''}`} 
               onClick={() => onImageClick(images, img.originalIndex)}>
-              <img src={`${backendUrl}${img.path}`} alt={title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
+              <Image src={`${backendUrl}${img.path}`} alt={title} fill className="object-cover group-hover:scale-110 transition-transform duration-300" unoptimized />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
                 <Search className="h-5 w-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
@@ -687,10 +687,12 @@ export default function EditPeminjamanPage() {
                       <div className="flex flex-wrap justify-center gap-3 mt-4">
                         {buktiPreviews.map((preview, idx) => (
                           <div key={idx} className="relative group w-24 h-24 sm:w-28 sm:h-28 shrink-0">
-                            <img
+                            <Image
                               src={preview}
                               alt={`Preview ${idx + 1}`}
-                              className="w-full h-full object-cover rounded-lg border border-slate-200"
+                              fill
+                              className="object-cover rounded-lg border border-slate-200"
+                              unoptimized
                             />
                             <button
                               type="button"
@@ -770,11 +772,15 @@ export default function EditPeminjamanPage() {
               </button>
             )}
             
-            <img 
-              src={`${BACKEND_URL}${lightboxData.images[lightboxData.index]}`} 
-              alt="Bukti Preview" 
-              className="max-h-full max-w-full object-contain"
-            />
+            <div className="relative w-full h-[80vh] flex items-center justify-center">
+              <Image 
+                src={`${BACKEND_URL}${lightboxData.images[lightboxData.index]}`} 
+                alt="Bukti Preview" 
+                fill
+                className="object-contain"
+                unoptimized
+              />
+            </div>
 
             {lightboxData.images.length > 1 && (
               <button

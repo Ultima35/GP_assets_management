@@ -19,6 +19,12 @@ const getAPIBase = () => {
 };
 const API_BASE = getAPIBase();
 
+const EyeIcon = ({ show, onClick }) => (
+  <button type="button" onClick={onClick} className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer" tabIndex="-1">
+    {show ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+  </button>
+);
+
 export default function ProfilPage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
@@ -213,11 +219,7 @@ export default function ProfilPage() {
     );
   };
 
-  const EyeIcon = ({ show, onClick }) => (
-    <button type="button" onClick={onClick} className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer" tabIndex="-1">
-      {show ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
-    </button>
-  );
+
 
   return (
     <div>

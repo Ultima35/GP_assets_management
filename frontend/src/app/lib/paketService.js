@@ -38,7 +38,7 @@ export async function createPaket(data, file = null) {
 /**
  * UPDATE template paket
  */
-export async function updatePaket(id, data, file = null) {
+export async function updatePaket(id, data, file = null, hapusGambar = false) {
   const formData = new FormData();
   formData.append("nama_paket", data.nama_paket);
   formData.append("deskripsi", data.deskripsi || "");
@@ -46,6 +46,8 @@ export async function updatePaket(id, data, file = null) {
 
   if (file) {
     formData.append("gambar", file);
+  } else if (hapusGambar) {
+    formData.append("hapus_gambar", "true");
   }
 
   const response = await api.put(`/paket/${id}`, formData, {

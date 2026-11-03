@@ -136,6 +136,11 @@ const paketController = {
         if (existing.gambar) {
           oldImageToDelete = path.join(__dirname, "..", "public", existing.gambar);
         }
+      } else if (req.body.hapus_gambar === "true" || req.body.hapus_gambar === true) {
+        paketData.gambar = null;
+        if (existing.gambar) {
+          oldImageToDelete = path.join(__dirname, "..", "public", existing.gambar);
+        }
       }
 
       await Paket.update(id, paketData, parsedItems);

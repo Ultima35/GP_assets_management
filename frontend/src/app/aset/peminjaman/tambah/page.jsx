@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { Suspense, useState, useEffect, useCallback, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -52,7 +53,10 @@ function ItemThumbnail({ src, alt, width = 150, height = 150, className = "w-ful
   );
 }
 
-export default function TambahPeminjamanPage() {
+function TambahPeminjamanContent() {
+  const searchParams = useSearchParams();
+  const queryPaketId = searchParams?.get("paketId");
+  const autoAppliedRef = useRef(false);
   const router = useRouter();
 
   // User & Auth State
@@ -620,7 +624,7 @@ export default function TambahPeminjamanPage() {
           const chosenUnits = readyUnits.slice(0, requestedQty);
           if (chosenUnits.length < requestedQty) {
             warnings.push(
-              `"${targetItem.nama}": Hanya tersedia ${chosenUnits.length} dari ${requestedQty} unit yang siap digunakan.`
+              `"${targetItem.nama}": Paket meminta ${requestedQty} unit, namun di inventaris hanya tersedia ${chosenUnits.length} unit siap pakai (${chosenUnits.length} unit otomatis dimasukkan).`
             );
           }
 
@@ -658,7 +662,7 @@ export default function TambahPeminjamanPage() {
 
           const chosenQty = Math.min(requestedQty, availableStock);
           if (chosenQty < requestedQty) {
-            warnings.push(`"${targetItem.nama}": Stok hanya tersisa ${chosenQty} dari ${requestedQty} yang diminta.`);
+            warnings.push(`"${targetItem.nama}": Paket meminta ${requestedQty} unit, namun stok yang tersisa hanya ${chosenQty} unit (${chosenQty} unit otomatis dimasukkan).`);
           }
 
           newItemsToAdd.push({
@@ -714,6 +718,15 @@ export default function TambahPeminjamanPage() {
       setApplyingPaketId(null);
     }
   };
+
+  // Auto-apply paket jika dibuka via URL ?paketId=...
+  useEffect(() => {
+    if (queryPaketId && allItems.length > 0 && !autoAppliedRef.current) {
+      autoAppliedRef.current = true;
+      handleApplyPaket(queryPaketId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queryPaketId, allItems]);
 
   // Form submit
   const handleSubmit = async (e) => {
@@ -1003,11 +1016,11 @@ export default function TambahPeminjamanPage() {
               <button
                 type="button"
                 onClick={handleOpenPaketModal}
-                className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-50 border border-orange-200 text-orange-700 hover:bg-orange-100 text-xs sm:text-sm font-semibold transition-all shadow-xs"
-                title="Pilih barang cepat menggunakan template paket"
+                className="cursor-pointer inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-primary text-white hover:bg-primary-hover text-xs sm:text-sm font-medium shadow-sm transition-colors whitespace-nowrap"
+                title="Pilih peralatan sekaligus dari paket bundling"
               >
-                <Boxes className="w-4 h-4 text-orange-600" />
-                <span>Gunakan Template Paket</span>
+                <Boxes className="w-4 h-4" />
+                <span>Pilih dari Paket Bundling</span>
               </button>
 
               {/* View Mode Toggle: Clean Segmented Pill */}
@@ -1087,30 +1100,46 @@ export default function TambahPeminjamanPage() {
             </div>
           </div>
 
-          {/* Paket Warnings Banner */}
+          {/* Paket Warnings Banner - Highly Prominent Alert */}
           {paketWarnings.length > 0 && (
-            <div className="mb-4 p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs sm:text-sm space-y-1.5 animate-in fade-in duration-200">
-              <div className="flex items-center justify-between font-bold text-amber-800">
-                <div className="flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-                  <span>Catatan Ketersediaan Paket:</span>
+            <div className="mb-5 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50/60 border-2 border-amber-300 border-l-6 border-l-amber-500 p-4 sm:p-5 shadow-md animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-xl bg-amber-500 text-white shadow-xs shrink-0 mt-0.5">
+                    <AlertTriangle className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm sm:text-base font-bold text-amber-950 flex items-center gap-2">
+                      Perhatian: Sebagian Peralatan Paket Tidak Tersedia Penuh
+                    </h4>
+                    <p className="text-xs text-amber-800 mt-1">
+                      Sistem telah otomatis menyaring dan hanya memasukkan unit yang <b>Tersedia & Siap Digunakan</b> di gudang. Berikut catatan peralatan yang terdampak:
+                    </p>
+
+                    <div className="mt-3 space-y-1.5">
+                      {paketWarnings.map((w, idx) => (
+                        <div key={idx} className="flex items-center gap-2 text-xs font-semibold text-amber-900 bg-white/80 border border-amber-200/80 px-3 py-1.5 rounded-lg shadow-2xs">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                          <span>{w}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <p className="text-[11px] text-amber-700/90 pt-2.5 italic">
+                      💡 <b>Tips:</b> Anda dapat mencari dan menambahkan item pengganti atau aksesoris tambahan secara manual dari daftar inventaris di bawah.
+                    </p>
+                  </div>
                 </div>
+
                 <button
                   type="button"
                   onClick={() => setPaketWarnings([])}
-                  className="cursor-pointer p-0.5 text-amber-600 hover:text-amber-800"
+                  className="cursor-pointer p-1.5 rounded-lg text-amber-600 hover:text-amber-900 hover:bg-amber-100 transition-colors shrink-0"
+                  title="Tutup Catatan"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-5 h-5" />
                 </button>
               </div>
-              <ul className="list-disc list-inside space-y-0.5 text-amber-700 pl-1 text-xs">
-                {paketWarnings.map((w, idx) => (
-                  <li key={idx}>{w}</li>
-                ))}
-              </ul>
-              <p className="text-[11px] text-amber-600 pt-1 italic">
-                * Unit yang sehat/tersedia telah otomatis dimasukkan. Anda dapat mencari item pengganti secara manual di daftar bawah jika diperlukan.
-              </p>
             </div>
           )}
 
@@ -1642,11 +1671,15 @@ export default function TambahPeminjamanPage() {
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                 {buktiPreviews.map((preview, idx) => (
                   <div key={idx} className="relative group">
-                    <img
-                      src={preview}
-                      alt={`Preview ${idx + 1}`}
-                      className="w-full h-24 object-cover rounded-lg border border-slate-200"
-                    />
+                    <div className="relative w-full h-24 rounded-lg overflow-hidden border border-slate-200">
+                      <Image
+                        src={preview}
+                        alt={`Preview ${idx + 1}`}
+                        fill
+                        className="object-cover"
+                        unoptimized
+                      />
+                    </div>
                     <button
                       type="button"
                       onClick={() => removeFile(idx)}
@@ -1993,7 +2026,7 @@ export default function TambahPeminjamanPage() {
       {/* Modal Pilihan Template Paket */}
       {typeof document !== 'undefined' && showPaketModal && createPortal(
         <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden">
+          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl border border-slate-200 border-t-4 border-t-primary animate-modal-in overflow-hidden">
             {/* Modal Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50/70">
               <div className="flex items-center gap-2.5">
@@ -2058,50 +2091,82 @@ export default function TambahPeminjamanPage() {
                     .map((paket) => (
                       <div
                         key={paket.id}
-                        className="p-4 rounded-xl border border-slate-200 hover:border-orange-300 hover:bg-orange-50/20 bg-white transition-all shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                        className="p-4 rounded-xl border border-slate-200 hover:border-primary/40 bg-white transition-all shadow-xs"
                       >
-                        <div className="flex items-center gap-3.5 min-w-0 flex-1">
-                          <div className="relative w-16 h-16 rounded-xl bg-slate-100 overflow-hidden shrink-0 border border-slate-200 flex items-center justify-center">
-                            {paket.gambar ? (
-                              <Image
-                                src={`${BACKEND_URL}${paket.gambar}`}
-                                alt={paket.nama_paket}
-                                fill
-                                className="object-cover"
-                                unoptimized
-                              />
-                            ) : (
-                              <Boxes className="h-7 w-7 text-slate-300" />
-                            )}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <h4 className="text-sm font-bold text-slate-800 truncate">
-                              {paket.nama_paket}
-                            </h4>
-                            <p className="text-xs text-slate-500 line-clamp-1 mt-0.5">
-                              {paket.deskripsi || "Tanpa deskripsi"}
-                            </p>
-                            <div className="flex items-center gap-2 mt-1.5">
-                              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-orange-700 bg-orange-100/70 px-2 py-0.5 rounded-md">
-                                <Layers className="w-3 h-3" />
-                                {paket.total_items || 0} Macam Barang ({paket.total_qty || 0} Unit)
-                              </span>
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                          <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                            <div className="relative w-16 h-16 rounded-xl bg-slate-100 overflow-hidden shrink-0 border border-slate-200 flex items-center justify-center">
+                              {paket.gambar ? (
+                                <Image
+                                  src={`${BACKEND_URL}${paket.gambar}`}
+                                  alt={paket.nama_paket}
+                                  fill
+                                  className="object-cover"
+                                  unoptimized
+                                />
+                              ) : (
+                                <Boxes className="h-7 w-7 text-slate-300" />
+                              )}
                             </div>
+                            <div className="min-w-0 flex-1">
+                              <h4 className="text-sm font-bold text-slate-800 truncate">
+                                {paket.nama_paket}
+                              </h4>
+                              <p className="text-xs text-slate-500 line-clamp-1 mt-0.5">
+                                {paket.deskripsi || "Tanpa deskripsi"}
+                              </p>
+                              <div className="flex items-center gap-2 mt-1.5">
+                                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+                                  <Layers className="w-3 h-3" />
+                                  {paket.total_items || 0} Jenis Alat ({paket.total_qty || 0} Unit)
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Actions */}
+                          <div className="flex items-center gap-2 w-full sm:w-auto justify-end shrink-0">
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                if (previewingPaket?.id === paket.id) {
+                                  setPreviewingPaket(null);
+                                } else {
+                                  const detail = await getPaketById(paket.id);
+                                  setPreviewingPaket(detail);
+                                }
+                              }}
+                              className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-xs font-semibold transition-colors"
+                            >
+                              <Eye className="w-3.5 h-3.5 text-slate-500" />
+                              <span>{previewingPaket?.id === paket.id ? "Tutup" : "Lihat Isi"}</span>
+                            </button>
+                            <button
+                              type="button"
+                              disabled={applyingPaketId === paket.id}
+                              onClick={() => handleApplyPaket(paket.id)}
+                              className="cursor-pointer flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-white text-xs font-semibold hover:bg-primary-hover transition-all shadow-xs disabled:opacity-60"
+                            >
+                              <Sparkles className="w-3.5 h-3.5" />
+                              <span>{applyingPaketId === paket.id ? "Menerapkan..." : "Terapkan Paket"}</span>
+                            </button>
                           </div>
                         </div>
 
-                        {/* Actions */}
-                        <div className="flex items-center gap-2 w-full sm:w-auto justify-end shrink-0">
-                          <button
-                            type="button"
-                            disabled={applyingPaketId === paket.id}
-                            onClick={() => handleApplyPaket(paket.id)}
-                            className="cursor-pointer flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-white text-xs font-semibold hover:bg-primary/90 transition-all shadow-xs disabled:opacity-60"
-                          >
-                            <Sparkles className="w-3.5 h-3.5" />
-                            <span>{applyingPaketId === paket.id ? "Menerapkan..." : "Terapkan Paket"}</span>
-                          </button>
-                        </div>
+                        {/* Accordion Detail Isi Paket */}
+                        {previewingPaket?.id === paket.id && (
+                          <div className="mt-3 pt-3 border-t border-slate-100 bg-slate-50/70 p-3 rounded-lg text-xs space-y-1.5 animate-in fade-in">
+                            <p className="font-bold text-slate-700">Daftar Peralatan dalam Paket ({previewingPaket.items?.length || 0} Macam):</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
+                              {(previewingPaket.items || []).map((it, idx) => (
+                                <div key={idx} className="flex items-center justify-between bg-white px-2.5 py-1.5 rounded-md border border-slate-200">
+                                  <span className="truncate text-slate-700">• {it.nama_item}</span>
+                                  <span className="font-bold text-primary shrink-0 ml-2">{it.jumlah} Unit</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ))}
                 </div>
@@ -2143,5 +2208,13 @@ export default function TambahPeminjamanPage() {
         document.body
       )}
     </div>
+  );
+}
+
+export default function TambahPeminjamanPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-slate-400">Memuat formulir peminjaman...</div>}>
+      <TambahPeminjamanContent />
+    </Suspense>
   );
 }
