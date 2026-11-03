@@ -5,7 +5,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { getUserContext } from "../lib/authService";
-import { Home, Package, ClipboardList, Tag, FileText, Users, ChevronRight, PanelRight, Cpu, BarChart2, ShieldAlert, Activity, X, History, Users2, UserCog } from "lucide-react";
+import { Home, Package, ClipboardList, Tag, FileText, Users, ChevronRight, PanelRight, Cpu, BarChart2, ShieldAlert, Activity, X, History, Users2, UserCog, Boxes } from "lucide-react";
 
 export default function Sidebar({ isCollapsed, setIsCollapsed, mobileOpen, setMobileOpen }) {
   const pathname = usePathname();
@@ -200,6 +200,23 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, mobileOpen, setMo
                   </div>
                   <span className="text-[13px] whitespace-nowrap">Peminjaman Alat</span>
                 </Link>
+
+                {/* Template Paket - Only Super Admin & Admin */}
+                {canSeeDaftarAset && (
+                  <Link
+                    href="/aset/paket"
+                    className={`flex items-center h-10 rounded-lg transition-all duration-300 ${
+                      pathname.startsWith("/aset/paket")
+                        ? "bg-primary text-white"
+                        : "text-slate-400 hover:bg-white/5 hover:text-white"
+                    }`}
+                  >
+                    <div className="flex w-12 h-full items-center justify-center shrink-0">
+                      <Boxes className="h-4 w-4" />
+                    </div>
+                    <span className="text-[13px] whitespace-nowrap">Template Paket</span>
+                  </Link>
+                )}
 
                 {/* Riwayat - Hidden for super admin, supervisor */}
                 {!["super admin", "supervisor"].includes(userRole) && (

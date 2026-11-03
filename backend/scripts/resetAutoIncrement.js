@@ -10,6 +10,8 @@ async function resetAutoIncrement() {
     "brands",
     "peminjaman",
     "peminjaman_items",
+    "paket_peminjaman",
+    "paket_peminjaman_items",
     "audit_logs",
     "notifications",
   ];

@@ -7,11 +7,12 @@ import { useRouter } from "next/navigation";
 import { createPeminjaman, getNextKodePinjam } from "../../../lib/peminjamanService";
 import { getAllAssets } from "../../../lib/assetService";
 import { getAllAksesoris } from "../../../lib/aksesorisService";
+import { getAllPaket, getPaketById } from "../../../lib/paketService";
 import { getActivePegawai, getApprovers } from "../../../lib/pegawaiService";
 import api from "../../../lib/api";
 import { getUserContext } from "../../../lib/authService";
 import { toCapitalEachWord, toSentenceCase } from "../../../lib/stringUtils";
-import { ChevronLeft, FileText, Package, Plus, X, Check, AlertTriangle, Camera, Trash2, Grid, List, Image as ImageIcon, Search, Layers, Minus, Info, Upload } from "lucide-react";
+import { ChevronLeft, FileText, Package, Plus, X, Check, AlertTriangle, Camera, Trash2, Grid, List, Image as ImageIcon, Search, Layers, Minus, Info, Upload, Boxes, Eye, Sparkles } from "lucide-react";
 
 const getBackendURL = () => {
   if (process.env.NEXT_PUBLIC_API_URL) {
@@ -88,6 +89,15 @@ export default function TambahPeminjamanPage() {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
+
+  // Template Paket State
+  const [showPaketModal, setShowPaketModal] = useState(false);
+  const [paketList, setPaketList] = useState([]);
+  const [loadingPaket, setLoadingPaket] = useState(false);
+  const [applyingPaketId, setApplyingPaketId] = useState(null);
+  const [paketSearch, setPaketSearch] = useState("");
+  const [paketWarnings, setPaketWarnings] = useState([]);
+  const [previewingPaket, setPreviewingPaket] = useState(null);
 
   // Initialize user context
   useEffect(() => {
@@ -548,6 +558,163 @@ export default function TambahPeminjamanPage() {
     setItems(updated);
   };
 
+  // ============================================================
+  // Template Paket Handlers & Smart Unit Selection
+  // ============================================================
+  const handleOpenPaketModal = async () => {
+    setShowPaketModal(true);
+    setLoadingPaket(true);
+    setPreviewingPaket(null);
+    try {
+      const data = await getAllPaket();
+      setPaketList(data || []);
+    } catch (err) {
+      console.error("Error loading paket:", err);
+      showToast("Gagal memuat template paket", "error");
+    } finally {
+      setLoadingPaket(false);
+    }
+  };
+
+  const handleApplyPaket = async (paketId) => {
+    try {
+      setApplyingPaketId(paketId);
+      const detail = await getPaketById(paketId);
+      if (!detail || !detail.items || detail.items.length === 0) {
+        showToast("Template paket ini belum memiliki item", "error");
+        return;
+      }
+
+      const newItemsToAdd = [];
+      const warnings = [];
+
+      for (const pItem of detail.items) {
+        // Cari item di inventaris master
+        const targetItem = allItems.find(
+          (it) =>
+            (pItem.tipe === "asset" && it.tipe === "asset" && it.id === pItem.asset_id) ||
+            (pItem.tipe === "aksesoris" && it.tipe === "aksesoris" && it.id === pItem.aksesoris_id)
+        );
+
+        if (!targetItem) {
+          warnings.push(`"${pItem.nama_item}": Tidak ditemukan di inventaris atau statusnya tidak aktif.`);
+          continue;
+        }
+
+        const requestedQty = parseInt(pItem.jumlah, 10) || 1;
+        const stats = getItemUnitStats(targetItem);
+
+        if (stats.hasUnits && targetItem.units && targetItem.units.length > 0) {
+          // SMART UNIT SELECTION:
+          // Otomatis mencari dan menyaring unit yang status_pinjam = 'Tersedia' dan kondisi = 'Siap Digunakan'
+          // Otomatis melompati unit yang rusak atau sedang dipinjam
+          const readyUnits = targetItem.units.filter(
+            (u) => u.status_pinjam === "Tersedia" && (u.kondisi === "Siap Digunakan" || !u.kondisi)
+          );
+
+          if (readyUnits.length === 0) {
+            warnings.push(`"${targetItem.nama}": Tidak ada unit yang siap digunakan (stok unit siap pakai kosong).`);
+            continue;
+          }
+
+          const chosenUnits = readyUnits.slice(0, requestedQty);
+          if (chosenUnits.length < requestedQty) {
+            warnings.push(
+              `"${targetItem.nama}": Hanya tersedia ${chosenUnits.length} dari ${requestedQty} unit yang siap digunakan.`
+            );
+          }
+
+          const unitIds = chosenUnits.map((u) => u.id);
+          const unitNames = chosenUnits.map((u) => u.nama_unit || u.kode_unit).join(", ");
+
+          newItemsToAdd.push({
+            id: targetItem.id,
+            nama: targetItem.nama,
+            gambar: targetItem.gambar,
+            kode: targetItem.kode,
+            tipe: targetItem.tipe,
+            harga: targetItem.harga,
+            tipeHarga: targetItem.tipeHarga,
+            hargaAsetOriginal: targetItem.hargaAsetOriginal,
+            jumlahTotal: targetItem.jumlahTotal,
+            stok: targetItem.stok,
+            jumlah: chosenUnits.length,
+            kategori: targetItem.kategori,
+            merek: targetItem.merek,
+            jenisAset: targetItem.jenisAset,
+            kondisi: chosenUnits[0]?.kondisi || targetItem.kondisi,
+            hasUnits: true,
+            units: targetItem.units,
+            unitIds: unitIds,
+            unitNames: unitNames,
+          });
+        } else {
+          // Item tanpa unit fisik
+          const availableStock = targetItem.stok || 0;
+          if (availableStock <= 0 || targetItem.kondisi !== "Siap Digunakan") {
+            warnings.push(`"${targetItem.nama}": Stok kosong atau tidak siap digunakan.`);
+            continue;
+          }
+
+          const chosenQty = Math.min(requestedQty, availableStock);
+          if (chosenQty < requestedQty) {
+            warnings.push(`"${targetItem.nama}": Stok hanya tersisa ${chosenQty} dari ${requestedQty} yang diminta.`);
+          }
+
+          newItemsToAdd.push({
+            id: targetItem.id,
+            nama: targetItem.nama,
+            gambar: targetItem.gambar,
+            kode: targetItem.kode,
+            tipe: targetItem.tipe,
+            harga: targetItem.harga,
+            tipeHarga: targetItem.tipeHarga,
+            hargaAsetOriginal: targetItem.hargaAsetOriginal,
+            jumlahTotal: targetItem.jumlahTotal,
+            stok: targetItem.stok,
+            jumlah: chosenQty,
+            kategori: targetItem.kategori,
+            merek: targetItem.merek,
+            jenisAset: targetItem.jenisAset,
+            kondisi: targetItem.kondisi,
+            hasUnits: false,
+          });
+        }
+      }
+
+      if (newItemsToAdd.length === 0) {
+        showToast("Tidak ada item dari paket ini yang dapat dimasukkan karena stok/unit tidak tersedia", "error");
+        return;
+      }
+
+      // Merge ke items yang ada (jika barang sudah ada, perbarui dengan isi paket)
+      setItems((prevItems) => {
+        const updated = [...prevItems];
+        for (const newItem of newItemsToAdd) {
+          const existingIdx = updated.findIndex((it) => it.id === newItem.id && it.tipe === newItem.tipe);
+          if (existingIdx >= 0) {
+            updated[existingIdx] = newItem;
+          } else {
+            updated.push(newItem);
+          }
+        }
+        return updated;
+      });
+
+      setShowPaketModal(false);
+      showToast(`Template Paket "${detail.nama_paket}" berhasil diterapkan (${newItemsToAdd.length} barang masuk)!`, "success");
+
+      if (warnings.length > 0) {
+        setPaketWarnings(warnings);
+      }
+    } catch (err) {
+      console.error("Error applying paket:", err);
+      showToast("Gagal menerapkan template paket", "error");
+    } finally {
+      setApplyingPaketId(null);
+    }
+  };
+
   // Form submit
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -821,7 +988,7 @@ export default function TambahPeminjamanPage() {
         {/* Section 2: Item Selection */}
         <div className="bg-white rounded-lg shadow-sm border border-slate-200 border-t-4 border-t-primary p-4 sm:p-6">
           {/* Header Row: Title & View Mode Toggle */}
-          <div className="flex items-center justify-between gap-3 mb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
             <div className="flex items-center gap-2 min-w-0">
               <Package className="w-5 h-5 text-primary shrink-0" />
               <h2 className="text-base sm:text-lg font-semibold text-slate-900 truncate">
@@ -832,8 +999,19 @@ export default function TambahPeminjamanPage() {
               </span>
             </div>
 
-            {/* View Mode Toggle: Clean Segmented Pill */}
-            <div className="inline-flex items-center p-1 bg-slate-100 rounded-lg border border-slate-200/80 shrink-0">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleOpenPaketModal}
+                className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-50 border border-orange-200 text-orange-700 hover:bg-orange-100 text-xs sm:text-sm font-semibold transition-all shadow-xs"
+                title="Pilih barang cepat menggunakan template paket"
+              >
+                <Boxes className="w-4 h-4 text-orange-600" />
+                <span>Gunakan Template Paket</span>
+              </button>
+
+              {/* View Mode Toggle: Clean Segmented Pill */}
+              <div className="inline-flex items-center p-1 bg-slate-100 rounded-lg border border-slate-200/80 shrink-0">
               <button
                 type="button"
                 onClick={() => setViewMode("list")}
@@ -858,6 +1036,7 @@ export default function TambahPeminjamanPage() {
                 <Grid className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 <span>Grid</span>
               </button>
+            </div>
             </div>
           </div>
 
@@ -907,6 +1086,33 @@ export default function TambahPeminjamanPage() {
               </select>
             </div>
           </div>
+
+          {/* Paket Warnings Banner */}
+          {paketWarnings.length > 0 && (
+            <div className="mb-4 p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs sm:text-sm space-y-1.5 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between font-bold text-amber-800">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span>Catatan Ketersediaan Paket:</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPaketWarnings([])}
+                  className="cursor-pointer p-0.5 text-amber-600 hover:text-amber-800"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <ul className="list-disc list-inside space-y-0.5 text-amber-700 pl-1 text-xs">
+                {paketWarnings.map((w, idx) => (
+                  <li key={idx}>{w}</li>
+                ))}
+              </ul>
+              <p className="text-[11px] text-amber-600 pt-1 italic">
+                * Unit yang sehat/tersedia telah otomatis dimasukkan. Anda dapat mencari item pengganti secara manual di daftar bawah jika diperlukan.
+              </p>
+            </div>
+          )}
 
           {/* Item Selection - Grid View */}
           {viewMode === "grid" && (
@@ -1777,6 +1983,139 @@ export default function TambahPeminjamanPage() {
               >
                 <Check className="w-4 h-4" />
                 Simpan ({detailModalItem.units && detailModalItem.units.length > 0 ? modalSelectedUnitIds.length : modalJumlah} Unit)
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Modal Pilihan Template Paket */}
+      {typeof document !== 'undefined' && showPaketModal && createPortal(
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50/70">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-orange-100 text-orange-600">
+                  <Boxes className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-800">Pilih Template Paket</h3>
+                  <p className="text-xs text-slate-500">
+                    Otomatis memasukkan barang paket dengan saringan unit sehat/tersedia
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPaketModal(false)}
+                className="cursor-pointer p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Search Input */}
+            <div className="p-4 border-b border-slate-100 bg-white">
+              <div className="relative">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <input
+                  type="text"
+                  value={paketSearch}
+                  onChange={(e) => setPaketSearch(e.target.value)}
+                  placeholder="Cari nama atau deskripsi paket..."
+                  className="w-full pl-10 pr-4 py-2 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 custom-scrollbar">
+              {loadingPaket ? (
+                <div className="py-12 text-center text-slate-400 text-sm">
+                  Memuat daftar template paket...
+                </div>
+              ) : paketList.length === 0 ? (
+                <div className="py-12 text-center space-y-2">
+                  <Boxes className="h-10 w-10 text-slate-300 mx-auto" />
+                  <p className="text-sm font-semibold text-slate-700">Belum Ada Template Paket</p>
+                  <p className="text-xs text-slate-400 max-w-xs mx-auto">
+                    Admin dapat membuat template paket di menu <b>Template Paket</b> di sidebar.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {paketList
+                    .filter((p) => {
+                      if (!paketSearch.trim()) return true;
+                      const q = paketSearch.toLowerCase();
+                      return (
+                        p.nama_paket?.toLowerCase().includes(q) ||
+                        p.deskripsi?.toLowerCase().includes(q)
+                      );
+                    })
+                    .map((paket) => (
+                      <div
+                        key={paket.id}
+                        className="p-4 rounded-xl border border-slate-200 hover:border-orange-300 hover:bg-orange-50/20 bg-white transition-all shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                      >
+                        <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                          <div className="relative w-16 h-16 rounded-xl bg-slate-100 overflow-hidden shrink-0 border border-slate-200 flex items-center justify-center">
+                            {paket.gambar ? (
+                              <Image
+                                src={`${BACKEND_URL}${paket.gambar}`}
+                                alt={paket.nama_paket}
+                                fill
+                                className="object-cover"
+                                unoptimized
+                              />
+                            ) : (
+                              <Boxes className="h-7 w-7 text-slate-300" />
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <h4 className="text-sm font-bold text-slate-800 truncate">
+                              {paket.nama_paket}
+                            </h4>
+                            <p className="text-xs text-slate-500 line-clamp-1 mt-0.5">
+                              {paket.deskripsi || "Tanpa deskripsi"}
+                            </p>
+                            <div className="flex items-center gap-2 mt-1.5">
+                              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-orange-700 bg-orange-100/70 px-2 py-0.5 rounded-md">
+                                <Layers className="w-3 h-3" />
+                                {paket.total_items || 0} Macam Barang ({paket.total_qty || 0} Unit)
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-2 w-full sm:w-auto justify-end shrink-0">
+                          <button
+                            type="button"
+                            disabled={applyingPaketId === paket.id}
+                            onClick={() => handleApplyPaket(paket.id)}
+                            className="cursor-pointer flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-white text-xs font-semibold hover:bg-primary/90 transition-all shadow-xs disabled:opacity-60"
+                          >
+                            <Sparkles className="w-3.5 h-3.5" />
+                            <span>{applyingPaketId === paket.id ? "Menerapkan..." : "Terapkan Paket"}</span>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-slate-200 bg-slate-50/70 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowPaketModal(false)}
+                className="cursor-pointer px-4 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-100 transition-colors"
+              >
+                Tutup
               </button>
             </div>
           </div>

@@ -52,10 +52,13 @@ const auditRoutes = require("./routes/auditRoutes");
 
 // ... (other route imports)
 
+const paketRoutes = require("./routes/paketRoutes");
+
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/assets", assetRoutes);
 app.use("/api/peminjaman", peminjamanRoutes);
+app.use("/api/paket", paketRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/categories", categoryRoutes);

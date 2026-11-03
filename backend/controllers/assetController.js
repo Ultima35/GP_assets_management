@@ -427,6 +427,17 @@ const assetController = {
 
       await connection.commit();
 
+      // Jika tabel assets sekarang kosong, otomatis reset AUTO_INCREMENT ke 1
+      try {
+        const [remainingAssets] = await connection.query("SELECT COUNT(*) AS count FROM assets");
+        if (remainingAssets[0]?.count === 0) {
+          await connection.query("ALTER TABLE assets AUTO_INCREMENT = 1");
+          await connection.query("ALTER TABLE asset_units AUTO_INCREMENT = 1");
+        }
+      } catch (e) {
+        console.error("Gagal reset AUTO_INCREMENT assets:", e.message);
+      }
+
       // Hapus file gambar jika ada (dilakukan setelah commit agar tidak kehilangan data jika rollback)
       if (existing.gambar) {
         const imgPath = path.join(__dirname, "..", "public", existing.gambar);
@@ -541,6 +552,38 @@ const assetController = {
       }
 
       await connection.commit();
+
+      // Otomatis reset AUTO_INCREMENT ke 1 jika data telah dihapus
+      if (target === "assets" || target === "both") {
+        try {
+          await connection.query("ALTER TABLE assets AUTO_INCREMENT = 1");
+          await connection.query("ALTER TABLE asset_units AUTO_INCREMENT = 1");
+        } catch (e) {
+          console.error("Gagal reset AUTO_INCREMENT assets/asset_units:", e.message);
+        }
+      }
+
+      if (target === "accessories" || target === "both") {
+        try {
+          await connection.query("ALTER TABLE aksesoris AUTO_INCREMENT = 1");
+          await connection.query("ALTER TABLE aksesoris_units AUTO_INCREMENT = 1");
+        } catch (e) {
+          console.error("Gagal reset AUTO_INCREMENT aksesoris/aksesoris_units:", e.message);
+        }
+      }
+
+      try {
+        const [piRemaining] = await connection.query("SELECT COUNT(*) AS count FROM peminjaman_items");
+        if (piRemaining[0]?.count === 0) {
+          await connection.query("ALTER TABLE peminjaman_items AUTO_INCREMENT = 1");
+        }
+        const [pRemaining] = await connection.query("SELECT COUNT(*) AS count FROM peminjaman");
+        if (pRemaining[0]?.count === 0) {
+          await connection.query("ALTER TABLE peminjaman AUTO_INCREMENT = 1");
+        }
+      } catch (e) {
+        console.error("Gagal reset AUTO_INCREMENT peminjaman/peminjaman_items:", e.message);
+      }
 
       // Bersihkan file gambar di folder public/uploads
       const allImages = [...assetImages, ...aksImages];

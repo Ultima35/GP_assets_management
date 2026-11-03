@@ -194,7 +194,7 @@ const Peminjaman = {
       updateFields.push("tanggal_pengembalian = ?");
       updateValues.push(tanggal_pengembalian || null);
     }
-    
+
     if (status !== undefined) {
       updateFields.push("status = ?");
       updateValues.push(status || "Dikembalikan");
@@ -211,7 +211,7 @@ const Peminjaman = {
     }
 
     if (updateFields.length === 0) return 0;
-    
+
     updateValues.push(id);
 
     const [result] = await db.query(
@@ -340,6 +340,16 @@ const Peminjaman = {
       await connection.query("DELETE FROM peminjaman WHERE id = ?", [id]);
 
       await connection.commit();
+
+      try {
+        const [pRemaining] = await connection.query("SELECT COUNT(*) AS count FROM peminjaman");
+        if (pRemaining[0]?.count === 0) {
+          await connection.query("ALTER TABLE peminjaman AUTO_INCREMENT = 1");
+          await connection.query("ALTER TABLE peminjaman_items AUTO_INCREMENT = 1");
+        }
+      } catch (e) {
+        console.error("Gagal reset AUTO_INCREMENT peminjaman:", e.message);
+      }
       return true;
     } catch (error) {
       await connection.rollback();

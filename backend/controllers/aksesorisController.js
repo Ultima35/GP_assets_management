@@ -165,7 +165,7 @@ const aksesorisController = {
         kodeSingkat = clean.length >= 2 ? (clean[0].slice(0, 2) + clean[1].slice(0, 2)).toUpperCase() : (clean[0]?.slice(0, 4).toUpperCase() || "GEN");
         try {
           await Category.create(kategori.trim(), kodeSingkat, "aksesoris");
-        } catch (catErr) {}
+        } catch (catErr) { }
       }
 
       // Auto-insert merek jika belum terdaftar
@@ -178,7 +178,7 @@ const aksesorisController = {
           if (!bRows || bRows.length === 0) {
             await db.query("INSERT INTO brands (nama, tipe) VALUES (?, 'aksesoris')", [req.body.merek.trim()]);
           }
-        } catch (bErr) {}
+        } catch (bErr) { }
       }
 
       // Auto-generate kode_aksesoris berdasarkan jenis_aset dan kategori
@@ -342,7 +342,7 @@ const aksesorisController = {
         action: 'UPDATE',
         entityType: 'Aksesoris',
         entityId: id,
-        details: changedText 
+        details: changedText
           ? `Memperbarui ${changedText} pada ${updated.nama_aksesoris} (${updated.kode_aksesoris})`
           : `Memperbarui ${updated.nama_aksesoris} (${updated.kode_aksesoris})`
       });
@@ -418,6 +418,17 @@ const aksesorisController = {
       await connection.query("DELETE FROM aksesoris WHERE id = ?", [id]);
 
       await connection.commit();
+
+      // Jika tabel aksesoris sekarang kosong, otomatis reset AUTO_INCREMENT ke 1
+      try {
+        const [remainingAks] = await connection.query("SELECT COUNT(*) AS count FROM aksesoris");
+        if (remainingAks[0]?.count === 0) {
+          await connection.query("ALTER TABLE aksesoris AUTO_INCREMENT = 1");
+          await connection.query("ALTER TABLE aksesoris_units AUTO_INCREMENT = 1");
+        }
+      } catch (e) {
+        console.error("Gagal reset AUTO_INCREMENT aksesoris:", e.message);
+      }
 
       // Hapus file gambar jika ada
       if (existing.gambar) {
@@ -661,7 +672,7 @@ const aksesorisController = {
                 "INSERT INTO categories (nama, kode_singkat, tipe) VALUES (?, ?, 'aksesoris')",
                 [kategori, kodeSingkat]
               );
-            } catch (catInsertErr) {}
+            } catch (catInsertErr) { }
           }
         }
 
@@ -678,7 +689,7 @@ const aksesorisController = {
                 [merek]
               );
             }
-          } catch (brandInsertErr) {}
+          } catch (brandInsertErr) { }
         }
 
         const jenisKode = jenisAset === "Galeria Production" ? "GPRO" : "GS";
@@ -955,8 +966,8 @@ const aksesorisController = {
 
       await syncAksesorisTotals(unit.aksesoris_id);
 
-      const changeDetails = changes.length > 0 
-        ? changes.join(", ") 
+      const changeDetails = changes.length > 0
+        ? changes.join(", ")
         : `kondisi menjadi ${kondisi || unit.kondisi}`;
 
       await AuditLog.create({

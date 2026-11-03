@@ -41,7 +41,7 @@ const tipeHargaOptions = ["Per Unit", "Per Paket"];
 
 function InputField({ label, required, value, onChange, placeholder, type = "text", className = "", hint }) {
   const isDate = type === 'date' || type === 'datetime-local';
-  
+
   return (
     <div className={className}>
       <label className="mb-1.5 block text-sm font-medium text-slate-700">
@@ -54,16 +54,16 @@ function InputField({ label, required, value, onChange, placeholder, type = "tex
             {placeholder || (type === 'date' ? "dd/mm/yyyy" : "dd/mm/yyyy, --:--")}
           </span>
         )}
-        <input 
-          type={type} 
+        <input
+          type={type}
           placeholder={placeholder}
-          value={value} 
-          onChange={onChange} 
-          onClick={(e) => { if (isDate) { try { e.target.showPicker(); } catch(err) {} } }}
-          required={required} 
-          onInvalid={(e) => required && e.target.setCustomValidity(`${label} wajib diisi`)} 
+          value={value}
+          onChange={onChange}
+          onClick={(e) => { if (isDate) { try { e.target.showPicker(); } catch (err) { } } }}
+          required={required}
+          onInvalid={(e) => required && e.target.setCustomValidity(`${label} wajib diisi`)}
           onInput={(e) => required && e.target.setCustomValidity("")}
-          className={`w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary ${isDate ? 'cursor-pointer' : ''} ${isDate && !value ? 'text-transparent' : 'text-slate-700 placeholder:text-slate-400'}`} 
+          className={`w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary ${isDate ? 'cursor-pointer' : ''} ${isDate && !value ? 'text-transparent' : 'text-slate-700 placeholder:text-slate-400'}`}
         />
       </div>
     </div>
@@ -127,14 +127,13 @@ function ImageUploadField({ onFileChange, previewUrl, onClear }) {
 
           {/* TAMPILAN WEB / DESKTOP (Layar sm ke atas) */}
           <div className="hidden sm:block w-full">
-            <div 
+            <div
               onClick={() => galeriRef.current?.click()}
               className="cursor-pointer group flex flex-col items-center justify-center p-2"
             >
               {!previewUrl && (
-                <div className={`w-11 h-11 rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm border transition-all ${
-                  dragging ? "bg-primary text-white scale-110" : "bg-white text-primary border-slate-100 group-hover:scale-110"
-                }`}>
+                <div className={`w-11 h-11 rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm border transition-all ${dragging ? "bg-primary text-white scale-110" : "bg-white text-primary border-slate-100 group-hover:scale-110"
+                  }`}>
                   <Upload className="w-5 h-5" />
                 </div>
               )}
@@ -279,7 +278,7 @@ export default function AksesorisPage() {
   const [deleteAllConfirmation, setDeleteAllConfirmation] = useState("");
   const [deleteAllLoading, setDeleteAllLoading] = useState(false);
 
-  useEffect(() => { 
+  useEffect(() => {
     setMounted(true);
     const ctx = getUserContext();
     if (ctx) {
@@ -315,22 +314,22 @@ export default function AksesorisPage() {
   };
 
   const fetchData = useCallback(async () => {
-    try { 
+    try {
       if (!loading) setTableLoading(true);
-      setError(null); 
+      setError(null);
       const data = await getAllAksesoris();
-      setAssets(data || []); 
+      setAssets(data || []);
     }
     catch { setError("Gagal memuat data aksesoris."); }
-    finally { 
-      setLoading(false); 
+    finally {
+      setLoading(false);
       setTableLoading(false);
     }
   }, [loading]);
 
-  useEffect(() => { 
+  useEffect(() => {
     if (["super admin", "admin"].includes(userRole)) {
-      fetchData(); 
+      fetchData();
       fetchDependencies();
     }
   }, [fetchData, userRole]);
@@ -655,6 +654,7 @@ export default function AksesorisPage() {
       setDeleteAllLoading(true);
       const res = await deleteAllInventory(deleteAllTarget);
       showToast(res.message || "Data berhasil dihapus seluruhnya!", "success");
+      try { localStorage.removeItem("tempPeminjaman"); } catch (e) { }
       setShowDeleteAllModal(false);
       setDeleteAllConfirmation("");
       await fetchData();
@@ -810,20 +810,20 @@ export default function AksesorisPage() {
   };
 
   const getKondisiBadge = (kondisi) => {
-    const s = { 
-      "Siap Digunakan": "bg-emerald-50 text-emerald-700 border-emerald-500 hover:bg-emerald-600 hover:text-white hover:border-emerald-600", 
-      "Maintenance": "bg-amber-50 text-amber-700 border-amber-500 hover:bg-amber-600 hover:text-white hover:border-amber-600", 
-      "Rusak": "bg-red-50 text-red-700 border-red-500 hover:bg-red-600 hover:text-white hover:border-red-600", 
+    const s = {
+      "Siap Digunakan": "bg-emerald-50 text-emerald-700 border-emerald-500 hover:bg-emerald-600 hover:text-white hover:border-emerald-600",
+      "Maintenance": "bg-amber-50 text-amber-700 border-amber-500 hover:bg-amber-600 hover:text-white hover:border-amber-600",
+      "Rusak": "bg-red-50 text-red-700 border-red-500 hover:bg-red-600 hover:text-white hover:border-red-600",
       "Rusak Berat": "bg-red-50 text-red-700 border-red-500 hover:bg-red-600 hover:text-white hover:border-red-600",
     };
     return s[kondisi] || "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-600 hover:text-white hover:border-slate-600";
   };
 
   const getKondisiBadgeStatic = (kondisi) => {
-    const s = { 
-      "Siap Digunakan": "bg-emerald-50 text-emerald-700 border-emerald-500", 
-      "Maintenance": "bg-amber-50 text-amber-700 border-amber-500", 
-      "Rusak": "bg-red-50 text-red-700 border-red-500", 
+    const s = {
+      "Siap Digunakan": "bg-emerald-50 text-emerald-700 border-emerald-500",
+      "Maintenance": "bg-amber-50 text-amber-700 border-amber-500",
+      "Rusak": "bg-red-50 text-red-700 border-red-500",
       "Rusak Berat": "bg-red-50 text-red-700 border-red-500",
     };
     return s[kondisi] || "bg-slate-50 text-slate-700 border-slate-200";
@@ -938,7 +938,7 @@ export default function AksesorisPage() {
       <div className="hidden sm:flex items-center gap-3">
         <p className="text-sm text-slate-500 text-nowrap">Menampilkan {sorted.length === 0 ? 0 : startIndex + 1}-{Math.min(startIndex + itemsPerPage, sorted.length)} dari <span className="font-semibold text-slate-700">{sorted.length}</span> data</p>
         <div className="flex items-center gap-2">
-          <select value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }} 
+          <select value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
             className="cursor-pointer rounded-lg bg-primary px-2 py-1 text-xs font-semibold text-white focus:outline-none focus:ring-1 focus:ring-primary-hover shadow-sm transition-colors hover:bg-primary-hover">
             {ROWS_OPTIONS.map(opt => <option key={opt} value={opt} className="bg-white text-slate-700">{opt}</option>)}
           </select>
@@ -970,44 +970,44 @@ export default function AksesorisPage() {
               <div className="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2.5 text-sm font-mono font-semibold text-slate-700">{data.kodeAksesoris}</div>
             </div>
           )}
-          <InputField label="Nama Aksesoris" required placeholder="Masukkan nama aksesoris" value={data.namaAksesoris} onChange={(e) => setData(d => ({...d, namaAksesoris: toUpperCaseText(e.target.value)}))} className={isEdit ? "" : "sm:col-span-2"} hint="Nama lengkap aksesoris, contoh: &quot;Battery NP-FZ100&quot;" />
-          
+          <InputField label="Nama Aksesoris" required placeholder="Masukkan nama aksesoris" value={data.namaAksesoris} onChange={(e) => setData(d => ({ ...d, namaAksesoris: toUpperCaseText(e.target.value) }))} className={isEdit ? "" : "sm:col-span-2"} hint="Nama lengkap aksesoris, contoh: &quot;Battery NP-FZ100&quot;" />
+
           <div className="flex gap-1.5 items-end">
-             <SelectField label="Kategori" value={data.kategori} onChange={(e) => setData(d => ({...d, kategori: e.target.value}))} options={kategoriList} placeholder="Pilih Kategori" className="flex-1" hint="Jenis/klasifikasi aksesoris" />
-             <button type="button" onClick={() => setShowKatModal(true)} title="Tambah Kategori Baru" className="h-[38px] cursor-pointer rounded-lg bg-primary px-3 text-white transition-colors hover:bg-primary-hover mb-[2px]"><Plus className="h-4 w-4" /></button>
-          </div>
-          
-          <div className="flex gap-1.5 items-end">
-             <SelectField label="Merek" value={data.merek} onChange={(e) => setData(d => ({...d, merek: e.target.value}))} options={merekList} placeholder="Pilih Merek" className="flex-1" hint="Brand/produsen aksesoris" />
-             <button type="button" onClick={() => setShowMerekModal(true)} title="Tambah Merek Baru" className="h-[38px] cursor-pointer rounded-lg bg-primary px-3 text-white transition-colors hover:bg-primary-hover mb-[2px]"><Plus className="h-4 w-4" /></button>
+            <SelectField label="Kategori" value={data.kategori} onChange={(e) => setData(d => ({ ...d, kategori: e.target.value }))} options={kategoriList} placeholder="Pilih Kategori" className="flex-1" hint="Jenis/klasifikasi aksesoris" />
+            <button type="button" onClick={() => setShowKatModal(true)} title="Tambah Kategori Baru" className="h-[38px] cursor-pointer rounded-lg bg-primary px-3 text-white transition-colors hover:bg-primary-hover mb-[2px]"><Plus className="h-4 w-4" /></button>
           </div>
 
-          <InputField label="Model" placeholder="Masukkan model" value={data.model} onChange={(e) => setData(d => ({...d, model: toUpperCaseText(e.target.value)}))} hint="Tipe/model spesifik aksesoris" />
-          <SelectField label="Jenis Brand" value={data.jenisAset} onChange={(e) => setData(d => ({...d, jenisAset: e.target.value}))} options={jenisAsetOptions} placeholder="Pilih Jenis Brand" hint="Departemen pemilik aksesoris" />
+          <div className="flex gap-1.5 items-end">
+            <SelectField label="Merek" value={data.merek} onChange={(e) => setData(d => ({ ...d, merek: e.target.value }))} options={merekList} placeholder="Pilih Merek" className="flex-1" hint="Brand/produsen aksesoris" />
+            <button type="button" onClick={() => setShowMerekModal(true)} title="Tambah Merek Baru" className="h-[38px] cursor-pointer rounded-lg bg-primary px-3 text-white transition-colors hover:bg-primary-hover mb-[2px]"><Plus className="h-4 w-4" /></button>
+          </div>
 
-          <InputField label="Jumlah Unit" placeholder="Jumlah unit" type="number" value={data.jumlahUnit} onChange={(e) => setData(d => ({...d, jumlahUnit: e.target.value}))} hint="Jumlah unit yang tersedia" />
-          <InputField label="Tanggal Pembelian" type="date" value={data.tanggalPembelian || ""} onChange={(e) => setData(d => ({...d, tanggalPembelian: e.target.value}))} hint="Tanggal pembelian/perolehan aksesoris" />
+          <InputField label="Model" placeholder="Masukkan model" value={data.model} onChange={(e) => setData(d => ({ ...d, model: toUpperCaseText(e.target.value) }))} hint="Tipe/model spesifik aksesoris" />
+          <SelectField label="Jenis Brand" value={data.jenisAset} onChange={(e) => setData(d => ({ ...d, jenisAset: e.target.value }))} options={jenisAsetOptions} placeholder="Pilih Jenis Brand" hint="Departemen pemilik aksesoris" />
+
+          <InputField label="Jumlah Unit" placeholder="Jumlah unit" type="number" value={data.jumlahUnit} onChange={(e) => setData(d => ({ ...d, jumlahUnit: e.target.value }))} hint="Jumlah unit yang tersedia" />
+          <InputField label="Tanggal Pembelian" type="date" value={data.tanggalPembelian || ""} onChange={(e) => setData(d => ({ ...d, tanggalPembelian: e.target.value }))} hint="Tanggal pembelian/perolehan aksesoris" />
 
           <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
-            <InputField 
-              label="Harga Aksesoris (Rp)" 
-              placeholder="Harga aksesoris" 
-              type="text" 
-              value={data.hargaAset ? Number(data.hargaAset).toLocaleString("id-ID") : ""} 
+            <InputField
+              label="Harga Aksesoris (Rp)"
+              placeholder="Harga aksesoris"
+              type="text"
+              value={data.hargaAset ? Number(data.hargaAset).toLocaleString("id-ID") : ""}
               onChange={(e) => {
                 const rawValue = e.target.value.replace(/\D/g, "");
                 setData(d => ({ ...d, hargaAset: rawValue }));
-              }} 
+              }}
               hint={data.tipeHarga === "Per Paket" ? "Harga total 1 paket keseluruhan (isi semua unit)" : "Harga pembelian untuk setiap 1 unit"}
             />
-            <SelectField 
-              label="Tipe Perhitungan Harga" 
-              value={data.tipeHarga || "Per Unit"} 
-              onChange={(e) => setData(d => ({ ...d, tipeHarga: e.target.value }))} 
-              options={tipeHargaOptions} 
-              placeholder="Pilih Tipe Harga" 
+            <SelectField
+              label="Tipe Perhitungan Harga"
+              value={data.tipeHarga || "Per Unit"}
+              onChange={(e) => setData(d => ({ ...d, tipeHarga: e.target.value }))}
+              options={tipeHargaOptions}
+              placeholder="Pilih Tipe Harga"
               hint={
-                data.tipeHarga === "Per Paket" 
+                data.tipeHarga === "Per Paket"
                   ? `Paket: Total aset = Rp ${Number(data.hargaAset || 0).toLocaleString("id-ID")}. Saat dipinjam dihitung ~ Rp ${Math.round((Number(data.hargaAset) || 0) / (Number(data.jumlahUnit) || 1)).toLocaleString("id-ID")}/unit.`
                   : `Unit: Total nilai aksesoris = Rp ${((Number(data.hargaAset) || 0) * (Number(data.jumlahUnit) || 1)).toLocaleString("id-ID")}.`
               }
@@ -1022,10 +1022,10 @@ export default function AksesorisPage() {
           Lokasi & Kondisi
         </h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <InputField label="Lokasi" placeholder="Masukkan lokasi penyimpanan" value={data.lokasi} onChange={(e) => setData(d => ({...d, lokasi: toUpperCaseText(e.target.value)}))} hint="Tempat penyimpanan aksesoris saat ini" />
-          <SelectField label="Kondisi" value={data.kondisi} onChange={(e) => setData(d => ({...d, kondisi: e.target.value}))} options={kondisiOptions} placeholder="Pilih Kondisi" hint="Status fisik aksesoris saat ini" />
+          <InputField label="Lokasi" placeholder="Masukkan lokasi penyimpanan" value={data.lokasi} onChange={(e) => setData(d => ({ ...d, lokasi: toUpperCaseText(e.target.value) }))} hint="Tempat penyimpanan aksesoris saat ini" />
+          <SelectField label="Kondisi" value={data.kondisi} onChange={(e) => setData(d => ({ ...d, kondisi: e.target.value }))} options={kondisiOptions} placeholder="Pilih Kondisi" hint="Status fisik aksesoris saat ini" />
           <ImageUploadField onFileChange={onImageChange} previewUrl={imgPreview} onClear={onImageClear} />
-          <TextAreaField label="Keterangan" placeholder="Keterangan tambahan" value={data.keterangan} onChange={(e) => setData(d => ({...d, keterangan: toSentenceCase(e.target.value)}))} className="sm:col-span-2" hint="Informasi tambahan mengenai aksesoris" />
+          <TextAreaField label="Keterangan" placeholder="Keterangan tambahan" value={data.keterangan} onChange={(e) => setData(d => ({ ...d, keterangan: toSentenceCase(e.target.value) }))} className="sm:col-span-2" hint="Informasi tambahan mengenai aksesoris" />
         </div>
       </div>
     </div>
@@ -1037,7 +1037,7 @@ export default function AksesorisPage() {
       <div>
         <div className="mb-6"><h1 className="text-2xl font-bold text-slate-800">Daftar Aksesoris</h1><p className="text-sm text-slate-500">Kelola data aksesoris Galeria Karya Media</p></div>
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-          <div className="p-8 space-y-3 animate-pulse">{[1,2,3,4,5].map(i => (<div key={i} className="flex gap-4"><div className="h-4 w-24 rounded bg-slate-200"/><div className="h-4 flex-1 rounded bg-slate-200"/><div className="h-4 w-20 rounded bg-slate-200"/></div>))}</div>
+          <div className="p-8 space-y-3 animate-pulse">{[1, 2, 3, 4, 5].map(i => (<div key={i} className="flex gap-4"><div className="h-4 w-24 rounded bg-slate-200" /><div className="h-4 flex-1 rounded bg-slate-200" /><div className="h-4 w-20 rounded bg-slate-200" /></div>))}</div>
         </div>
       </div>
     );
@@ -1106,7 +1106,7 @@ export default function AksesorisPage() {
             </div>
           </div>
         )}
-        
+
         {/* Total Harga Stats */}
         <div className="px-5 py-4 border-b border-slate-200 bg-gradient-to-r from-primary/5 to-primary/10">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -1140,8 +1140,8 @@ export default function AksesorisPage() {
               />
             </div>
             <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center w-full sm:w-auto">
-              <select 
-                value={kondisiFilter} 
+              <select
+                value={kondisiFilter}
                 onChange={(e) => { setKondisiFilter(e.target.value); setCurrentPage(1); }}
                 className="w-full sm:w-36 rounded-lg border-2 border-slate-200 py-2 px-2.5 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors hover:border-slate-300 outline-none cursor-pointer"
               >
@@ -1166,9 +1166,8 @@ export default function AksesorisPage() {
             <button
               onClick={handleExportExcel}
               title="Export data ke file Excel"
-              className={`cursor-pointer w-full sm:w-auto flex justify-center items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-700 whitespace-nowrap ${
-                ["user", "guest"].includes(userRole) ? "col-span-2 sm:col-span-1" : ""
-              }`}
+              className={`cursor-pointer w-full sm:w-auto flex justify-center items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-700 whitespace-nowrap ${["user", "guest"].includes(userRole) ? "col-span-2 sm:col-span-1" : ""
+                }`}
             >
               <Download className="h-4 w-4" />
               Export Excel
@@ -1190,9 +1189,8 @@ export default function AksesorisPage() {
             {["super admin", "admin"].includes(userRole) && (
               <button
                 onClick={() => { setFormData(emptyForm); setImageFile(null); setImagePreview(null); setShowModal(true); }}
-                className={`cursor-pointer w-full sm:w-auto flex justify-center items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-hover whitespace-nowrap ${
-                  userRole === "admin" ? "col-span-2 sm:col-span-1" : ""
-                }`}
+                className={`cursor-pointer w-full sm:w-auto flex justify-center items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-hover whitespace-nowrap ${userRole === "admin" ? "col-span-2 sm:col-span-1" : ""
+                  }`}
               >
                 <Plus className="h-4 w-4" />
                 Tambah Aksesoris
@@ -1220,7 +1218,8 @@ export default function AksesorisPage() {
 
         {/* Table Controls (Pagination Top) & Table */}
         <Pagination />
-        <div className="overflow-x-auto border-t border-slate-100">          <table className="w-full text-left text-sm table-fixed">
+        <div className="overflow-x-auto border-t border-slate-100">
+          <table className="w-full text-left text-sm table-fixed">
             <thead>
               <tr className="border-t border-t-slate-300 border-b border-b-slate-300">
                 <th className="w-[125px] px-2 py-3 font-bold text-slate-700 text-center text-xs border-r border-slate-200"><button onClick={() => handleSort("kodeAksesoris")} className="cursor-pointer flex items-center justify-center uppercase tracking-wider w-full">Kode <SortIcon columnKey="kodeAksesoris" sortConfig={sortConfig} /></button></th>
@@ -1238,7 +1237,7 @@ export default function AksesorisPage() {
               {paginatedData.map((item, index) => (
                 <tr key={item.id} className={`border-b border-slate-100 transition-colors ${index % 2 === 0 ? "bg-slate-100" : "bg-white"}`}>
                   <td className="w-[125px] px-2 py-3 font-mono text-xs font-semibold text-slate-700 hover:text-primary cursor-pointer truncate border-r border-slate-200 align-middle text-center" onClick={() => setShowDetail(item)} title={item.kodeAksesoris}>{item.kodeAksesoris}</td>
-                  <td className="w-[100px] px-3 py-3 text-center border-r border-slate-200" style={{verticalAlign: 'middle'}}>
+                  <td className="w-[100px] px-3 py-3 text-center border-r border-slate-200" style={{ verticalAlign: 'middle' }}>
                     {item.gambar ? (
                       <div className="inline-block h-12 w-12 relative cursor-pointer hover:ring-2 hover:ring-primary transition-all rounded-md overflow-hidden" onClick={() => setLightboxImg(getImageUrl(item.gambar))}>
                         <Image src={getImageUrl(item.gambar)} alt="" fill unoptimized className="object-cover border border-slate-200" />
@@ -1388,17 +1387,15 @@ export default function AksesorisPage() {
                       onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setImportDragging(true); }}
                       onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setImportDragging(false); }}
                       onDrop={handleImportDrop}
-                      className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all group ${
-                        importDragging
-                          ? "border-blue-500 bg-blue-50/70 scale-[1.01] ring-4 ring-blue-100"
-                          : "border-slate-300 hover:border-blue-500 hover:bg-blue-50/30"
-                      }`}
+                      className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all group ${importDragging
+                        ? "border-blue-500 bg-blue-50/70 scale-[1.01] ring-4 ring-blue-100"
+                        : "border-slate-300 hover:border-blue-500 hover:bg-blue-50/30"
+                        }`}
                     >
-                      <div className={`w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm border transition-all ${
-                        importDragging
-                          ? "bg-blue-600 text-white scale-110 border-blue-600 animate-bounce"
-                          : "bg-blue-50 text-blue-600 border-blue-100 group-hover:scale-110"
-                      }`}>
+                      <div className={`w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm border transition-all ${importDragging
+                        ? "bg-blue-600 text-white scale-110 border-blue-600 animate-bounce"
+                        : "bg-blue-50 text-blue-600 border-blue-100 group-hover:scale-110"
+                        }`}>
                         <Upload className="w-7 h-7" />
                       </div>
                       <p className="text-sm font-bold text-slate-800 mb-1">
@@ -1614,7 +1611,7 @@ export default function AksesorisPage() {
                   </div>
                 </div>
                 <div className="flex items-center justify-end border-t border-slate-100 px-6 py-4 gap-3 bg-white rounded-b-2xl shrink-0">
-                  <button onClick={() => {openEdit(showDetail); setShowDetail(null);}} className="cursor-pointer rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-600 shadow-sm">Edit Aksesoris</button>
+                  <button onClick={() => { openEdit(showDetail); setShowDetail(null); }} className="cursor-pointer rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-600 shadow-sm">Edit Aksesoris</button>
                   <button onClick={() => setShowDetail(null)} className="cursor-pointer rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-600 shadow-sm">Tutup</button>
                 </div>
               </div>
@@ -1723,8 +1720,8 @@ export default function AksesorisPage() {
                   <div className="p-6">
                     <h3 className="text-lg font-bold text-slate-800 mb-4">Tambah Kategori Baru</h3>
                     <div className="space-y-4">
-                      <InputField label="Nama Kategori" required placeholder="Contoh: KAMERA" value={newKatData.nama} onChange={(e) => setNewKatData(d => ({...d, nama: toUpperCaseText(e.target.value)}))} />
-                      <InputField label="Kode Singkat" required placeholder="Contoh: CAM" value={newKatData.kode_singkat} onChange={(e) => setNewKatData(d => ({...d, kode_singkat: toUpperCaseText(e.target.value.replace(/[^a-zA-Z0-9]/g, ""))}))} />
+                      <InputField label="Nama Kategori" required placeholder="Contoh: KAMERA" value={newKatData.nama} onChange={(e) => setNewKatData(d => ({ ...d, nama: toUpperCaseText(e.target.value) }))} />
+                      <InputField label="Kode Singkat" required placeholder="Contoh: CAM" value={newKatData.kode_singkat} onChange={(e) => setNewKatData(d => ({ ...d, kode_singkat: toUpperCaseText(e.target.value.replace(/[^a-zA-Z0-9]/g, "")) }))} />
 
                       {/* Alert jika sudah ada di dropdown */}
                       {duplicateKat && (
@@ -1780,7 +1777,7 @@ export default function AksesorisPage() {
                   <div className="p-6">
                     <h3 className="text-lg font-bold text-slate-800 mb-4">Tambah Merek Baru</h3>
                     <div className="space-y-4">
-                      <InputField label="Nama Merek" required placeholder="Contoh: SONY" value={newMerekData.nama} onChange={(e) => setNewMerekData(d => ({...d, nama: toUpperCaseText(e.target.value)}))} />
+                      <InputField label="Nama Merek" required placeholder="Contoh: SONY" value={newMerekData.nama} onChange={(e) => setNewMerekData(d => ({ ...d, nama: toUpperCaseText(e.target.value) }))} />
 
                       {/* Alert jika sudah ada di dropdown */}
                       {duplicateMerek && (
@@ -1968,146 +1965,143 @@ export default function AksesorisPage() {
                         {aksesorisUnitsList.map((unit) => {
                           const isEditing = editingUnitId === unit.id;
                           return (
-                          <div
-                            key={unit.id}
-                            className={`p-3 rounded-xl border transition-all ${
-                              isEditing
+                            <div
+                              key={unit.id}
+                              className={`p-3 rounded-xl border transition-all ${isEditing
                                 ? "bg-blue-50/60 border-blue-300 ring-1 ring-blue-300"
                                 : unit.kondisi === "Rusak" || unit.kondisi === "Rusak Berat"
-                                ? "bg-rose-50/50 border-rose-200"
-                                : unit.kondisi === "Maintenance"
-                                ? "bg-amber-50/40 border-amber-200"
-                                : unit.kondisi === "Sedang Dipinjam" || unit.status_pinjam === "Dipinjam"
-                                ? "bg-blue-50/40 border-blue-200"
-                                : "bg-white border-slate-200 shadow-xs"
-                            }`}
-                          >
-                            <div className="flex items-center justify-between gap-2 mb-2">
-                              <div className="flex items-center gap-1.5">
-                                <span className="font-mono text-xs font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
-                                  {unit.kode_unit}
-                                </span>
-                                <span
-                                  className={`text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full border ${
-                                    unit.status_pinjam === "Dipinjam"
+                                  ? "bg-rose-50/50 border-rose-200"
+                                  : unit.kondisi === "Maintenance"
+                                    ? "bg-amber-50/40 border-amber-200"
+                                    : unit.kondisi === "Sedang Dipinjam" || unit.status_pinjam === "Dipinjam"
+                                      ? "bg-blue-50/40 border-blue-200"
+                                      : "bg-white border-slate-200 shadow-xs"
+                                }`}
+                            >
+                              <div className="flex items-center justify-between gap-2 mb-2">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="font-mono text-xs font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
+                                    {unit.kode_unit}
+                                  </span>
+                                  <span
+                                    className={`text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full border ${unit.status_pinjam === "Dipinjam"
                                       ? "bg-amber-100 text-amber-800 border-amber-200"
                                       : "bg-emerald-100 text-emerald-800 border-emerald-200"
-                                  }`}
-                                >
-                                  {unit.status_pinjam || "Tersedia"}
-                                </span>
+                                      }`}
+                                  >
+                                    {unit.status_pinjam || "Tersedia"}
+                                  </span>
+                                </div>
+                                {["super admin", "admin"].includes(userRole) && (
+                                  <div className="flex items-center gap-1">
+                                    {isEditing ? (
+                                      <>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleSaveUnitEdit(unit.id)}
+                                          className="cursor-pointer rounded-lg bg-emerald-500 p-1.5 text-white hover:bg-emerald-600 transition-colors shadow-xs"
+                                          title="Simpan"
+                                        >
+                                          <Check className="h-3.5 w-3.5" />
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => setEditingUnitId(null)}
+                                          className="cursor-pointer rounded-lg bg-rose-500 p-1.5 text-white hover:bg-rose-600 transition-colors shadow-xs"
+                                          title="Batal"
+                                        >
+                                          <X className="h-3.5 w-3.5" />
+                                        </button>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleStartEditUnit(unit)}
+                                          className="cursor-pointer rounded-lg bg-blue-50 p-1.5 text-blue-600 hover:bg-blue-600 hover:text-white transition-colors"
+                                          title="Edit Unit"
+                                        >
+                                          <Pencil className="h-3.5 w-3.5" />
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleDeleteUnit(unit)}
+                                          className="cursor-pointer rounded-lg bg-rose-50 p-1.5 text-rose-600 hover:bg-rose-600 hover:text-white transition-colors"
+                                          title="Hapus Unit"
+                                        >
+                                          <Trash2 className="h-3.5 w-3.5" />
+                                        </button>
+                                      </>
+                                    )}
+                                  </div>
+                                )}
                               </div>
-                              {["super admin", "admin"].includes(userRole) && (
-                                <div className="flex items-center gap-1">
-                                  {isEditing ? (
-                                    <>
-                                      <button
-                                        type="button"
-                                        onClick={() => handleSaveUnitEdit(unit.id)}
-                                        className="cursor-pointer rounded-lg bg-emerald-500 p-1.5 text-white hover:bg-emerald-600 transition-colors shadow-xs"
-                                        title="Simpan"
-                                      >
-                                        <Check className="h-3.5 w-3.5" />
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => setEditingUnitId(null)}
-                                        className="cursor-pointer rounded-lg bg-rose-500 p-1.5 text-white hover:bg-rose-600 transition-colors shadow-xs"
-                                        title="Batal"
-                                      >
-                                        <X className="h-3.5 w-3.5" />
-                                      </button>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <button
-                                        type="button"
-                                        onClick={() => handleStartEditUnit(unit)}
-                                        className="cursor-pointer rounded-lg bg-blue-50 p-1.5 text-blue-600 hover:bg-blue-600 hover:text-white transition-colors"
-                                        title="Edit Unit"
-                                      >
-                                        <Pencil className="h-3.5 w-3.5" />
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => handleDeleteUnit(unit)}
-                                        className="cursor-pointer rounded-lg bg-rose-50 p-1.5 text-rose-600 hover:bg-rose-600 hover:text-white transition-colors"
-                                        title="Hapus Unit"
-                                      >
-                                        <Trash2 className="h-3.5 w-3.5" />
-                                      </button>
-                                    </>
-                                  )}
+
+                              {isEditing ? (
+                                <div className="space-y-2 mb-2.5 bg-white/80 p-2.5 rounded-lg border border-blue-200">
+                                  <div>
+                                    <label className="text-[10px] text-blue-900 font-semibold block mb-0.5">Nama / Label Unit</label>
+                                    <input
+                                      type="text"
+                                      value={unitForm.nama_unit}
+                                      onChange={(e) => setUnitForm((f) => ({ ...f, nama_unit: e.target.value }))}
+                                      className="w-full px-2.5 py-1 text-xs border border-blue-300 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 text-slate-800"
+                                      placeholder="Contoh: Unit Baterai A"
+                                      autoFocus
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="text-[10px] text-blue-900 font-semibold block mb-0.5">Lokasi</label>
+                                    <input
+                                      type="text"
+                                      value={unitForm.lokasi_unit}
+                                      onChange={(e) => setUnitForm((f) => ({ ...f, lokasi_unit: e.target.value }))}
+                                      className="w-full px-2.5 py-1 text-xs border border-blue-300 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 text-slate-800"
+                                      placeholder="Lokasi..."
+                                    />
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="grid grid-cols-2 gap-2 text-xs mb-2.5">
+                                  <div>
+                                    <span className="text-[10px] text-slate-400 font-medium block">Nama/Label Unit</span>
+                                    <span className="font-medium text-slate-700 truncate block">
+                                      {unit.nama_unit || <span className="text-slate-400 italic">-</span>}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <span className="text-[10px] text-slate-400 font-medium block">Lokasi</span>
+                                    <span className="font-medium text-slate-700 truncate block">
+                                      {unit.lokasi_unit || <span className="text-slate-400 italic">-</span>}
+                                    </span>
+                                  </div>
                                 </div>
                               )}
-                            </div>
 
-                            {isEditing ? (
-                              <div className="space-y-2 mb-2.5 bg-white/80 p-2.5 rounded-lg border border-blue-200">
-                                <div>
-                                  <label className="text-[10px] text-blue-900 font-semibold block mb-0.5">Nama / Label Unit</label>
-                                  <input
-                                    type="text"
-                                    value={unitForm.nama_unit}
-                                    onChange={(e) => setUnitForm((f) => ({ ...f, nama_unit: e.target.value }))}
-                                    className="w-full px-2.5 py-1 text-xs border border-blue-300 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 text-slate-800"
-                                    placeholder="Contoh: Unit Baterai A"
-                                    autoFocus
-                                  />
-                                </div>
-                                <div>
-                                  <label className="text-[10px] text-blue-900 font-semibold block mb-0.5">Lokasi</label>
-                                  <input
-                                    type="text"
-                                    value={unitForm.lokasi_unit}
-                                    onChange={(e) => setUnitForm((f) => ({ ...f, lokasi_unit: e.target.value }))}
-                                    className="w-full px-2.5 py-1 text-xs border border-blue-300 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 text-slate-800"
-                                    placeholder="Lokasi..."
-                                  />
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="grid grid-cols-2 gap-2 text-xs mb-2.5">
-                                <div>
-                                  <span className="text-[10px] text-slate-400 font-medium block">Nama/Label Unit</span>
-                                  <span className="font-medium text-slate-700 truncate block">
-                                    {unit.nama_unit || <span className="text-slate-400 italic">-</span>}
-                                  </span>
-                                </div>
-                                <div>
-                                  <span className="text-[10px] text-slate-400 font-medium block">Lokasi</span>
-                                  <span className="font-medium text-slate-700 truncate block">
-                                    {unit.lokasi_unit || <span className="text-slate-400 italic">-</span>}
-                                  </span>
-                                </div>
-                              </div>
-                            )}
-
-                            <div>
-                              <label className="text-[10px] text-slate-400 font-medium block mb-1">Kondisi Fisik</label>
-                              <select
-                                value={unit.kondisi}
-                                disabled={!["super admin", "admin"].includes(userRole)}
-                                onChange={(e) => handleUnitKondisiChange(unit.id, e.target.value)}
-                                className={`w-full text-center py-1.5 px-3 rounded-lg text-xs font-semibold uppercase tracking-wider border cursor-pointer focus:outline-none ${
-                                  unit.kondisi === "Siap Digunakan"
+                              <div>
+                                <label className="text-[10px] text-slate-400 font-medium block mb-1">Kondisi Fisik</label>
+                                <select
+                                  value={unit.kondisi}
+                                  disabled={!["super admin", "admin"].includes(userRole)}
+                                  onChange={(e) => handleUnitKondisiChange(unit.id, e.target.value)}
+                                  className={`w-full text-center py-1.5 px-3 rounded-lg text-xs font-semibold uppercase tracking-wider border cursor-pointer focus:outline-none ${unit.kondisi === "Siap Digunakan"
                                     ? "bg-emerald-50 text-emerald-700 border-emerald-300"
                                     : unit.kondisi === "Maintenance"
-                                    ? "bg-amber-50 text-amber-700 border-amber-300"
-                                    : unit.kondisi === "Rusak" || unit.kondisi === "Rusak Berat"
-                                    ? "bg-rose-50 text-rose-700 border-rose-300"
-                                    : "bg-slate-100 text-slate-700 border-slate-300"
-                                }`}
-                              >
-                                {kondisiOptions.map((opt) => (
-                                  <option key={opt} value={opt} className="bg-white text-slate-800 normal-case">
-                                    {opt}
-                                  </option>
-                                ))}
-                              </select>
+                                      ? "bg-amber-50 text-amber-700 border-amber-300"
+                                      : unit.kondisi === "Rusak" || unit.kondisi === "Rusak Berat"
+                                        ? "bg-rose-50 text-rose-700 border-rose-300"
+                                        : "bg-slate-100 text-slate-700 border-slate-300"
+                                    }`}
+                                >
+                                  {kondisiOptions.map((opt) => (
+                                    <option key={opt} value={opt} className="bg-white text-slate-800 normal-case">
+                                      {opt}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
                             </div>
-                          </div>
-                        );
+                          );
                         })}
                       </div>
 
@@ -2132,19 +2126,18 @@ export default function AksesorisPage() {
                               return (
                                 <tr
                                   key={unit.id}
-                                  className={`transition-colors ${
-                                    isEditing
-                                      ? "bg-blue-50/60 ring-1 ring-blue-300"
-                                      : unit.kondisi === "Rusak" || unit.kondisi === "Rusak Berat"
+                                  className={`transition-colors ${isEditing
+                                    ? "bg-blue-50/60 ring-1 ring-blue-300"
+                                    : unit.kondisi === "Rusak" || unit.kondisi === "Rusak Berat"
                                       ? "bg-rose-50/40"
                                       : unit.kondisi === "Maintenance"
-                                      ? "bg-amber-50/30"
-                                      : unit.kondisi === "Sedang Dipinjam" || unit.status_pinjam === "Dipinjam"
-                                      ? "bg-blue-50/30"
-                                      : idx % 2 === 0
-                                      ? "bg-white"
-                                      : "bg-slate-50/40"
-                                  }`}
+                                        ? "bg-amber-50/30"
+                                        : unit.kondisi === "Sedang Dipinjam" || unit.status_pinjam === "Dipinjam"
+                                          ? "bg-blue-50/30"
+                                          : idx % 2 === 0
+                                            ? "bg-white"
+                                            : "bg-slate-50/40"
+                                    }`}
                                 >
                                   <td className="px-3 py-2.5 font-mono font-bold text-slate-800">
                                     {unit.kode_unit}
@@ -2204,15 +2197,14 @@ export default function AksesorisPage() {
                                       value={unit.kondisi}
                                       disabled={!["super admin", "admin"].includes(userRole)}
                                       onChange={(e) => handleUnitKondisiChange(unit.id, e.target.value)}
-                                      className={`w-full text-center px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider border transition-all cursor-pointer focus:outline-none ${
-                                        unit.kondisi === "Siap Digunakan"
-                                          ? "bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100"
-                                          : unit.kondisi === "Maintenance"
+                                      className={`w-full text-center px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider border transition-all cursor-pointer focus:outline-none ${unit.kondisi === "Siap Digunakan"
+                                        ? "bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100"
+                                        : unit.kondisi === "Maintenance"
                                           ? "bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100"
                                           : unit.kondisi === "Rusak" || unit.kondisi === "Rusak Berat"
-                                          ? "bg-rose-50 text-rose-700 border-rose-300 hover:bg-rose-100"
-                                          : "bg-slate-100 text-slate-700 border-slate-300"
-                                      }`}
+                                            ? "bg-rose-50 text-rose-700 border-rose-300 hover:bg-rose-100"
+                                            : "bg-slate-100 text-slate-700 border-slate-300"
+                                        }`}
                                       title="Ubah kondisi unit fisik ini"
                                     >
                                       {kondisiOptions.map((opt) => (
