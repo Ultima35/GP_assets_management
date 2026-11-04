@@ -749,7 +749,7 @@ export default function PeminjamanAsetPage() {
                   ? keperluanArr.join(', ')
                   : keperluanArr[0] || '-';
                 const isItemOwner = (item.userId && Number(item.userId) === Number(currentUserId)) || (item.namaPeminjam && item.namaPeminjam === userName);
-                const canDeleteItem = userRole === "super admin" || (isItemOwner && (item.status === "Ditolak" || item.status === "Peminjaman Selesai")) || (["admin"].includes(userRole) && (item.status === "Ditolak" || item.status === "Peminjaman Selesai"));
+                const canDeleteItem = userRole === "super admin" || (["admin"].includes(userRole) && (item.status === "Ditolak" || item.status === "Peminjaman Selesai")) || (isItemOwner && item.status === "Ditolak");
                 return (
                 <tr key={item.id} className={`border-b border-slate-100 transition-colors ${index % 2 === 0 ? "bg-slate-100" : "bg-white"}`}>
                   <td className="w-[140px] px-4 py-3 font-mono text-xs font-semibold text-slate-700 hover:text-primary cursor-pointer truncate border-r border-slate-200 align-middle text-center" onClick={() => handleShowDetail(item)}>{item.kodePinjam}</td>

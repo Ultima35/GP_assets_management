@@ -495,6 +495,14 @@ const peminjamanController = {
         });
       }
 
+      // User biasa hanya boleh menghapus pengajuan yang berstatus 'Ditolak'
+      if (!isAdmin && checkData.status !== 'Ditolak') {
+        return res.status(403).json({
+          success: false,
+          message: "Akses ditolak. Pengguna hanya dapat menghapus pengajuan yang berstatus 'Ditolak'."
+        });
+      }
+
       // Cek status peminjaman — hanya boleh hapus jika sudah 'Peminjaman Selesai' atau 'Ditolak'
       if (checkData.status !== 'Peminjaman Selesai' && checkData.status !== 'Ditolak') {
         return res.status(400).json({
