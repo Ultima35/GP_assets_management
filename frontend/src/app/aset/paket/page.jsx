@@ -70,11 +70,11 @@ export default function PaketPage() {
   const [deleteAllConfirmation, setDeleteAllConfirmation] = useState("");
   const [deleteAllLoading, setDeleteAllLoading] = useState(false);
 
-  // Form State (Bebas dari field gambar)
+  // Form State
   const [formData, setFormData] = useState({
     nama_paket: "",
     deskripsi: "",
-    items: [], // [{ asset_id, aksesoris_id, nama, kode, tipe, stok, jumlah, jenisAset, kategori }]
+    items: [],
   });
 
   // Item Picker State
@@ -161,7 +161,6 @@ export default function PaketPage() {
       ]);
 
       const assetList = (assetsRes.data || []).map((a) => {
-        // Hitung stok siap pakai jika ada unit fisik
         const readyUnits = (a.units || []).filter(
           (u) => u.status_pinjam === "Tersedia" && (u.kondisi === "Siap Digunakan" || !u.kondisi)
         );
@@ -272,11 +271,6 @@ export default function PaketPage() {
     }
   };
 
-  // Quick Loan Action: Navigate to Tambah Peminjaman with paketId
-  const handlePinjamPaket = (paketId) => {
-    router.push(`/aset/peminjaman/tambah?paketId=${paketId}`);
-  };
-
   // Form Submit (Create or Update)
   const handleSubmitForm = async (e) => {
     e.preventDefault();
@@ -364,7 +358,7 @@ export default function PaketPage() {
     }
   };
 
-  // Add Item from Item Picker (Terkunci Tidak Boleh Melebihi Stok)
+  // Add Item from Item Picker
   const handleAddItemToPaket = (item, quantity = 1) => {
     const maxStok = Math.max(1, parseInt(item.stok, 10) || 1);
 
@@ -433,7 +427,7 @@ export default function PaketPage() {
     }));
   };
 
-  // Change Item Qty in Form (Terkunci Tidak Boleh Melebihi Stok)
+  // Change Item Qty in Form
   const handleChangeItemQty = (index, delta) => {
     setFormData((prev) => {
       const updated = [...prev.items];
@@ -693,7 +687,7 @@ export default function PaketPage() {
               </button>
             )}
 
-            {/* Hapus Seluruh Data - Khusus Super Admin (Implementasi persis aset/daftar) */}
+            {/* Hapus Seluruh Data - Khusus Super Admin */}
             {userRole === "super admin" && pakets.length > 0 && (
               <button
                 type="button"
@@ -755,7 +749,7 @@ export default function PaketPage() {
 
             {viewMode === "grid" ? (
               /* ========================================================================= */
-              /* CARD VIEW DENGAN BORDER-2 TEGAS (KONSISTEN DENGAN FORM PILIH ITEM) */
+              /* CARD VIEW DENGAN BADGE TEBAL SEPERTI BADGE KONDISI ASET */
               /* ========================================================================= */
               <div className="p-5 border-t border-slate-100">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -766,13 +760,13 @@ export default function PaketPage() {
                       className="cursor-pointer group relative bg-white rounded-xl border-2 border-slate-300 hover:border-primary hover:bg-slate-50/50 hover:shadow-sm transition-all p-5 flex flex-col justify-between"
                     >
                       <div>
-                        {/* Header Badges */}
+                        {/* Header Badges: Border Tegas Seperti Badge Kondisi Aset */}
                         <div className="flex items-center justify-between gap-2 mb-3">
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-500 shadow-2xs">
                             <Boxes className="w-3.5 h-3.5" />
                             <span>{paket.total_items || 0} Jenis Alat</span>
                           </span>
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-500 shadow-2xs">
                             {paket.total_qty || 0} Unit
                           </span>
                         </div>
@@ -789,7 +783,7 @@ export default function PaketPage() {
                         </p>
                       </div>
 
-                      {/* Footer: Detail Indicator & Actions dengan Style Konsisten Halaman Lain */}
+                      {/* Footer: Detail Indicator & Actions */}
                       <div className="pt-3.5 mt-3.5 border-t border-slate-200 flex items-center justify-between">
                         <span className="text-xs text-slate-400 group-hover:text-primary transition-colors flex items-center gap-1 font-medium">
                           Detail isi <ArrowRight className="w-3 h-3" />
@@ -822,13 +816,13 @@ export default function PaketPage() {
               </div>
             ) : (
               /* ========================================================================= */
-              /* TABLE VIEW DENGAN HEADER NAMA PAKET CENTER & BORDER TUNGGAL */
+              /* TABLE VIEW: IDENTIK PERSIS DENGAN TABEL HALAMAN ASET / DAFTAR */
               /* ========================================================================= */
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto border-t border-slate-100">
                 <table className="w-full text-left text-sm table-fixed">
                   <thead>
-                    <tr className="border-t border-t-slate-300 border-b border-b-slate-300 bg-slate-50">
-                      <th className="w-[320px] sm:w-[420px] px-4 py-3 font-bold text-slate-700 text-center text-xs uppercase tracking-wider border-r border-slate-200">
+                    <tr className="border-t border-t-slate-300 border-b border-b-slate-300">
+                      <th className="w-[360px] sm:w-[450px] px-4 py-3 font-bold text-slate-700 text-center text-xs uppercase tracking-wider border-r border-slate-200">
                         Nama Paket & Keterangan
                       </th>
                       <th className="w-[160px] px-3 py-3 font-bold text-slate-700 text-center text-xs uppercase tracking-wider border-r border-slate-200">
@@ -842,21 +836,21 @@ export default function PaketPage() {
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody>
                     {paginatedPakets.map((paket, index) => (
                       <tr
                         key={paket.id}
-                        onClick={() => handleOpenDetail(paket)}
-                        className={`border-b border-slate-100 cursor-pointer transition-colors ${
-                          index % 2 === 0 ? "bg-slate-50/50" : "bg-white"
-                        } hover:bg-slate-100/70`}
+                        className={`border-b border-slate-100 transition-colors ${
+                          index % 2 === 0 ? "bg-slate-100" : "bg-white"
+                        }`}
                       >
                         {/* Info Paket */}
-                        <td className="px-4 py-3 border-r border-slate-200 align-middle">
-                          <div
-                            className="font-bold text-slate-800 text-sm hover:text-primary transition-colors truncate"
-                            title={paket.nama_paket}
-                          >
+                        <td
+                          className="px-4 py-3 text-xs text-slate-600 hover:text-primary cursor-pointer border-r border-slate-200 align-middle"
+                          onClick={() => handleOpenDetail(paket)}
+                          title={paket.nama_paket}
+                        >
+                          <div className="font-semibold text-slate-800 text-sm hover:text-primary transition-colors truncate">
                             {paket.nama_paket}
                           </div>
                           <p className="text-xs text-slate-500 line-clamp-1 mt-0.5">
@@ -864,43 +858,47 @@ export default function PaketPage() {
                           </p>
                         </td>
 
-                        {/* Jumlah Jenis Alat */}
+                        {/* Jumlah Jenis Alat: Badge Style Identik dengan Kondisi Aset */}
                         <td className="px-3 py-3 text-center border-r border-slate-200 align-middle">
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                          <span className="inline-block rounded-full border border-blue-500 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 shadow-2xs whitespace-nowrap">
                             {paket.total_items || 0} Jenis Alat
                           </span>
                         </td>
 
-                        {/* Total Unit */}
+                        {/* Total Unit: Badge Style Identik dengan Kondisi Aset */}
                         <td className="px-3 py-3 text-center border-r border-slate-200 align-middle">
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
+                          <span className="inline-block rounded-full border border-amber-500 bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700 shadow-2xs whitespace-nowrap">
                             {paket.total_qty || 0} Unit
                           </span>
                         </td>
 
-                        {/* Actions dengan Style Konsisten Halaman Lain */}
+                        {/* Actions: Identik Persis dengan Halaman Aset */}
                         <td className="px-3 py-3 text-center align-middle" onClick={(e) => e.stopPropagation()}>
-                          {canManage ? (
-                            <div className="flex items-center justify-center gap-1.5">
+                          {canManage && (
+                            <div className="flex items-center justify-center gap-1">
                               <button
                                 type="button"
-                                onClick={() => handleOpenEdit(paket)}
-                                className="cursor-pointer rounded-lg bg-amber-100 p-1.5 text-amber-600 transition-colors hover:bg-amber-600 hover:text-white"
-                                title="Edit Paket"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenEdit(paket);
+                                }}
+                                className="cursor-pointer rounded-lg bg-amber-100 p-1 text-amber-600 transition-colors hover:bg-amber-600 hover:text-white"
+                                title="Edit"
                               >
                                 <Pencil className="h-3.5 w-3.5" />
                               </button>
                               <button
                                 type="button"
-                                onClick={() => setShowDeleteModal(paket)}
-                                className="cursor-pointer rounded-lg bg-rose-100 p-1.5 text-rose-600 transition-colors hover:bg-rose-600 hover:text-white"
-                                title="Hapus Paket"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setShowDeleteModal(paket);
+                                }}
+                                className="cursor-pointer rounded-lg bg-rose-100 p-1 text-rose-600 transition-colors hover:bg-rose-600 hover:text-white"
+                                title="Hapus"
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
                               </button>
                             </div>
-                          ) : (
-                            <span className="text-xs text-slate-400">-</span>
                           )}
                         </td>
                       </tr>
@@ -919,77 +917,89 @@ export default function PaketPage() {
       </div>
 
       {/* ========================================================================= */}
-      {/* MODAL TAMBAH / EDIT PAKET (DENGAN STYLE TOP BORDER: border-t-4 border-t-primary) */}
+      {/* MODAL TAMBAH / EDIT PAKET (STYLE PERSIS ASET/AKSESORIS) */}
+      {/* Tambah = Hijau (Emerald-500), Edit = Oranye/Amber (Amber-500) */}
       {/* ========================================================================= */}
       {typeof document !== "undefined" && showFormModal && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 border-t-4 border-t-primary animate-modal-in overflow-hidden">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50/70">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-primary/10 text-primary">
-                  <Boxes className="h-5 w-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-slate-800">
-                    {editingPaket ? "Edit Paket Bundling" : "Tambah Paket Bundling Baru"}
-                  </h3>
-                  <p className="text-xs text-slate-500">
-                    Tentukan nama paket dan daftar peralatan yang dibundling
-                  </p>
-                </div>
-              </div>
+        <div
+          className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300"
+          onClick={() => setShowFormModal(false)}
+        >
+          <form
+            onSubmit={handleSubmitForm}
+            className={`max-h-[90vh] w-full max-w-2xl flex flex-col rounded-2xl bg-white shadow-xl animate-modal-in border-t-4 ${
+              editingPaket ? "border-t-amber-500" : "border-t-emerald-500"
+            }`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header: Konsisten Persis dengan Tambah/Edit Aset */}
+            <div
+              className={`flex items-center justify-between border-b border-slate-100 px-6 py-4 rounded-t-2xl shrink-0 ${
+                editingPaket ? "bg-amber-50" : "bg-emerald-50"
+              }`}
+            >
+              <h2
+                className={`text-lg font-bold ${
+                  editingPaket ? "text-amber-800" : "text-emerald-800"
+                }`}
+              >
+                {editingPaket ? "Edit Paket" : "Tambah Paket Baru"}
+              </h2>
               <button
                 type="button"
                 onClick={() => setShowFormModal(false)}
-                className="cursor-pointer p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             {/* Modal Body */}
-            <form onSubmit={handleSubmitForm} className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+            <div className="overflow-y-auto custom-scrollbar flex-1 p-6 space-y-5">
               {/* Nama Paket */}
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                  Nama Paket Bundling <span className="text-rose-500">*</span>
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                  Nama Paket <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="text"
                   required
                   value={formData.nama_paket}
                   onChange={(e) => setFormData({ ...formData, nama_paket: e.target.value })}
-                  placeholder="Contoh: Paket Videotron 4x9 P3.9 Outdoor"
-                  className="w-full px-3.5 py-2.5 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all text-slate-700 placeholder:text-slate-400"
+                  placeholder="Masukkan nama paket bundling"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors hover:border-slate-300"
                 />
               </div>
 
               {/* Deskripsi */}
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                  Deskripsi / Catatan Paket (Opsional)
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                  Deskripsi / Keterangan Paket
                 </label>
                 <textarea
                   rows={2}
                   value={formData.deskripsi}
                   onChange={(e) => setFormData({ ...formData, deskripsi: e.target.value })}
                   placeholder="Keterangan singkat mengenai peruntukan atau kelengkapan paket..."
-                  className="w-full px-3.5 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all resize-none text-slate-700 placeholder:text-slate-400"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors hover:border-slate-300 resize-none"
                 />
               </div>
 
               {/* Section Daftar Barang dalam Paket */}
-              <div className="pt-3 border-t border-slate-200">
+              <div>
                 <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-800">Daftar Peralatan dalam Paket</h3>
-                    <p className="text-xs text-slate-500">Pilih alat dan tentukan kuantitas yang dibutuhkan</p>
-                  </div>
+                  <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-800 uppercase tracking-wide">
+                    <Package className={`h-4 w-4 ${editingPaket ? "text-amber-500" : "text-emerald-500"}`} />
+                    Daftar Peralatan Paket
+                  </h3>
                   <button
                     type="button"
                     onClick={() => setShowItemPicker(true)}
-                    className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-primary border border-primary/20 text-xs font-semibold hover:bg-primary/20 transition-colors"
+                    className={`cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                      editingPaket
+                        ? "bg-amber-100 text-amber-700 hover:bg-amber-200"
+                        : "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+                    }`}
                   >
                     <Plus className="h-3.5 w-3.5" />
                     <span>Pilih Peralatan</span>
@@ -1029,7 +1039,7 @@ export default function PaketPage() {
                               <p className="text-xs font-bold text-slate-800 truncate">{it.nama}</p>
                             </div>
                             <p className="text-[11px] text-slate-400">
-                              Kode: {it.kode || "-"} • Stok Tersedia: <span className="font-semibold text-slate-700">{it.stok} unit</span>
+                              Kode: {it.kode || "-"} • Stok: <span className="font-semibold text-slate-700">{it.stok} unit</span>
                             </p>
                           </div>
                         </div>
@@ -1073,41 +1083,48 @@ export default function PaketPage() {
                   </div>
                 )}
               </div>
+            </div>
 
-              {/* Modal Footer */}
-              <div className="pt-4 border-t border-slate-200 flex items-center justify-end gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setShowFormModal(false)}
-                  className="cursor-pointer px-4 py-2 text-xs sm:text-sm font-semibold text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="cursor-pointer px-5 py-2 text-xs sm:text-sm font-semibold text-white bg-primary rounded-xl hover:bg-primary-hover transition-all shadow-md shadow-primary/20 disabled:opacity-60"
-                >
-                  {submitting ? "Menyimpan..." : editingPaket ? "Simpan Perubahan" : "Buat Paket"}
-                </button>
-              </div>
-            </form>
-          </div>
+            {/* Modal Footer: Identik dengan Aset/Aksesoris */}
+            <div className="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4 bg-white rounded-b-2xl shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowFormModal(false)}
+                className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                disabled={submitting}
+                className={`cursor-pointer rounded-lg px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors disabled:opacity-60 ${
+                  editingPaket
+                    ? "bg-amber-500 hover:bg-amber-600"
+                    : "bg-emerald-500 hover:bg-emerald-600"
+                }`}
+              >
+                {submitting ? "Menyimpan..." : editingPaket ? "Simpan Perubahan" : "Simpan Paket"}
+              </button>
+            </div>
+          </form>
         </div>,
         document.body
       )}
 
       {/* ========================================================================= */}
-      {/* ITEM PICKER SUB-MODAL (DENGAN STYLE TOP BORDER & KONTROL STOK) */}
+      {/* ITEM PICKER SUB-MODAL */}
       {/* ========================================================================= */}
       {typeof document !== "undefined" && showItemPicker && createPortal(
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl w-full max-w-xl max-h-[85vh] flex flex-col shadow-2xl border border-slate-200 border-t-4 border-t-primary animate-modal-in overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-200 bg-slate-50/70">
-              <div className="flex items-center gap-2">
-                <Package className="w-4 h-4 text-primary" />
-                <h3 className="text-sm font-bold text-slate-800">Pilih Alat untuk Bundling Paket</h3>
-              </div>
+        <div
+          className="fixed inset-0 z-70 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs transition-opacity animate-in fade-in duration-300"
+          onClick={() => setShowItemPicker(false)}
+        >
+          <div
+            className="bg-white rounded-2xl w-full max-w-xl max-h-[85vh] flex flex-col shadow-2xl border border-slate-200 border-t-4 border-t-emerald-500 animate-modal-in overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 bg-emerald-50 rounded-t-2xl">
+              <h2 className="text-base font-bold text-emerald-800">Pilih Alat untuk Bundling Paket</h2>
               <button
                 type="button"
                 onClick={() => setShowItemPicker(false)}
@@ -1302,7 +1319,7 @@ export default function PaketPage() {
                           <button
                             type="button"
                             onClick={() => handleAddItemToPaket(item, 1)}
-                            className="cursor-pointer px-3 py-1.5 text-xs font-semibold rounded-lg bg-primary text-white hover:bg-primary-hover shadow-2xs transition-colors"
+                            className="cursor-pointer px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 shadow-2xs transition-colors"
                           >
                             + Tambah
                           </button>
@@ -1315,14 +1332,14 @@ export default function PaketPage() {
             </div>
 
             {/* Picker Footer */}
-            <div className="p-3 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
+            <div className="p-3 border-t border-slate-100 bg-slate-50 flex items-center justify-between">
               <span className="text-xs text-slate-600">
                 Terpilih: <b>{formData.items.length}</b> jenis alat ({formData.items.reduce((s, it) => s + it.jumlah, 0)} total unit)
               </span>
               <button
                 type="button"
                 onClick={() => setShowItemPicker(false)}
-                className="cursor-pointer px-4 py-1.5 text-xs font-semibold text-white bg-primary rounded-lg hover:bg-primary-hover transition-colors shadow-2xs"
+                className="cursor-pointer px-4 py-1.5 text-xs font-semibold text-white bg-emerald-500 rounded-lg hover:bg-emerald-600 transition-colors shadow-2xs"
               >
                 Selesai
               </button>
@@ -1333,25 +1350,23 @@ export default function PaketPage() {
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL DETAIL / PRATINJAU ISI PAKET (STYLE TOP BORDER: border-t-4 border-t-blue-500) */}
+      {/* MODAL DETAIL / PRATINJAU ISI PAKET (STYLE IDENTIK DENGAN ASET/AKSESORIS) */}
       {/* ========================================================================= */}
       {typeof document !== "undefined" && showDetailModal && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl w-full max-w-xl max-h-[85vh] flex flex-col shadow-2xl border border-slate-200 border-t-4 border-t-blue-500 animate-modal-in overflow-hidden">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50/70">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-blue-100 text-blue-600">
-                  <Boxes className="h-5 w-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-slate-800">{showDetailModal.nama_paket}</h3>
-                  <p className="text-xs text-slate-500">Pratinjau detail kelengkapan paket peralatan</p>
-                </div>
-              </div>
+        <div
+          className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300"
+          onClick={() => setShowDetailModal(null)}
+        >
+          <div
+            className="max-h-[90vh] w-full max-w-xl flex flex-col rounded-2xl bg-white shadow-xl border-t-4 border-t-blue-500 animate-modal-in overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 bg-blue-50 px-6 py-4 rounded-t-2xl shrink-0">
+              <h2 className="text-lg font-bold text-blue-800">{showDetailModal.nama_paket}</h2>
               <button
                 type="button"
                 onClick={() => setShowDetailModal(null)}
-                className="cursor-pointer p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -1397,7 +1412,7 @@ export default function PaketPage() {
                         </div>
 
                         <div className="text-right">
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-primary/10 border border-primary/20 text-primary text-xs font-bold">
+                          <span className="inline-block rounded-full border border-amber-500 bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700 shadow-2xs">
                             {it.jumlah} Unit
                           </span>
                         </div>
@@ -1408,11 +1423,12 @@ export default function PaketPage() {
               </div>
             </div>
 
-            <div className="p-4 border-t border-slate-200 bg-slate-50/70 flex items-center justify-end">
+            {/* Footer Detail: Tombol Tutup Biru Senada dengan Top Border */}
+            <div className="flex items-center justify-end border-t border-slate-100 px-6 py-4 bg-white rounded-b-2xl shrink-0">
               <button
                 type="button"
                 onClick={() => setShowDetailModal(null)}
-                className="cursor-pointer px-5 py-2 text-xs sm:text-sm font-semibold text-white bg-blue-500 hover:bg-blue-600 rounded-xl transition-all shadow-md shadow-blue-500/20"
+                className="cursor-pointer rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-600 shadow-sm"
               >
                 Tutup
               </button>
@@ -1426,8 +1442,14 @@ export default function PaketPage() {
       {/* MODAL KONFIRMASI HAPUS TUNGGAL (STYLE TOP BORDER: border-t-4 border-t-rose-600) */}
       {/* ========================================================================= */}
       {typeof document !== "undefined" && showDeleteModal && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl border border-slate-200 border-t-4 border-t-rose-600 animate-modal-in text-center space-y-4">
+        <div
+          className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300"
+          onClick={() => setShowDeleteModal(null)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl animate-modal-in border-t-4 border-t-rose-600 text-center space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
               <Trash2 className="h-6 w-6" />
             </div>
@@ -1437,11 +1459,11 @@ export default function PaketPage() {
                 Apakah Anda yakin ingin menghapus paket <b>&quot;{showDeleteModal.nama_paket}&quot;</b>? Tindakan ini tidak dapat dibatalkan.
               </p>
             </div>
-            <div className="flex items-center gap-2 pt-2">
+            <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 type="button"
                 onClick={() => setShowDeleteModal(null)}
-                className="cursor-pointer flex-1 py-2 text-xs sm:text-sm font-semibold text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors"
+                className="cursor-pointer flex-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
               >
                 Batal
               </button>
@@ -1449,7 +1471,7 @@ export default function PaketPage() {
                 type="button"
                 onClick={handleDeleteConfirm}
                 disabled={submitting}
-                className="cursor-pointer flex-1 py-2 text-xs sm:text-sm font-semibold text-white bg-rose-600 rounded-xl hover:bg-rose-700 disabled:opacity-60 transition-colors shadow-2xs"
+                className="cursor-pointer flex-1 rounded-lg bg-rose-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-rose-700 disabled:opacity-60"
               >
                 {submitting ? "Menghapus..." : "Ya, Hapus"}
               </button>
@@ -1463,8 +1485,14 @@ export default function PaketPage() {
       {/* MODAL HAPUS SELURUH DATA (SUPER ADMIN, border-t-4 border-t-rose-600) */}
       {/* ========================================================================= */}
       {typeof document !== "undefined" && showDeleteAllModal && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl border border-slate-200 border-t-4 border-t-rose-600 animate-modal-in space-y-4">
+        <div
+          className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300"
+          onClick={() => setShowDeleteAllModal(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl border-t-4 border-t-rose-600 animate-modal-in space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center gap-3">
               <div className="p-3 rounded-xl bg-rose-100 text-rose-600 shrink-0">
                 <AlertTriangle className="h-6 w-6" />
@@ -1492,11 +1520,11 @@ export default function PaketPage() {
               />
             </div>
 
-            <div className="flex items-center gap-2 pt-2">
+            <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 type="button"
                 onClick={() => setShowDeleteAllModal(false)}
-                className="cursor-pointer flex-1 py-2 text-xs sm:text-sm font-semibold text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50"
+                className="cursor-pointer flex-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
               >
                 Batal
               </button>
@@ -1504,7 +1532,7 @@ export default function PaketPage() {
                 type="button"
                 onClick={handleDeleteAllConfirm}
                 disabled={deleteAllLoading || deleteAllConfirmation.trim() !== "HAPUS SEMUA"}
-                className="cursor-pointer flex-1 py-2 text-xs sm:text-sm font-semibold text-white bg-rose-600 rounded-xl hover:bg-rose-700 disabled:opacity-50 transition-all"
+                className="cursor-pointer flex-1 rounded-lg bg-rose-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-rose-700 disabled:opacity-50"
               >
                 {deleteAllLoading ? "Menghapus..." : "Konfirmasi Hapus"}
               </button>

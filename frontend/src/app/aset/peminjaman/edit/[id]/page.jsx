@@ -453,8 +453,8 @@ export default function EditPeminjamanPage() {
                 <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                   <Package className="w-5 h-5 text-primary" />
                   Daftar Alat Dipinjam
-                  <span className="bg-primary/10 text-primary text-sm px-2 py-0.5 rounded-full">
-                    {items.length}
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border border-primary bg-primary/10 text-primary shadow-2xs">
+                    {items.length} Alat
                   </span>
                 </h2>
               </div>

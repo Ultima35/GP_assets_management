@@ -1007,7 +1007,7 @@ function TambahPeminjamanContent() {
               <h2 className="text-base sm:text-lg font-semibold text-slate-900 truncate">
                 Pilih Item
               </h2>
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary shrink-0">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border border-primary bg-primary/10 text-primary shadow-2xs shrink-0">
                 {items.length} terpilih
               </span>
             </div>
@@ -2023,27 +2023,35 @@ function TambahPeminjamanContent() {
         document.body
       )}
 
-      {/* Modal Pilihan Template Paket */}
+      {/* Modal Pilihan Paket Bundling */}
       {typeof document !== 'undefined' && showPaketModal && createPortal(
-        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl border border-slate-200 border-t-4 border-t-primary animate-modal-in overflow-hidden">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50/70">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-orange-100 text-orange-600">
+        <div
+          className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs transition-opacity animate-in fade-in duration-300"
+          onClick={() => setShowPaketModal(false)}
+        >
+          <div
+            className="bg-white rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl border border-slate-200 border-t-4 border-t-primary animate-modal-in overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header: Selaras dengan tema dan gaya modal aset/aksesoris */}
+            <div className="flex items-center justify-between border-b border-slate-100 bg-orange-50 px-6 py-4 rounded-t-2xl shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-orange-100 text-primary shrink-0 border border-orange-200/60">
                   <Boxes className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-800">Pilih Template Paket</h3>
-                  <p className="text-xs text-slate-500">
-                    Otomatis memasukkan barang paket dengan saringan unit sehat/tersedia
+                  <h2 className="text-base sm:text-lg font-bold text-slate-800">
+                    Pilih Paket Bundling
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Otomatis memasukkan barang paket dengan saringan unit sehat & tersedia di gudang
                   </p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowPaketModal(false)}
-                className="cursor-pointer p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -2067,14 +2075,14 @@ function TambahPeminjamanContent() {
             <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 custom-scrollbar">
               {loadingPaket ? (
                 <div className="py-12 text-center text-slate-400 text-sm">
-                  Memuat daftar template paket...
+                  Memuat daftar paket bundling...
                 </div>
               ) : paketList.length === 0 ? (
                 <div className="py-12 text-center space-y-2">
                   <Boxes className="h-10 w-10 text-slate-300 mx-auto" />
-                  <p className="text-sm font-semibold text-slate-700">Belum Ada Template Paket</p>
+                  <p className="text-sm font-semibold text-slate-700">Belum Ada Paket Bundling</p>
                   <p className="text-xs text-slate-400 max-w-xs mx-auto">
-                    Admin dapat membuat template paket di menu <b>Template Paket</b> di sidebar.
+                    Admin dapat membuat paket bundling di menu <b>Paket Bundling</b> di sidebar.
                   </p>
                 </div>
               ) : (
@@ -2091,41 +2099,35 @@ function TambahPeminjamanContent() {
                     .map((paket) => (
                       <div
                         key={paket.id}
-                        className="p-4 rounded-xl border border-slate-200 hover:border-primary/40 bg-white transition-all shadow-xs"
+                        className="p-4 rounded-xl border-2 border-slate-200 hover:border-primary/50 hover:bg-slate-50/50 bg-white transition-all shadow-2xs"
                       >
                         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                          <div className="flex items-center gap-3.5 min-w-0 flex-1">
-                            <div className="relative w-16 h-16 rounded-xl bg-slate-100 overflow-hidden shrink-0 border border-slate-200 flex items-center justify-center">
-                              {paket.gambar ? (
-                                <Image
-                                  src={`${BACKEND_URL}${paket.gambar}`}
-                                  alt={paket.nama_paket}
-                                  fill
-                                  className="object-cover"
-                                  unoptimized
-                                />
-                              ) : (
-                                <Boxes className="h-7 w-7 text-slate-300" />
-                              )}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <h4 className="text-sm font-bold text-slate-800 truncate">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <div className="p-1.5 rounded-lg bg-orange-100 text-primary shrink-0 border border-orange-200/60">
+                                <Boxes className="h-4 w-4" />
+                              </div>
+                              <h4 className="text-sm sm:text-base font-bold text-slate-800 truncate">
                                 {paket.nama_paket}
                               </h4>
-                              <p className="text-xs text-slate-500 line-clamp-1 mt-0.5">
-                                {paket.deskripsi || "Tanpa deskripsi"}
-                              </p>
-                              <div className="flex items-center gap-2 mt-1.5">
-                                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
-                                  <Layers className="w-3 h-3" />
-                                  {paket.total_items || 0} Jenis Alat ({paket.total_qty || 0} Unit)
-                                </span>
-                              </div>
+                            </div>
+                            <p className="text-xs text-slate-500 line-clamp-2 mt-1.5 leading-relaxed pl-8 sm:pl-8">
+                              {paket.deskripsi || "Tanpa deskripsi tambahan"}
+                            </p>
+                            <div className="flex flex-wrap items-center gap-2 mt-2.5 pl-8 sm:pl-8">
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-500 shadow-2xs">
+                                <Layers className="w-3.5 h-3.5" />
+                                {paket.total_items || 0} Jenis Alat
+                              </span>
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-500 shadow-2xs">
+                                <Boxes className="w-3.5 h-3.5" />
+                                {paket.total_qty || 0} Unit
+                              </span>
                             </div>
                           </div>
 
                           {/* Actions */}
-                          <div className="flex items-center gap-2 w-full sm:w-auto justify-end shrink-0">
+                          <div className="flex items-center gap-2 w-full sm:w-auto justify-end shrink-0 pl-8 sm:pl-0">
                             <button
                               type="button"
                               onClick={async () => {
@@ -2136,16 +2138,16 @@ function TambahPeminjamanContent() {
                                   setPreviewingPaket(detail);
                                 }
                               }}
-                              className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-xs font-semibold transition-colors"
+                              className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 text-xs font-semibold transition-colors"
                             >
                               <Eye className="w-3.5 h-3.5 text-slate-500" />
-                              <span>{previewingPaket?.id === paket.id ? "Tutup" : "Lihat Isi"}</span>
+                              <span>{previewingPaket?.id === paket.id ? "Tutup Isi" : "Lihat Isi"}</span>
                             </button>
                             <button
                               type="button"
                               disabled={applyingPaketId === paket.id}
                               onClick={() => handleApplyPaket(paket.id)}
-                              className="cursor-pointer flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-white text-xs font-semibold hover:bg-primary-hover transition-all shadow-xs disabled:opacity-60"
+                              className="cursor-pointer flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary-hover transition-all shadow-sm disabled:opacity-60"
                             >
                               <Sparkles className="w-3.5 h-3.5" />
                               <span>{applyingPaketId === paket.id ? "Menerapkan..." : "Terapkan Paket"}</span>
@@ -2155,13 +2157,25 @@ function TambahPeminjamanContent() {
 
                         {/* Accordion Detail Isi Paket */}
                         {previewingPaket?.id === paket.id && (
-                          <div className="mt-3 pt-3 border-t border-slate-100 bg-slate-50/70 p-3 rounded-lg text-xs space-y-1.5 animate-in fade-in">
-                            <p className="font-bold text-slate-700">Daftar Peralatan dalam Paket ({previewingPaket.items?.length || 0} Macam):</p>
+                          <div className="mt-3.5 pt-3.5 border-t border-slate-200 bg-slate-50/80 p-3.5 rounded-xl text-xs space-y-2 animate-in fade-in duration-200">
+                            <p className="font-bold text-slate-700">
+                              Daftar Peralatan dalam Paket ({previewingPaket.items?.length || 0} Jenis Alat):
+                            </p>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
                               {(previewingPaket.items || []).map((it, idx) => (
-                                <div key={idx} className="flex items-center justify-between bg-white px-2.5 py-1.5 rounded-md border border-slate-200">
-                                  <span className="truncate text-slate-700">• {it.nama_item}</span>
-                                  <span className="font-bold text-primary shrink-0 ml-2">{it.jumlah} Unit</span>
+                                <div
+                                  key={idx}
+                                  className="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-slate-200 shadow-2xs"
+                                >
+                                  <div className="flex items-center gap-2 min-w-0 pr-2">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                                    <span className="truncate text-slate-800 font-medium text-xs">
+                                      {it.nama_item}
+                                    </span>
+                                  </div>
+                                  <span className="inline-block rounded-full border border-amber-500 bg-amber-50 px-2.5 py-0.5 text-[11px] font-bold text-amber-700 shrink-0">
+                                    {it.jumlah} Unit
+                                  </span>
                                 </div>
                               ))}
                             </div>
@@ -2178,7 +2192,7 @@ function TambahPeminjamanContent() {
               <button
                 type="button"
                 onClick={() => setShowPaketModal(false)}
-                className="cursor-pointer px-4 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-100 transition-colors"
+                className="cursor-pointer px-4 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors shadow-2xs"
               >
                 Tutup
               </button>

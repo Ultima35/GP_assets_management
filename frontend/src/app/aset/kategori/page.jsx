@@ -8,7 +8,7 @@ import { getAllAssets } from "../../lib/assetService";
 import { getAllAksesoris } from "../../lib/aksesorisService";
 import { getUserContext } from "../../lib/authService";
 import { toUpperCaseText } from "../../lib/stringUtils";
-import { Plus, Trash2, X, Check, Tag, Bookmark, AlertTriangle, Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Pencil, Info, ChevronUp, ChevronDown, List } from "lucide-react";
+import { Plus, Trash2, X, Check, Tag, Bookmark, Layers, AlertTriangle, Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Pencil, Info, ChevronUp, ChevronDown, List } from "lucide-react";
 
 export default function KategoriMerekPage() {
   const [categories, setCategories] = useState([]);
@@ -50,13 +50,6 @@ export default function KategoriMerekPage() {
   const [deleteAllConfirmation, setDeleteAllConfirmation] = useState("");
   const [deleteAllLoading, setDeleteAllLoading] = useState(false);
 
-  // Tab sliding indicator
-  const tabContainerRef = useRef(null);
-  const tabKategoriRef = useRef(null);
-  const tabMerekRef = useRef(null);
-  const [indicatorStyle, setIndicatorStyle] = useState({});
-  const [isIndicatorReady, setIsIndicatorReady] = useState(false);
-
   useEffect(() => {
     setMounted(true);
     const ctx = getUserContext();
@@ -64,38 +57,6 @@ export default function KategoriMerekPage() {
       setUserRole(ctx.role || "user");
     }
   }, []);
-
-  // Update sliding indicator position when activeTab changes
-  useEffect(() => {
-    let mounted = true;
-    const updateIndicator = () => {
-      const activeRef = activeTab === "kategori" ? tabKategoriRef : tabMerekRef;
-      const button = activeRef.current;
-      if (button && button.offsetWidth > 0) {
-        setIndicatorStyle({
-          width: button.offsetWidth,
-          left: button.offsetLeft,
-        });
-      }
-    };
-
-    updateIndicator();
-    
-    const readyTimer = setTimeout(() => {
-      if (mounted) setIsIndicatorReady(true);
-    }, 50);
-
-    // Antisipasi client-side routing Next.js dimana ukuran bisa jadi 0 di awal
-    const routingTimer = setTimeout(updateIndicator, 150);
-    window.addEventListener("resize", updateIndicator);
-
-    return () => {
-      mounted = false;
-      clearTimeout(readyTimer);
-      clearTimeout(routingTimer);
-      window.removeEventListener("resize", updateIndicator);
-    };
-  }, [activeTab]);
 
   useEffect(() => { if (toast) { const t = setTimeout(() => setToast(null), 3500); return () => clearTimeout(t); } }, [toast]);
   const showToast = (message, type = "success") => setToast({ message, type });
@@ -416,25 +377,33 @@ export default function KategoriMerekPage() {
           <p className="text-sm text-slate-500">Manajemen kategori dan merek aset dalam satu tempat</p>
         </div>
         
-        <div ref={tabContainerRef} className="relative flex bg-slate-200 p-1.5 rounded-xl border border-slate-300 self-center sm:self-start shadow-inner">
-          {/* Sliding Indicator */}
-          <div 
-            className={`absolute top-1.5 bottom-1.5 bg-primary rounded-lg shadow-md transition-all duration-300 ease-out ${!indicatorStyle.width ? 'opacity-0' : 'opacity-100'}`}
-            style={indicatorStyle}
-          />
-          <button 
-            ref={tabKategoriRef}
+        {/* Toggle Button Kategori / Merek (Konsisten dengan style halaman paket) */}
+        <div className="inline-flex items-center p-1 bg-slate-200/90 rounded-lg border-2 border-slate-300 shrink-0 self-center sm:self-auto">
+          <button
+            type="button"
             onClick={() => { setActiveTab("kategori"); setCurrentPage(1); setSearch(""); }}
-            className={`relative z-10 px-6 py-2.5 rounded-lg text-xs sm:text-sm font-bold transition-all duration-300 cursor-pointer ${activeTab === "kategori" && indicatorStyle.width ? "text-white scale-[1.02]" : "text-slate-600 hover:bg-white/50 hover:text-slate-800"}`}
+            className={`cursor-pointer px-4 py-1.5 text-xs sm:text-sm rounded-md transition-all flex items-center gap-1.5 ${
+              activeTab === "kategori"
+                ? "bg-white text-primary shadow-sm font-bold border border-slate-300/60"
+                : "text-slate-700 hover:text-slate-900 font-semibold"
+            }`}
+            title="Kelola Daftar Kategori"
           >
-            DAFTAR KATEGORI
+            <Layers className="w-4 h-4 stroke-[2.2]" />
+            <span>DAFTAR KATEGORI</span>
           </button>
-          <button 
-            ref={tabMerekRef}
+          <button
+            type="button"
             onClick={() => { setActiveTab("merek"); setCurrentPage(1); setSearch(""); }}
-            className={`relative z-10 px-6 py-2.5 rounded-lg text-xs sm:text-sm font-bold transition-all duration-300 cursor-pointer ${activeTab === "merek" && indicatorStyle.width ? "text-white scale-[1.02]" : "text-slate-600 hover:bg-white/50 hover:text-slate-800"}`}
+            className={`cursor-pointer px-4 py-1.5 text-xs sm:text-sm rounded-md transition-all flex items-center gap-1.5 ${
+              activeTab === "merek"
+                ? "bg-white text-primary shadow-sm font-bold border border-slate-300/60"
+                : "text-slate-700 hover:text-slate-900 font-semibold"
+            }`}
+            title="Kelola Daftar Merek"
           >
-            DAFTAR MEREK
+            <Tag className="w-4 h-4 stroke-[2.2]" />
+            <span>DAFTAR MEREK</span>
           </button>
         </div>
       </div>
