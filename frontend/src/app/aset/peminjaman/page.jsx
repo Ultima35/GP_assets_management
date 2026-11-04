@@ -748,6 +748,8 @@ export default function PeminjamanAsetPage() {
                 const keperluanText = keperluanArr.length > 1
                   ? keperluanArr.join(', ')
                   : keperluanArr[0] || '-';
+                const isItemOwner = (item.userId && Number(item.userId) === Number(currentUserId)) || (item.namaPeminjam && item.namaPeminjam === userName);
+                const canDeleteItem = userRole === "super admin" || (isItemOwner && (item.status === "Ditolak" || item.status === "Peminjaman Selesai")) || (["admin"].includes(userRole) && (item.status === "Ditolak" || item.status === "Peminjaman Selesai"));
                 return (
                 <tr key={item.id} className={`border-b border-slate-100 transition-colors ${index % 2 === 0 ? "bg-slate-100" : "bg-white"}`}>
                   <td className="w-[140px] px-4 py-3 font-mono text-xs font-semibold text-slate-700 hover:text-primary cursor-pointer truncate border-r border-slate-200 align-middle text-center" onClick={() => handleShowDetail(item)}>{item.kodePinjam}</td>
@@ -781,12 +783,12 @@ export default function PeminjamanAsetPage() {
                       <button onClick={() => handleShowDetail(item)} className="cursor-pointer rounded-lg bg-blue-100 p-1 text-blue-600 transition-colors hover:bg-blue-600 hover:text-white" title="Detail"><Info className="h-3.5 w-3.5" /></button>
                       
                       {/* Edit Pengajuan (untuk Menunggu Persetujuan atau Ditolak) */}
-                      {canEdit && (item.status === "Menunggu Persetujuan" || item.status === "Ditolak") && (["super admin", "admin"].includes(userRole) || item.userId === currentUserId) && (
+                      {canEdit && (item.status === "Menunggu Persetujuan" || item.status === "Ditolak") && (["super admin", "admin"].includes(userRole) || isItemOwner) && (
                         <button onClick={() => router.push(`/aset/peminjaman/edit-pengajuan/${item.id}`)} className="cursor-pointer rounded-lg bg-amber-100 p-1 text-amber-600 transition-colors hover:bg-amber-600 hover:text-white" title="Edit Pengajuan"><Pencil className="h-3.5 w-3.5" /></button>
                       )}
 
                       {/* Pengembalian Alat (hanya saat Sedang Dipinjam) */}
-                      {canEdit && item.status === "Sedang Dipinjam" && (["super admin", "admin"].includes(userRole) || item.userId === currentUserId) && (
+                      {canEdit && item.status === "Sedang Dipinjam" && (["super admin", "admin"].includes(userRole) || isItemOwner) && (
                         <button onClick={() => router.push(`/aset/peminjaman/edit/${item.id}`)} className="cursor-pointer rounded-lg bg-teal-100 p-1 text-teal-700 transition-colors hover:bg-teal-600 hover:text-white" title="Pengembalian Alat"><RotateCcw className="h-3.5 w-3.5" /></button>
                       )}
 
@@ -813,7 +815,7 @@ export default function PeminjamanAsetPage() {
                       )}
 
                       {/* Delete */}
-                      {canDelete && (
+                      {canDeleteItem && (
                         <button onClick={() => setShowDeleteConfirm(item)} className="cursor-pointer rounded-lg bg-rose-100 p-1 text-rose-600 transition-colors hover:bg-rose-600 hover:text-white" title="Hapus"><Trash2 className="h-3.5 w-3.5" /></button>
                       )}
                     </div>

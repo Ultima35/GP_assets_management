@@ -485,7 +485,7 @@ const peminjamanController = {
       }
 
       // PERMISSION CHECK: Only owner or admin/super admin
-      const isOwner = checkData.user_id === req.user?.userId;
+      const isOwner = (checkData.user_id && checkData.user_id === req.user?.userId) || checkData.nama_peminjam === req.user?.nama;
       const isAdmin = ["super admin", "admin"].includes(req.user?.role);
 
       if (!isOwner && !isAdmin) {

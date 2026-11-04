@@ -8,6 +8,7 @@ import {
   getPeminjamanById,
   getItemsWithPricing,
   updatePengajuan,
+  deletePeminjaman,
 } from "../../../../lib/peminjamanService";
 import { getAllAssets } from "../../../../lib/assetService";
 import { getAllAksesoris } from "../../../../lib/aksesorisService";
@@ -146,7 +147,32 @@ export default function EditPengajuanPage() {
   const [paketWarnings, setPaketWarnings] = useState([]);
   const [previewingPaket, setPreviewingPaket] = useState(null);
 
+  // Delete State
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const showToast = (message, type = "success") => setToast({ message, type });
+
+  const handleDeletePengajuan = async () => {
+    try {
+      setIsDeleting(true);
+      await deletePeminjaman(peminjamanId);
+      router.push("/aset/peminjaman");
+    } catch (err) {
+      console.error("Gagal menghapus pengajuan:", err);
+      showToast(err.response?.data?.message || "Gagal menghapus pengajuan", "error");
+      setShowDeleteModal(false);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const isItemOwner =
+    (existingData?.userId && Number(existingData.userId) === Number(userId)) ||
+    (existingData?.namaPeminjam && existingData.namaPeminjam === userName);
+  const canDeleteThis =
+    existingData?.status === "Ditolak" &&
+    (["super admin", "admin"].includes(userRole) || isItemOwner);
 
   // Initialize user
   useEffect(() => {
@@ -875,9 +901,21 @@ export default function EditPengajuanPage() {
               <AlertTriangle className="h-5 w-5 sm:h-6 sm:w-6" />
             </div>
             <div className="space-y-1.5 flex-1">
-              <h3 className="text-sm sm:text-base font-bold text-rose-900">
-                Pengajuan Peminjaman Ini Ditolak
-              </h3>
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <h3 className="text-sm sm:text-base font-bold text-rose-900">
+                  Pengajuan Peminjaman Ini Ditolak
+                </h3>
+                {canDeleteThis && (
+                  <button
+                    type="button"
+                    onClick={() => setShowDeleteModal(true)}
+                    className="cursor-pointer px-3 py-1.5 rounded-lg border border-rose-300 bg-white text-xs font-bold text-rose-600 hover:bg-rose-600 hover:text-white transition flex items-center gap-1.5 shadow-xs"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Hapus Pengajuan</span>
+                  </button>
+                )}
+              </div>
               <p className="text-xs text-rose-700">
                 <span className="font-semibold">Ditolak oleh:</span> {existingData?.rejectedBy || "Admin"}
               </p>
@@ -1668,31 +1706,45 @@ export default function EditPengajuanPage() {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center justify-end gap-3 pt-2">
-          <button
-            type="button"
-            onClick={() => router.push("/aset/peminjaman")}
-            className="cursor-pointer px-5 py-2.5 rounded-lg border border-slate-300 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition"
-          >
-            Batal
-          </button>
-          <button
-            type="submit"
-            disabled={submitting}
-            className="cursor-pointer px-6 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary-hover disabled:opacity-60 transition shadow-sm flex items-center gap-2"
-          >
-            {submitting ? (
-              <>
-                <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                <span>Menyimpan...</span>
-              </>
-            ) : (
-              <>
-                <Check className="w-4 h-4" />
-                <span>Perbarui &amp; Ajukan Ulang</span>
-              </>
+        <div className="flex items-center justify-between gap-3 pt-2">
+          <div>
+            {canDeleteThis && (
+              <button
+                type="button"
+                onClick={() => setShowDeleteModal(true)}
+                className="cursor-pointer px-4 py-2.5 rounded-lg border border-rose-300 bg-rose-50 text-sm font-semibold text-rose-700 hover:bg-rose-100 hover:border-rose-400 transition flex items-center gap-2 shadow-xs"
+              >
+                <Trash2 className="w-4 h-4 text-rose-600" />
+                <span>Hapus Pengajuan</span>
+              </button>
             )}
-          </button>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => router.push("/aset/peminjaman")}
+              className="cursor-pointer px-5 py-2.5 rounded-lg border border-slate-300 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition"
+            >
+              Batal
+            </button>
+            <button
+              type="submit"
+              disabled={submitting}
+              className="cursor-pointer px-6 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary-hover disabled:opacity-60 transition shadow-sm flex items-center gap-2"
+            >
+              {submitting ? (
+                <>
+                  <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Menyimpan...</span>
+                </>
+              ) : (
+                <>
+                  <Check className="w-4 h-4" />
+                  <span>Perbarui &amp; Ajukan Ulang</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </form>
 
@@ -2214,6 +2266,49 @@ export default function EditPengajuanPage() {
               <Check className="h-4 w-4" />
             )}
             {toast.message}
+          </div>,
+          document.body
+        )}
+
+      {/* Modal Delete Confirm (Portal) */}
+      {typeof document !== "undefined" &&
+        showDeleteModal &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 p-4 transition-opacity animate-in fade-in duration-300"
+            onClick={() => setShowDeleteModal(false)}
+          >
+            <div
+              className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl border-t-4 border-t-rose-500 animate-modal-in"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-rose-100 text-rose-600 mx-auto">
+                <Trash2 className="h-6 w-6" />
+              </div>
+              <h3 className="text-lg font-bold text-slate-800 text-center mb-1">
+                Hapus Pengajuan?
+              </h3>
+              <p className="text-sm text-slate-500 text-center mb-6">
+                Apakah Anda yakin ingin menghapus pengajuan peminjaman #{kodePinjam}? Data yang dihapus tidak dapat dipulihkan.
+              </p>
+              <div className="flex items-center justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteModal(false)}
+                  className="cursor-pointer flex-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeletePengajuan}
+                  disabled={isDeleting}
+                  className="cursor-pointer flex-1 rounded-lg bg-rose-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-rose-700 disabled:opacity-60"
+                >
+                  {isDeleting ? "Menghapus..." : "Hapus"}
+                </button>
+              </div>
+            </div>
           </div>,
           document.body
         )}
