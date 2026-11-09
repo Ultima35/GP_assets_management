@@ -2069,24 +2069,24 @@ export default function EditPengajuanPage() {
         showPaketModal &&
         createPortal(
           <div
-            className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs transition-opacity animate-in fade-in duration-300"
+            className="fixed inset-0 z-60 flex items-center justify-center p-2.5 sm:p-4 bg-black/40 backdrop-blur-xs transition-opacity animate-in fade-in duration-300"
             onClick={() => setShowPaketModal(false)}
           >
             <div
-              className="bg-white rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl border border-slate-200 border-t-4 border-t-primary animate-modal-in overflow-hidden"
+              className="bg-white rounded-2xl w-full max-w-2xl max-h-[92vh] sm:max-h-[85vh] flex flex-col shadow-2xl border border-slate-200 border-t-4 border-t-primary animate-modal-in overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Modal Header: Selaras dengan tema dan gaya modal aset/aksesoris */}
-              <div className="flex items-center justify-between border-b border-slate-100 bg-orange-50 px-6 py-4 rounded-t-2xl shrink-0">
-                <div className="flex items-center gap-3">
+              <div className="flex items-center justify-between border-b border-slate-100 bg-orange-50 px-4 sm:px-6 py-3.5 sm:py-4 rounded-t-2xl shrink-0">
+                <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 pr-2">
                   <div className="p-2 rounded-xl bg-orange-100 text-primary shrink-0 border border-orange-200/60">
                     <Boxes className="h-5 w-5" />
                   </div>
-                  <div>
-                    <h2 className="text-base sm:text-lg font-bold text-slate-800">
+                  <div className="min-w-0">
+                    <h2 className="text-base sm:text-lg font-bold text-slate-800 truncate">
                       Pilih Paket Bundling
                     </h2>
-                    <p className="text-xs text-slate-500 mt-0.5">
+                    <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5 leading-snug line-clamp-1 sm:line-clamp-none">
                       Otomatis memasukkan barang paket dengan saringan unit sehat & tersedia di gudang
                     </p>
                   </div>
@@ -2094,14 +2094,14 @@ export default function EditPengajuanPage() {
                 <button
                   type="button"
                   onClick={() => setShowPaketModal(false)}
-                  className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+                  className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 shrink-0"
                 >
                   <X className="h-5 w-5" />
                 </button>
               </div>
 
               {/* Search Input */}
-              <div className="p-4 border-b border-slate-100 bg-white">
+              <div className="p-3 sm:p-4 border-b border-slate-100 bg-white">
                 <div className="relative">
                   <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                   <input
@@ -2109,13 +2109,22 @@ export default function EditPengajuanPage() {
                     value={paketSearch}
                     onChange={(e) => setPaketSearch(e.target.value)}
                     placeholder="Cari nama atau deskripsi paket..."
-                    className="w-full pl-10 pr-4 py-2 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-primary"
+                    className="w-full pl-10 pr-9 py-2 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-primary text-slate-700 placeholder:text-slate-400"
                   />
+                  {paketSearch && (
+                    <button
+                      type="button"
+                      onClick={() => setPaketSearch("")}
+                      className="cursor-pointer absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
                 </div>
               </div>
 
               {/* Modal Body */}
-              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 custom-scrollbar">
+              <div className="flex-1 overflow-y-auto p-3.5 sm:p-5 space-y-3 custom-scrollbar">
                 {loadingPaket ? (
                   <div className="py-12 text-center text-slate-400 text-sm">
                     Memuat daftar paket bundling...
@@ -2142,10 +2151,10 @@ export default function EditPengajuanPage() {
                       .map((paket) => (
                         <div
                           key={paket.id}
-                          className="p-4 rounded-xl border-2 border-slate-200 hover:border-primary/50 hover:bg-slate-50/50 bg-white transition-all shadow-2xs"
+                          className="p-3.5 sm:p-4 rounded-xl border-2 border-slate-200 hover:border-primary/50 hover:bg-slate-50/50 bg-white transition-all shadow-2xs"
                         >
-                          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                            <div className="min-w-0 flex-1">
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+                            <div className="min-w-0 flex-1 w-full">
                               <div className="flex items-center gap-2">
                                 <div className="p-1.5 rounded-lg bg-orange-100 text-primary shrink-0 border border-orange-200/60">
                                   <Boxes className="h-4 w-4" />
@@ -2154,23 +2163,23 @@ export default function EditPengajuanPage() {
                                   {paket.nama_paket}
                                 </h4>
                               </div>
-                              <p className="text-xs text-slate-500 line-clamp-2 mt-1.5 leading-relaxed pl-8 sm:pl-8">
+                              <p className="text-xs text-slate-500 line-clamp-2 mt-1.5 leading-relaxed pl-0 sm:pl-8">
                                 {paket.deskripsi || "Tanpa deskripsi tambahan"}
                               </p>
-                              <div className="flex flex-wrap items-center gap-2 mt-2.5 pl-8 sm:pl-8">
-                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-500 shadow-2xs">
-                                  <Layers className="w-3.5 h-3.5" />
-                                  {paket.total_items || 0} Jenis Alat
+                              <div className="flex flex-wrap items-center gap-2 mt-2 sm:mt-2.5 pl-0 sm:pl-8">
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] sm:text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-500 shadow-2xs">
+                                  <Layers className="w-3.5 h-3.5 shrink-0" />
+                                  <span>{paket.total_items || 0} Jenis Alat</span>
                                 </span>
-                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-500 shadow-2xs">
-                                  <Boxes className="w-3.5 h-3.5" />
-                                  {paket.total_qty || 0} Unit
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] sm:text-xs font-bold bg-amber-50 text-amber-700 border border-amber-500 shadow-2xs">
+                                  <Boxes className="w-3.5 h-3.5 shrink-0" />
+                                  <span>{paket.total_qty || 0} Unit</span>
                                 </span>
                               </div>
                             </div>
 
-                            {/* Actions */}
-                            <div className="flex items-center gap-2 w-full sm:w-auto justify-end shrink-0 pl-8 sm:pl-0">
+                            {/* Actions: Grid 2 kolom di mobile, Flex di desktop */}
+                            <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto justify-end shrink-0 pt-2.5 sm:pt-0 border-t border-slate-100 sm:border-0">
                               <button
                                 type="button"
                                 onClick={async () => {
@@ -2181,18 +2190,18 @@ export default function EditPengajuanPage() {
                                     setPreviewingPaket(detail);
                                   }
                                 }}
-                                className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 text-xs font-semibold transition-colors"
+                                className="cursor-pointer inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 text-xs font-semibold transition-colors shadow-2xs"
                               >
-                                <Eye className="w-3.5 h-3.5 text-slate-500" />
+                                <Eye className="w-3.5 h-3.5 text-slate-500 shrink-0" />
                                 <span>{previewingPaket?.id === paket.id ? "Tutup Isi" : "Lihat Isi"}</span>
                               </button>
                               <button
                                 type="button"
                                 disabled={applyingPaketId === paket.id}
                                 onClick={() => handleApplyPaket(paket.id)}
-                                className="cursor-pointer flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary-hover transition-all shadow-sm disabled:opacity-60"
+                                className="cursor-pointer inline-flex items-center justify-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary-hover transition-all shadow-sm disabled:opacity-60 whitespace-nowrap"
                               >
-                                <Sparkles className="w-3.5 h-3.5" />
+                                <Sparkles className="w-3.5 h-3.5 shrink-0" />
                                 <span>{applyingPaketId === paket.id ? "Menerapkan..." : "Terapkan Paket"}</span>
                               </button>
                             </div>
@@ -2200,7 +2209,7 @@ export default function EditPengajuanPage() {
 
                           {/* Accordion Detail Isi Paket */}
                           {previewingPaket?.id === paket.id && (
-                            <div className="mt-3.5 pt-3.5 border-t border-slate-200 bg-slate-50/80 p-3.5 rounded-xl text-xs space-y-2 animate-in fade-in duration-200">
+                            <div className="mt-3 pt-3 border-t border-slate-200 bg-slate-50/80 p-3 sm:p-3.5 rounded-xl text-xs space-y-2 animate-in fade-in duration-200">
                               <p className="font-bold text-slate-700">
                                 Daftar Peralatan dalam Paket ({previewingPaket.items?.length || 0} Jenis Alat):
                               </p>
@@ -2208,9 +2217,9 @@ export default function EditPengajuanPage() {
                                 {(previewingPaket.items || []).map((it, idx) => (
                                   <div
                                     key={idx}
-                                    className="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-slate-200 shadow-2xs"
+                                    className="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-slate-200 shadow-2xs gap-2"
                                   >
-                                    <div className="flex items-center gap-2 min-w-0 pr-2">
+                                    <div className="flex items-center gap-2 min-w-0 flex-1">
                                       <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
                                       <span className="truncate text-slate-800 font-medium text-xs">
                                         {it.nama_item}
@@ -2231,11 +2240,14 @@ export default function EditPengajuanPage() {
               </div>
 
               {/* Modal Footer */}
-              <div className="p-4 border-t border-slate-200 bg-slate-50/70 flex justify-end">
+              <div className="p-3 sm:p-4 border-t border-slate-200 bg-slate-50/70 flex items-center justify-between">
+                <p className="text-[11px] sm:text-xs text-slate-400">
+                  Pilih paket bundling untuk memuat alat secara otomatis
+                </p>
                 <button
                   type="button"
                   onClick={() => setShowPaketModal(false)}
-                  className="cursor-pointer px-4 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors shadow-2xs"
+                  className="cursor-pointer px-4 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors shadow-2xs shrink-0"
                 >
                   Tutup
                 </button>

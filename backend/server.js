@@ -148,9 +148,41 @@ async function initAksesorisUnitsTable() {
   }
 }
 
+// Inisialisasi kolom tabel peminjaman jika belum ada
+async function initPeminjamanTable() {
+  try {
+    const [cols] = await db.query("DESCRIBE peminjaman");
+    const colNames = cols.map(c => c.Field);
+
+    // Update ENUM status jika belum menyertakan 'Ditolak'
+    const statusCol = cols.find(c => c.Field === "status");
+    if (statusCol && !statusCol.Type.includes("'Ditolak'")) {
+      await db.query(`
+        ALTER TABLE \`peminjaman\` 
+        MODIFY COLUMN \`status\` ENUM('Menunggu Persetujuan','Sedang Dipinjam','Menunggu Verifikasi','Peminjaman Selesai','Ditolak') 
+        DEFAULT 'Menunggu Persetujuan'
+      `);
+      console.log("[Database Init] Kolom status tabel peminjaman diperbarui untuk menyertakan 'Ditolak'.");
+    }
+
+    if (!colNames.includes("alasan_penolakan")) {
+      await db.query(`ALTER TABLE \`peminjaman\` ADD COLUMN \`alasan_penolakan\` TEXT DEFAULT NULL AFTER \`status\``);
+      console.log("[Database Init] Kolom alasan_penolakan berhasil ditambahkan ke tabel peminjaman.");
+    }
+
+    if (!colNames.includes("rejected_by")) {
+      await db.query(`ALTER TABLE \`peminjaman\` ADD COLUMN \`rejected_by\` VARCHAR(255) DEFAULT NULL AFTER \`alasan_penolakan\``);
+      console.log("[Database Init] Kolom rejected_by berhasil ditambahkan ke tabel peminjaman.");
+    }
+  } catch (err) {
+    console.error("[Database Init Error] peminjaman:", err.message);
+  }
+}
+
 // Start server
 app.listen(PORT, "0.0.0.0", async () => {
   console.log(`Server berjalan di http://localhost:${PORT}`);
   await initAksesorisUnitsTable();
+  await initPeminjamanTable();
 });
 

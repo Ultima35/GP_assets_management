@@ -36,7 +36,7 @@ import {
 } from "lucide-react";
 
 const ROWS_OPTIONS_GRID = [8, 16, 24, 32];
-const ROWS_OPTIONS_TABLE = [10, 20, 30, 50];
+const ROWS_OPTIONS_TABLE = [10, 25, 50, 100];
 
 export default function PaketPage() {
   const router = useRouter();
@@ -531,7 +531,6 @@ export default function PaketPage() {
       </div>
       <div className="flex items-center gap-1">
         <button
-          type="button"
           onClick={() => setCurrentPage(1)}
           disabled={currentPage === 1}
           className="cursor-pointer rounded-lg px-2 py-1.5 text-sm text-slate-500 transition-colors hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed"
@@ -540,7 +539,6 @@ export default function PaketPage() {
           <ChevronsLeft className="h-4 w-4" />
         </button>
         <button
-          type="button"
           onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
           disabled={currentPage === 1}
           className="cursor-pointer rounded-lg px-2 py-1.5 text-sm text-slate-500 transition-colors hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed"
@@ -556,7 +554,6 @@ export default function PaketPage() {
           ) : (
             <button
               key={page}
-              type="button"
               onClick={() => setCurrentPage(page)}
               className={`cursor-pointer min-w-[32px] rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors ${
                 currentPage === page ? "bg-primary text-white" : "text-slate-600 hover:bg-slate-100"
@@ -567,7 +564,6 @@ export default function PaketPage() {
           )
         )}
         <button
-          type="button"
           onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
           disabled={currentPage === totalPages || totalPages === 0}
           className="cursor-pointer rounded-lg px-2 py-1.5 text-sm text-slate-500 transition-colors hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed"
@@ -576,7 +572,6 @@ export default function PaketPage() {
           <ChevronRight className="h-4 w-4" />
         </button>
         <button
-          type="button"
           onClick={() => setCurrentPage(totalPages)}
           disabled={currentPage === totalPages || totalPages === 0}
           className="cursor-pointer rounded-lg px-2 py-1.5 text-sm text-slate-500 transition-colors hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed"
@@ -608,16 +603,17 @@ export default function PaketPage() {
       {/* Header Halaman Standar */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-slate-800">Paket Bundling Peminjaman</h1>
-        <p className="text-sm text-slate-500 mt-0.5">
-          Kelola bundling peralatan untuk mempermudah dan mempercepat input peminjaman alat secara kolektif
+        <p className="text-sm text-slate-500">
+          Kelola paket bundling peminjaman alat
         </p>
       </div>
 
       {/* Container Kontrol & Toolbar dengan Style Top Border (border-t-4 border-t-primary) */}
       <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm border-t-4 border-t-primary">
-        <div className="p-4 sm:p-5 border-b border-slate-300 flex flex-col xl:flex-row xl:items-center justify-between gap-3 bg-slate-50/50">
+        {/* Toolbar */}
+        <div className="p-4 sm:p-5 border-b border-slate-300 flex flex-col xl:flex-row xl:items-center justify-between gap-3 sm:gap-4 bg-slate-50/50">
           {/* Search Bar */}
-          <div className="relative flex-1 max-w-md">
+          <div className="relative w-full xl:max-w-md">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <input
               type="text"
@@ -644,63 +640,67 @@ export default function PaketPage() {
           </div>
 
           {/* Right Toolbar: View Mode Toggle, Tambah Paket, Hapus Seluruh Data */}
-          <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 justify-between xl:justify-end">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 w-full xl:w-auto justify-between xl:justify-end">
             {/* Toggle Button Kartu / Tabel (Dipertebal sedikit agar jelas terlihat) */}
-            <div className="inline-flex items-center p-1 bg-slate-200/90 rounded-lg border-2 border-slate-300 shrink-0">
+            <div className="inline-flex items-center p-1 bg-slate-200/90 rounded-lg border-2 border-slate-300 shrink-0 self-start sm:self-auto w-full sm:w-auto">
               <button
                 type="button"
                 onClick={() => handleToggleViewMode("grid")}
-                className={`cursor-pointer px-3 py-1.5 text-xs rounded-md transition-all flex items-center gap-1.5 ${
+                className={`cursor-pointer flex-1 sm:flex-initial px-3.5 py-1.5 text-xs rounded-md transition-all flex items-center justify-center gap-1.5 ${
                   viewMode === "grid"
                     ? "bg-white text-primary shadow-sm font-bold border border-slate-300/60"
                     : "text-slate-700 hover:text-slate-900 font-semibold"
                 }`}
                 title="Tampilan Kartu Visual"
               >
-                <Grid className="w-4 h-4 stroke-[2.2]" />
+                <Grid className="w-4 h-4 stroke-[2.2] shrink-0" />
                 <span>Kartu</span>
               </button>
               <button
                 type="button"
                 onClick={() => handleToggleViewMode("table")}
-                className={`cursor-pointer px-3 py-1.5 text-xs rounded-md transition-all flex items-center gap-1.5 ${
+                className={`cursor-pointer flex-1 sm:flex-initial px-3.5 py-1.5 text-xs rounded-md transition-all flex items-center justify-center gap-1.5 ${
                   viewMode === "table"
                     ? "bg-white text-primary shadow-sm font-bold border border-slate-300/60"
                     : "text-slate-700 hover:text-slate-900 font-semibold"
                 }`}
                 title="Tampilan Tabel Rapi"
               >
-                <List className="w-4 h-4 stroke-[2.2]" />
+                <List className="w-4 h-4 stroke-[2.2] shrink-0" />
                 <span>Tabel</span>
               </button>
             </div>
 
-            {/* Tambah Paket Button */}
-            {canManage && (
-              <button
-                type="button"
-                onClick={handleOpenCreate}
-                className="cursor-pointer flex items-center justify-center gap-1.5 rounded-lg bg-primary px-3.5 py-2.5 text-xs sm:text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-hover whitespace-nowrap"
-              >
-                <Plus className="h-4 w-4" />
-                <span>Tambah Paket</span>
-              </button>
-            )}
+            {/* Action Buttons: Tambah Paket & Hapus Seluruh Data */}
+            {(canManage || (userRole === "super admin" && pakets.length > 0)) && (
+              <div className={`grid ${canManage && userRole === "super admin" && pakets.length > 0 ? "grid-cols-2" : "grid-cols-1"} gap-2 w-full sm:w-auto sm:flex sm:items-center`}>
+                {canManage && (
+                  <button
+                    type="button"
+                    onClick={handleOpenCreate}
+                    className="cursor-pointer flex items-center justify-center gap-1.5 rounded-lg bg-primary px-3.5 py-2.5 text-xs sm:text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-hover whitespace-nowrap"
+                  >
+                    <Plus className="h-4 w-4 shrink-0" />
+                    <span>Tambah Paket</span>
+                  </button>
+                )}
 
-            {/* Hapus Seluruh Data - Khusus Super Admin */}
-            {userRole === "super admin" && pakets.length > 0 && (
-              <button
-                type="button"
-                onClick={() => {
-                  setDeleteAllConfirmation("");
-                  setShowDeleteAllModal(true);
-                }}
-                title="Khusus Super Admin: Hapus seluruh data paket"
-                className="cursor-pointer flex items-center justify-center gap-1.5 rounded-lg bg-rose-600 px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-sm transition-all hover:bg-rose-700 active:scale-95 whitespace-nowrap"
-              >
-                <Trash2 className="h-4 w-4" />
-                <span>Hapus Seluruh Data</span>
-              </button>
+                {/* Hapus Seluruh Data - Khusus Super Admin */}
+                {userRole === "super admin" && pakets.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDeleteAllConfirmation("");
+                      setShowDeleteAllModal(true);
+                    }}
+                    title="Khusus Super Admin: Hapus seluruh data paket"
+                    className="cursor-pointer flex items-center justify-center gap-1.5 rounded-lg bg-rose-600 px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-sm transition-all hover:bg-rose-700 active:scale-95 whitespace-nowrap"
+                  >
+                    <Trash2 className="h-4 w-4 shrink-0" />
+                    <span>Hapus Seluruh Data</span>
+                  </button>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -819,7 +819,7 @@ export default function PaketPage() {
               /* TABLE VIEW: IDENTIK PERSIS DENGAN TABEL HALAMAN ASET / DAFTAR */
               /* ========================================================================= */
               <div className="overflow-x-auto border-t border-slate-100">
-                <table className="w-full text-left text-sm table-fixed">
+                <table className="w-full min-w-[760px] text-left text-sm table-fixed">
                   <thead>
                     <tr className="border-t border-t-slate-300 border-b border-b-slate-300">
                       <th className="w-[360px] sm:w-[450px] px-4 py-3 font-bold text-slate-700 text-center text-xs uppercase tracking-wider border-r border-slate-200">
@@ -909,7 +909,7 @@ export default function PaketPage() {
             )}
 
             {/* Pagination Bottom */}
-            <div className="border-t border-slate-200 bg-slate-50/50">
+            <div className="border-t border-slate-200">
               <Pagination />
             </div>
           </div>
