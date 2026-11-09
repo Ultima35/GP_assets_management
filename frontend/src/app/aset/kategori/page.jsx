@@ -378,32 +378,32 @@ export default function KategoriMerekPage() {
         </div>
         
         {/* Toggle Button Kategori / Merek (Konsisten dengan style halaman paket) */}
-        <div className="inline-flex items-center p-1 bg-slate-200/90 rounded-lg border-2 border-slate-300 shrink-0 self-center sm:self-auto">
+        <div className="w-full sm:w-auto grid grid-cols-2 sm:inline-flex items-center p-1 bg-slate-200/90 rounded-lg border-2 border-slate-300 shrink-0 self-center sm:self-auto">
           <button
             type="button"
             onClick={() => { setActiveTab("kategori"); setCurrentPage(1); setSearch(""); }}
-            className={`cursor-pointer px-4 py-1.5 text-xs sm:text-sm rounded-md transition-all flex items-center gap-1.5 ${
+            className={`cursor-pointer px-3 sm:px-4 py-1.5 text-xs sm:text-sm rounded-md transition-all flex items-center justify-center gap-1.5 ${
               activeTab === "kategori"
                 ? "bg-white text-primary shadow-sm font-bold border border-slate-300/60"
                 : "text-slate-700 hover:text-slate-900 font-semibold"
             }`}
             title="Kelola Daftar Kategori"
           >
-            <Layers className="w-4 h-4 stroke-[2.2]" />
-            <span>DAFTAR KATEGORI</span>
+            <Layers className="w-4 h-4 stroke-[2.2] shrink-0" />
+            <span className="truncate">DAFTAR KATEGORI</span>
           </button>
           <button
             type="button"
             onClick={() => { setActiveTab("merek"); setCurrentPage(1); setSearch(""); }}
-            className={`cursor-pointer px-4 py-1.5 text-xs sm:text-sm rounded-md transition-all flex items-center gap-1.5 ${
+            className={`cursor-pointer px-3 sm:px-4 py-1.5 text-xs sm:text-sm rounded-md transition-all flex items-center justify-center gap-1.5 ${
               activeTab === "merek"
                 ? "bg-white text-primary shadow-sm font-bold border border-slate-300/60"
                 : "text-slate-700 hover:text-slate-900 font-semibold"
             }`}
             title="Kelola Daftar Merek"
           >
-            <Tag className="w-4 h-4 stroke-[2.2]" />
-            <span>DAFTAR MEREK</span>
+            <Tag className="w-4 h-4 stroke-[2.2] shrink-0" />
+            <span className="truncate">DAFTAR MEREK</span>
           </button>
         </div>
       </div>
@@ -418,8 +418,8 @@ export default function KategoriMerekPage() {
         )}
         
         {/* Toolbar */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-5 border-b border-slate-300 bg-slate-50/50">
-          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 sm:p-5 border-b border-slate-300 bg-slate-50/50">
+          <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 w-full sm:w-auto">
             <div className="relative w-full sm:w-72">
               <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
               <input 
@@ -440,16 +440,18 @@ export default function KategoriMerekPage() {
               <option value="aksesoris">Aksesoris</option>
             </select>
           </div>
-          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+
+          {/* Button Toolbar: 2 Grid (1 baris 2 tombol) */}
+          <div className={`w-full sm:w-auto ${userRole === "super admin" ? "grid grid-cols-2 gap-2 sm:gap-2.5" : "flex"}`}>
             <button 
               onClick={() => {
                 if (activeTab === "kategori") { setFormKat({ nama: "", kode_singkat: "", tipe: "aset" }); setShowModalKat(true); }
                 else { setFormMerek({ nama: "", tipe: "aset" }); setShowModalMerek(true); }
               }}
-              className="cursor-pointer w-full sm:w-auto flex justify-center items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-hover"
+              className={`cursor-pointer w-full flex justify-center items-center gap-1.5 sm:gap-2 rounded-lg bg-primary px-3 sm:px-5 py-2.5 text-xs sm:text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-hover whitespace-nowrap ${userRole === "super admin" ? "col-span-1" : "col-span-2 sm:w-auto"}`}
             >
-              <Plus className="h-4 w-4" />
-              Tambah {activeTab === "kategori" ? "Kategori" : "Merek"}
+              <Plus className="h-4 w-4 shrink-0" />
+              <span className="truncate">Tambah {activeTab === "kategori" ? "Kategori" : "Merek"}</span>
             </button>
 
             {/* Hapus Seluruh Data - Khusus Super Admin */}
@@ -462,10 +464,10 @@ export default function KategoriMerekPage() {
                   setShowDeleteAllModal(true);
                 }}
                 title="Khusus Super Admin: Hapus seluruh kategori dan/atau merek"
-                className="cursor-pointer w-full sm:w-auto flex justify-center items-center gap-1.5 rounded-lg bg-rose-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-rose-700 active:scale-95 whitespace-nowrap"
+                className="cursor-pointer w-full col-span-1 flex justify-center items-center gap-1.5 rounded-lg bg-rose-600 px-2.5 sm:px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-sm transition-all hover:bg-rose-700 active:scale-95 whitespace-nowrap"
               >
-                <Trash2 className="h-4 w-4" />
-                Hapus Seluruh Data
+                <Trash2 className="h-4 w-4 shrink-0" />
+                <span className="truncate">Hapus Seluruh Data</span>
               </button>
             )}
           </div>
